@@ -25,8 +25,8 @@ export default function RootLayout({
                 className={`${sarabun.className} antialiased`}
             >
                 <ThemeProviderCustom>
-                    {children}
                     <NavigationMenuCustom />
+                    {children}
                 </ThemeProviderCustom>
             </body>
         </html>

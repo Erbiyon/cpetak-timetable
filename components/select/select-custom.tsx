@@ -20,7 +20,7 @@ export function SelectCustom() {
                 <SelectContent>
                     <SelectGroup>
                         <SelectLabel>เลือกแผนการเรียน</SelectLabel>
-                        <SelectItem value="apple">Apple</SelectItem>
+                        <SelectItem value="apple">1/xxxx</SelectItem>
                     </SelectGroup>
                 </SelectContent>
             </Select>

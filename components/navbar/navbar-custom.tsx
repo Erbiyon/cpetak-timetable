@@ -12,119 +12,128 @@ import {
     NavigationMenuTrigger,
     navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
+import { DarkModeToggle } from "../theme-provider/dark-mode"
+import { Button } from "../ui/button"
 
 export function NavigationMenuCustom() {
     return (
-        <NavigationMenu viewport={false} className="sticky bg-white mx-auto py-4 top-0 left-0 w-full shadow z-50 border-b">
-            <NavigationMenuList>
-                <NavigationMenuItem>
-                    <div>
-                        <NavigationMenuTrigger>แผนการเรียน</NavigationMenuTrigger>
+        <>
+            <NavigationMenu viewport={false} className="sticky mx-auto py-4 top-0 left-0 w-screen z-50 shadow-background bg-card border p-2 rounded-b-xl">
+                <NavigationMenuList>
+                    <NavigationMenuItem>
+                        <div>
+                            <NavigationMenuTrigger className="bg-card">แผนการเรียน</NavigationMenuTrigger>
+                            <NavigationMenuContent className="z-50">
+                                <ul className="grid w-[200px] gap-4">
+                                    <li>
+                                        <NavigationMenuLink asChild>
+                                            <Link href="/study-plans/transfer-plan">แผนการเรียน เทียบโอน</Link>
+                                        </NavigationMenuLink>
+                                        <NavigationMenuLink asChild>
+                                            <Link href="/study-plans/four-year-plan">แผนการเรียน 4 ปี</Link>
+                                        </NavigationMenuLink>
+                                        <NavigationMenuLink asChild>
+                                            <Link href="/study-plans/dve-plan">แผนการเรียน ปวส.</Link>
+                                        </NavigationMenuLink>
+                                    </li>
+                                </ul>
+                            </NavigationMenuContent>
+                        </div>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                        <NavigationMenuLink asChild className={`${navigationMenuTriggerStyle()} bg-card`}>
+                            <Link href="/rooms">ห้องเรียน</Link>
+                        </NavigationMenuLink>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                        <NavigationMenuLink asChild className={`${navigationMenuTriggerStyle()} bg-card`}>
+                            <Link href="/teachers">อาจารย์</Link>
+                        </NavigationMenuLink>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                        <NavigationMenuTrigger className="bg-card">จัดตารางเรียน เทียบโอน</NavigationMenuTrigger>
                         <NavigationMenuContent className="z-50">
                             <ul className="grid w-[200px] gap-4">
                                 <li>
                                     <NavigationMenuLink asChild>
-                                        <Link href="/study-plans/transfer-plan">เทียบโอน</Link>
+                                        <Link href="#">จัดตารางเรียน ปี 1</Link>
                                     </NavigationMenuLink>
                                     <NavigationMenuLink asChild>
-                                        <Link href="/study-plans/four-year-plan">4 ปี</Link>
+                                        <Link href="#">จัดตารางเรียน ปี 2</Link>
                                     </NavigationMenuLink>
                                     <NavigationMenuLink asChild>
-                                        <Link href="/study-plans/dve-plan">ปวส.</Link>
+                                        <Link href="#">จัดตารางเรียน ปี 3</Link>
                                     </NavigationMenuLink>
                                 </li>
                             </ul>
                         </NavigationMenuContent>
-                    </div>
-                </NavigationMenuItem>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                        <NavigationMenuTrigger className="bg-card">จัดตารางเรียน 4 ปี</NavigationMenuTrigger>
+                        <NavigationMenuContent className="z-50">
+                            <ul className="grid w-[200px] gap-4">
+                                <li>
+                                    <NavigationMenuLink asChild>
+                                        <Link href="#">จัดตารางเรียน ปี 1</Link>
+                                    </NavigationMenuLink>
+                                    <NavigationMenuLink asChild>
+                                        <Link href="#">จัดตารางเรียน ปี 2</Link>
+                                    </NavigationMenuLink>
+                                    <NavigationMenuLink asChild>
+                                        <Link href="#">จัดตารางเรียน ปี 3</Link>
+                                    </NavigationMenuLink>
+                                    <NavigationMenuLink asChild>
+                                        <Link href="#">จัดตารางเรียน ปี 4</Link>
+                                    </NavigationMenuLink>
+                                </li>
+                            </ul>
+                        </NavigationMenuContent>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                        <NavigationMenuTrigger className="bg-card">จัดตารางเรียน ปวส.</NavigationMenuTrigger>
+                        <NavigationMenuContent className="z-50">
+                            <ul className="grid w-[200px] gap-4">
+                                <li>
+                                    <NavigationMenuLink asChild>
+                                        <Link href="#">จัดตารางเรียน ปี 1</Link>
+                                    </NavigationMenuLink>
+                                    <NavigationMenuLink asChild>
+                                        <Link href="#">จัดตารางเรียน ปี 2</Link>
+                                    </NavigationMenuLink>
+                                </li>
+                            </ul>
+                        </NavigationMenuContent>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                        <NavigationMenuLink asChild className={`${navigationMenuTriggerStyle()} bg-card`}>
+                            <Link href="/class-schedule">ตารางสอน</Link>
+                        </NavigationMenuLink>
+                    </NavigationMenuItem>
 
-                <NavigationMenuItem>
-                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                        <Link href="/rooms">ห้องเรียน</Link>
-                    </NavigationMenuLink>
-                </NavigationMenuItem>
+                    <NavigationMenuItem>
+                        <NavigationMenuLink asChild className={`${navigationMenuTriggerStyle()} bg-card`}>
+                            <Link href="/rooms-use">การใช้ห้อง</Link>
+                        </NavigationMenuLink>
+                    </NavigationMenuItem>
 
-                <NavigationMenuItem>
-                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                        <Link href="/teachers">อาจารย์</Link>
-                    </NavigationMenuLink>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                    <NavigationMenuTrigger>จัดตารางเรียน เทียบโอน</NavigationMenuTrigger>
-                    <NavigationMenuContent className="z-50">
-                        <ul className="grid w-[200px] gap-4">
-                            <li>
-                                <NavigationMenuLink asChild>
-                                    <Link href="#">ปี 1</Link>
-                                </NavigationMenuLink>
-                                <NavigationMenuLink asChild>
-                                    <Link href="#">ปี 2</Link>
-                                </NavigationMenuLink>
-                                <NavigationMenuLink asChild>
-                                    <Link href="#">ปี 3</Link>
-                                </NavigationMenuLink>
-                            </li>
-                        </ul>
-                    </NavigationMenuContent>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                    <NavigationMenuTrigger>จัดตารางเรียน 4 ปี</NavigationMenuTrigger>
-                    <NavigationMenuContent className="z-50">
-                        <ul className="grid w-[200px] gap-4">
-                            <li>
-                                <NavigationMenuLink asChild>
-                                    <Link href="#">ปี 1</Link>
-                                </NavigationMenuLink>
-                                <NavigationMenuLink asChild>
-                                    <Link href="#">ปี 2</Link>
-                                </NavigationMenuLink>
-                                <NavigationMenuLink asChild>
-                                    <Link href="#">ปี 3</Link>
-                                </NavigationMenuLink>
-                                <NavigationMenuLink asChild>
-                                    <Link href="#">ปี 4</Link>
-                                </NavigationMenuLink>
-                            </li>
-                        </ul>
-                    </NavigationMenuContent>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                    <NavigationMenuTrigger>จัดตารางเรียน ปวส.</NavigationMenuTrigger>
-                    <NavigationMenuContent className="z-50">
-                        <ul className="grid w-[200px] gap-4">
-                            <li>
-                                <NavigationMenuLink asChild>
-                                    <Link href="#">ปี 1</Link>
-                                </NavigationMenuLink>
-                                <NavigationMenuLink asChild>
-                                    <Link href="#">ปี 2</Link>
-                                </NavigationMenuLink>
-                            </li>
-                        </ul>
-                    </NavigationMenuContent>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                        <Link href="#">ตารางสอน</Link>
-                    </NavigationMenuLink>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                        <Link href="#">การใช้ห้อง</Link>
-                    </NavigationMenuLink>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                        <Link href="#">ปฏิทินการศึกษา</Link>
-                    </NavigationMenuLink>
-                </NavigationMenuItem>
-            </NavigationMenuList>
-        </NavigationMenu >
+                    <NavigationMenuItem>
+                        <NavigationMenuLink asChild className={`${navigationMenuTriggerStyle()} bg-card`}>
+                            <Link href="/academic-calendar">ปฏิทินการศึกษา</Link>
+                        </NavigationMenuLink>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                        <Button
+                            variant="ghost"
+                            className="text-red-700 mx-2"
+                        >
+                            Sign Out
+                        </Button>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                        <DarkModeToggle />
+                    </NavigationMenuItem>
+                </NavigationMenuList>
+            </NavigationMenu>
+        </>
     )
 }
