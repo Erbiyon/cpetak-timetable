@@ -1,3 +1,4 @@
+import { AddSubjectCustom } from "@/components/add-subject/add-subject-custom";
 import { SelectCustom } from "@/components/select/select-custom";
 import { TableCustom } from "@/components/table/table-custom";
 import { Button } from "@/components/ui/button";
@@ -14,54 +15,42 @@ export default function DvePlan() {
 
             <div className="flex justify-between items-center">
                 <h2 className="py-5">ปี 1 ภาคเรียนที่ 1/xxxx</h2>
-                <Button>
-                    เพิ่มวิชา
-                </Button>
+                <AddSubjectCustom />
             </div>
 
             <TableCustom />
 
             <div className="flex justify-between items-center">
                 <h2 className="py-5">ปี 1 ภาคเรียนที่ 2/xxxx</h2>
-                <Button>
-                    เพิ่มวิชา
-                </Button>
+                <AddSubjectCustom />
             </div>
 
             <TableCustom />
 
             <div className="flex justify-between items-center">
                 <h2 className="py-5">ปี 1 ภาคเรียนที่ 3/xxxx</h2>
-                <Button>
-                    เพิ่มวิชา
-                </Button>
+                <AddSubjectCustom />
             </div>
 
             <TableCustom />
 
             <div className="flex justify-between items-center">
                 <h2 className="py-5">ปี 2 ภาคเรียนที่ 1/xxxx</h2>
-                <Button>
-                    เพิ่มวิชา
-                </Button>
+                <AddSubjectCustom />
             </div>
 
             <TableCustom />
 
             <div className="flex justify-between items-center">
                 <h2 className="py-5">ปี 2 ภาคเรียนที่ 2/xxxx</h2>
-                <Button>
-                    เพิ่มวิชา
-                </Button>
+                <AddSubjectCustom />
             </div>
 
             <TableCustom />
 
             <div className="flex justify-between items-center">
                 <h2 className="py-5">ปี 2 ภาคเรียนที่ 3/xxxx</h2>
-                <Button>
-                    เพิ่มวิชา
-                </Button>
+                <AddSubjectCustom />
             </div>
 
             <TableCustom />

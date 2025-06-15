@@ -9,7 +9,7 @@ import {
 
 export function TableCustom() {
     return (
-        <Table className="my-4">
+        <Table>
             <TableHeader>
                 <TableRow>
                     <TableHead>รหัสวิชา</TableHead>

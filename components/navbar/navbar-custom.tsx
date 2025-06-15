@@ -15,7 +15,7 @@ import {
 
 export function NavigationMenuCustom() {
     return (
-        <NavigationMenu viewport={false} className="container mx-auto py-4">
+        <NavigationMenu viewport={false} className="sticky bg-white mx-auto py-4 top-0 left-0 w-full shadow z-50 border-b">
             <NavigationMenuList>
                 <NavigationMenuItem>
                     <div>

@@ -12,16 +12,18 @@ import {
 
 export function SelectCustom() {
     return (
-        <Select>
-            <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="เลือกแผนการเรียน" />
-            </SelectTrigger>
-            <SelectContent>
-                <SelectGroup>
-                    <SelectLabel>เลือกแผนการเรียน</SelectLabel>
-                    <SelectItem value="apple">Apple</SelectItem>
-                </SelectGroup>
-            </SelectContent>
-        </Select>
+        <div className="py-5 mx-48">
+            <Select>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="เลือกแผนการเรียน" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectGroup>
+                        <SelectLabel>เลือกแผนการเรียน</SelectLabel>
+                        <SelectItem value="apple">Apple</SelectItem>
+                    </SelectGroup>
+                </SelectContent>
+            </Select>
+        </div>
     )
 }

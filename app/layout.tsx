@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Sarabun } from "next/font/google";
 import "./globals.css";
 import { NavigationMenuCustom } from "@/components/navbar/navbar-custom";
+import ThemeProviderCustom from "@/components/theme-provider/theme-provider-custom";
 
 const sarabun = Sarabun({
     subsets: ["thai", "latin"],
@@ -19,12 +20,14 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en">
+        <html lang="en" suppressHydrationWarning>
             <body
                 className={`${sarabun.className} antialiased`}
             >
-                <NavigationMenuCustom />
-                {children}
+                <ThemeProviderCustom>
+                    {children}
+                    <NavigationMenuCustom />
+                </ThemeProviderCustom>
             </body>
         </html>
     );
