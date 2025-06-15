@@ -40,13 +40,13 @@ export function NavigationMenuCustom() {
 
                 <NavigationMenuItem>
                     <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                        <Link href="#">ห้องเรียน</Link>
+                        <Link href="/rooms">ห้องเรียน</Link>
                     </NavigationMenuLink>
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
                     <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                        <Link href="#">อาจารย์</Link>
+                        <Link href="/teachers">อาจารย์</Link>
                     </NavigationMenuLink>
                 </NavigationMenuItem>
 
