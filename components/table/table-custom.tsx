@@ -10,7 +10,7 @@ import {
 export function TableCustom() {
     return (
         <Table>
-            <TableHeader>
+            <TableHeader className="sticky top-0 z-10 bg-card">
                 <TableRow>
                     <TableHead>รหัสวิชา</TableHead>
                     <TableHead>ชื่อวิชา</TableHead>
@@ -24,6 +24,9 @@ export function TableCustom() {
                 <TableRow>
                     <TableCell></TableCell>
                 </TableRow>
+                {/* <TableRow className="sticky bottom-0 z-10 bg-card pointer-events-none select-none">
+                    <TableCell colSpan={6}><p className="invisible">""</p></TableCell>
+                </TableRow> */}
             </TableBody>
         </Table>
     )

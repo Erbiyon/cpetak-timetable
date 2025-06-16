@@ -10,7 +10,7 @@ export default function CardStudyPlansCustom({
 
             {children}
 
-            <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-5 shadow-sm mx-8">
+            <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-5 shadow-sm mx-8 max-h-[35vh] overflow-y-auto">
                 <TableCustom />
             </div>
         </div>

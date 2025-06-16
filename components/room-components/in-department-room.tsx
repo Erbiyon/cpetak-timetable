@@ -20,19 +20,21 @@ export default function IndepartmentRoom() {
                         เพิ่มห้อง
                     </Button>
                 </div>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>เลขห้อง</TableHead>
-                            <TableHead>ปุ่มดำเนินการ</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <TableRow>
-                            <TableCell></TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
+                <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-5 shadow-sm max-h-[71vh] overflow-y-auto">
+                    <Table>
+                        <TableHeader className="sticky top-0 z-10 bg-card">
+                            <TableRow>
+                                <TableHead>เลขห้อง</TableHead>
+                                <TableHead>ปุ่มดำเนินการ</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow>
+                                <TableCell></TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
         </div>
     )
