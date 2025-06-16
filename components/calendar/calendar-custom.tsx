@@ -18,9 +18,9 @@ export default function CalendarCustom() {
 
     return (
         <div className="flex flex-col gap-3">
-            <Label htmlFor="date" className="px-1">
+            {/* <Label htmlFor="date" className="px-1">
                 Date of birth
-            </Label>
+            </Label> */}
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <Button
@@ -37,13 +37,21 @@ export default function CalendarCustom() {
                         mode="single"
                         selected={date}
                         captionLayout="dropdown"
+                        fromYear={2000}
+                        toYear={2100}
                         onSelect={(selectedDate) => {
                             setDate(selectedDate)
                             setOpen(false)
+                            // if (selectedDate) {
+                            //     console.log("เลือกวันที่:", selectedDate)
+                            // }
                         }}
                     />
                 </PopoverContent>
             </Popover>
+            {/* <div className="mt-2 text-sm text-gray-700">
+                {date ? `วันที่ที่เลือก: ${date.toLocaleDateString()}` : "ยังไม่ได้เลือกวันที่"}
+            </div> */}
         </div>
     )
 }
