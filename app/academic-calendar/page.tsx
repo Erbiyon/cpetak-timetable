@@ -1,5 +1,9 @@
+import CalendarCustom from "@/components/calendar/calendar-custom";
+
 export default function AcademicCalendar() {
     return (
-        <h1>Academic Calendar page</h1>
+        <div>
+            <CalendarCustom />
+        </div>
     )
 }
