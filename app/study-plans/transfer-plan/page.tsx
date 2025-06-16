@@ -7,7 +7,7 @@ export default function TransferPlan() {
         <div className="container mx-auto py-4">
             <div className="py-5 mx-48">
                 <h1>แผนการเรียนสำหรับนักศึกษาที่เข้ารับการศึกษาในปีการศึกษา 25xx</h1>
-                <h3>หลักสูตรวืศวกรรมคอมพิวเตอร์ เทียบโอน มทร.ล้านนา ตาก</h3>
+                <h3>หลักสูตรวืศวกรรมคอมพิวเตอร์ <span className="text-blue-600">เทียบโอน</span> มทร.ล้านนา ตาก</h3>
             </div>
             <SelectCustom />
             <CardStudyPlansCustom>

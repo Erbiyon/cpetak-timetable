@@ -10,7 +10,7 @@ import {
 export function TableCustom() {
     return (
         <Table>
-            <TableHeader className="sticky top-0 z-10 bg-card">
+            <TableHeader className="sticky top-0 z-10">
                 <TableRow>
                     <TableHead>รหัสวิชา</TableHead>
                     <TableHead>ชื่อวิชา</TableHead>

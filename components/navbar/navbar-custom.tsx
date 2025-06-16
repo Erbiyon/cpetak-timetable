@@ -124,7 +124,7 @@ export function NavigationMenuCustom() {
                     <NavigationMenuItem>
                         <Button
                             variant="ghost"
-                            className="text-red-700 mx-2"
+                            className="text-red-600 mx-2"
                         >
                             Sign Out
                         </Button>

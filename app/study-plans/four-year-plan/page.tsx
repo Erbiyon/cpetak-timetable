@@ -7,7 +7,7 @@ export default function FourYearPlan() {
         <div className="container mx-auto py-4">
             <div className="py-5 mx-48">
                 <h1>แผนการเรียนสำหรับนักศึกษาที่เข้ารับการศึกษาในปีการศึกษา 25xx</h1>
-                <h3>หลักสูตรวืศวกรรมคอมพิวเตอร์ 4 ปี มทร.ล้านนา ตาก</h3>
+                <h3>หลักสูตรวืศวกรรมคอมพิวเตอร์ <span className="text-green-600">4 ปี</span> มทร.ล้านนา ตาก</h3>
             </div>
             <SelectCustom />
             <CardStudyPlansCustom>
