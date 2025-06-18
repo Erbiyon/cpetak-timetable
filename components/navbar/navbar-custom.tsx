@@ -56,13 +56,13 @@ export function NavigationMenuCustom() {
                             <ul className="grid w-[200px] gap-4">
                                 <li>
                                     <NavigationMenuLink asChild>
-                                        <Link href="#">จัดตารางเรียน ปี 1</Link>
+                                        <Link href="/adjust-time-tables/adjust-plan-transfer/transfer-one-year">จัดตารางเรียน ปี 1</Link>
                                     </NavigationMenuLink>
                                     <NavigationMenuLink asChild>
-                                        <Link href="#">จัดตารางเรียน ปี 2</Link>
+                                        <Link href="/adjust-time-tables/adjust-plan-transfer/transfer-two-year">จัดตารางเรียน ปี 2</Link>
                                     </NavigationMenuLink>
                                     <NavigationMenuLink asChild>
-                                        <Link href="#">จัดตารางเรียน ปี 3</Link>
+                                        <Link href="/adjust-time-tables/adjust-plan-transfer/transfer-three-year">จัดตารางเรียน ปี 3</Link>
                                     </NavigationMenuLink>
                                 </li>
                             </ul>
@@ -74,16 +74,16 @@ export function NavigationMenuCustom() {
                             <ul className="grid w-[200px] gap-4">
                                 <li>
                                     <NavigationMenuLink asChild>
-                                        <Link href="#">จัดตารางเรียน ปี 1</Link>
+                                        <Link href="/adjust-time-tables/adjust-plan-four-year/four-one-year">จัดตารางเรียน ปี 1</Link>
                                     </NavigationMenuLink>
                                     <NavigationMenuLink asChild>
-                                        <Link href="#">จัดตารางเรียน ปี 2</Link>
+                                        <Link href="/adjust-time-tables/adjust-plan-four-year/four-two-year">จัดตารางเรียน ปี 2</Link>
                                     </NavigationMenuLink>
                                     <NavigationMenuLink asChild>
-                                        <Link href="#">จัดตารางเรียน ปี 3</Link>
+                                        <Link href="/adjust-time-tables/adjust-plan-four-year/four-three-year">จัดตารางเรียน ปี 3</Link>
                                     </NavigationMenuLink>
                                     <NavigationMenuLink asChild>
-                                        <Link href="#">จัดตารางเรียน ปี 4</Link>
+                                        <Link href="/adjust-time-tables/adjust-plan-four-year/four-four-year">จัดตารางเรียน ปี 4</Link>
                                     </NavigationMenuLink>
                                 </li>
                             </ul>
@@ -95,10 +95,10 @@ export function NavigationMenuCustom() {
                             <ul className="grid w-[200px] gap-4">
                                 <li>
                                     <NavigationMenuLink asChild>
-                                        <Link href="#">จัดตารางเรียน ปี 1</Link>
+                                        <Link href="/adjust-time-tables/adjust-plan-dve/dve-one-year">จัดตารางเรียน ปี 1</Link>
                                     </NavigationMenuLink>
                                     <NavigationMenuLink asChild>
-                                        <Link href="#">จัดตารางเรียน ปี 2</Link>
+                                        <Link href="/adjust-time-tables/adjust-plan-dve/dve-two-year">จัดตารางเรียน ปี 2</Link>
                                     </NavigationMenuLink>
                                 </li>
                             </ul>
