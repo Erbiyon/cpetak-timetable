@@ -12,7 +12,16 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export function AddSubjectCustom() {
+type AddSubjectCustomProps = {
+    title?: string,
+    description?: string
+}
+
+export function AddSubjectCustom({
+    title,
+    description
+}: AddSubjectCustomProps
+) {
     return (
         <Dialog>
             <form>
@@ -21,9 +30,9 @@ export function AddSubjectCustom() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>เพิ่มวิชา</DialogTitle>
+                        <DialogTitle>{title}</DialogTitle>
                         <DialogDescription>
-                            กรอกข้อมูลให้ครบ
+                            {description || "กรุณากรอกรายละเอียดของวิชาที่ต้องการเพิ่ม"}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4">

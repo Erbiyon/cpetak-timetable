@@ -37,8 +37,8 @@ export default function CalendarCustom() {
                         mode="single"
                         selected={date}
                         captionLayout="dropdown"
-                        fromYear={2000}
-                        toYear={2100}
+                        fromYear={2025}
+                        toYear={2075}
                         onSelect={(selectedDate) => {
                             setDate(selectedDate)
                             setOpen(false)

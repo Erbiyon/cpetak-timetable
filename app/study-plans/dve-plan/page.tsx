@@ -13,37 +13,37 @@ export default function DvePlan() {
             <CardStudyPlansCustom>
                 <div className="flex justify-between items-center mx-8">
                     <h2>ปี 1 ภาคเรียนที่ 1/xxxx</h2>
-                    <AddSubjectCustom />
+                    <AddSubjectCustom title="ปี 1 ภาคเรียนที่ 1/xxxx" />
                 </div>
             </CardStudyPlansCustom>
             <CardStudyPlansCustom>
                 <div className="flex justify-between items-center mx-8">
                     <h2>ปี 1 ภาคเรียนที่ 2/xxxx</h2>
-                    <AddSubjectCustom />
+                    <AddSubjectCustom title="ปี 1 ภาคเรียนที่ 2/xxxx" />
                 </div>
             </CardStudyPlansCustom>
             <CardStudyPlansCustom>
                 <div className="flex justify-between items-center mx-8">
                     <h2>ปี 1 ภาคเรียนที่ 3/xxxx</h2>
-                    <AddSubjectCustom />
+                    <AddSubjectCustom title="ปี 1 ภาคเรียนที่ 3/xxxx" />
                 </div>
             </CardStudyPlansCustom>
             <CardStudyPlansCustom>
                 <div className="flex justify-between items-center mx-8">
                     <h2>ปี 2 ภาคเรียนที่ 1/xxxx</h2>
-                    <AddSubjectCustom />
+                    <AddSubjectCustom title="ปี 2 ภาคเรียนที่ 1/xxxx" />
                 </div>
             </CardStudyPlansCustom>
             <CardStudyPlansCustom>
                 <div className="flex justify-between items-center mx-8">
                     <h2>ปี 2 ภาคเรียนที่ 2/xxxx</h2>
-                    <AddSubjectCustom />
+                    <AddSubjectCustom title="ปี 2 ภาคเรียนที่ 2/xxxx" />
                 </div>
             </CardStudyPlansCustom>
             <CardStudyPlansCustom>
                 <div className="flex justify-between items-center mx-8">
                     <h2>ปี 2 ภาคเรียนที่ 3/xxxx</h2>
-                    <AddSubjectCustom />
+                    <AddSubjectCustom title="ปี 2 ภาคเรียนที่ 3/xxxx" />
                 </div>
             </CardStudyPlansCustom>
         </div>
