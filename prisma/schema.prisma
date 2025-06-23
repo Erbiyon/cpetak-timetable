@@ -6,10 +6,32 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../lib/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+model Term_tb {
+  id       Int        @id @default(autoincrement())
+  name     String     
+  start    DateTime
+  end      DateTime
+  plans    Plans_tb[] 
+
+  @@map("Term_tb")
+}
+
+model Plans_tb {
+  id            Int      @id @default(autoincrement())
+  subjectCode   String   
+  subjectName   String   
+  credit        Int      
+  lectureHour   Int      
+  labHour       Int      
+  termId        Int
+  term          Term_tb  @relation(fields: [termId], references: [id])
+
+  @@map("Plans_tb")
 }
