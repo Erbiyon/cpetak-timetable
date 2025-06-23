@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { ChevronDownIcon } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Label } from "@/components/ui/label"
@@ -12,15 +11,41 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 
-export default function CalendarCustom() {
+type TermRange = {
+    name: string;
+    start?: Date;
+    end?: Date
+}
+
+type CalendarCustomProps = {
+    date?: Date
+    onChange?: (date: Date | undefined) => void
+    terms?: TermRange[]
+    selectDate?: string
+}
+
+function getTermName(date?: Date, terms?: TermRange[]) {
+    if (!date || !terms) return undefined
+    for (const term of terms) {
+        if (term.start && term.end && date >= term.start && date <= term.end) {
+            return term.name
+        }
+    }
+    return undefined
+}
+
+export default function CalendarCustom({
+    selectDate,
+    date,
+    onChange,
+    terms
+}: CalendarCustomProps) {
     const [open, setOpen] = React.useState(false)
-    const [date, setDate] = React.useState<Date | undefined>(undefined)
+    const termName = getTermName(date, terms)
 
     return (
         <div className="flex flex-col gap-3">
-            {/* <Label htmlFor="date" className="px-1">
-                Date of birth
-            </Label> */}
+            {/* {label && <Label className="px-1">{label}</Label>} */}
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <Button
@@ -28,7 +53,7 @@ export default function CalendarCustom() {
                         id="date"
                         className="w-48 justify-between font-normal"
                     >
-                        {date ? date.toLocaleDateString() : "Select date"}
+                        {date ? date.toLocaleDateString() : `${selectDate}`}
                         <ChevronDownIcon />
                     </Button>
                 </PopoverTrigger>
@@ -37,20 +62,20 @@ export default function CalendarCustom() {
                         mode="single"
                         selected={date}
                         captionLayout="dropdown"
-                        fromYear={2025}
-                        toYear={2075}
+                        startMonth={new Date(2025, 0)}
+                        endMonth={new Date(2075, 12)}
                         onSelect={(selectedDate) => {
-                            setDate(selectedDate)
+                            onChange?.(selectedDate)
                             setOpen(false)
-                            // if (selectedDate) {
-                            //     console.log("เลือกวันที่:", selectedDate)
-                            // }
                         }}
                     />
                 </PopoverContent>
             </Popover>
             {/* <div className="mt-2 text-sm text-gray-700">
                 {date ? `วันที่ที่เลือก: ${date.toLocaleDateString()}` : "ยังไม่ได้เลือกวันที่"}
+                {termName && (
+                    <div className="text-green-700">อยู่ใน {termName}</div>
+                )}
             </div> */}
         </div>
     )
