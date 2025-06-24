@@ -13,25 +13,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum PlanType {
+  TRANSFER 
+  VOCATIONAL 
+  FOUR_YEAR
+}
+
 model Term_tb {
   id       Int        @id @default(autoincrement())
-  name     String     
+  name     String
   start    DateTime
   end      DateTime
-  plans    Plans_tb[] 
+  Plans_tb Plans_tb[]
 
   @@map("Term_tb")
 }
 
 model Plans_tb {
-  id            Int      @id @default(autoincrement())
-  subjectCode   String   
-  subjectName   String   
-  credit        Int      
-  lectureHour   Int      
-  labHour       Int      
-  termId        Int
-  term          Term_tb  @relation(fields: [termId], references: [id])
+  id           Int      @id @default(autoincrement())
+  subjectCode  String
+  subjectName  String
+  credit       Int
+  lectureHour  Int
+  labHour      Int
+  termId       Int
+  term         Term_tb  @relation(fields: [termId], references: [id], onDelete: Cascade)
+  planType     PlanType
+  academicYear Int
 
   @@map("Plans_tb")
 }
