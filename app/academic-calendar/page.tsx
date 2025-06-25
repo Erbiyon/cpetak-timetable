@@ -12,9 +12,9 @@ export default function AcademicCalendar() {
     const [savedTerm, setSavedTerm] = React.useState<any>(null)
 
     const terms = [
-        { name: "เทอม 1", start: term1.start, end: term1.end },
-        { name: "เทอม 2", start: term2.start, end: term2.end },
-        { name: "เทอม 3", start: term3.start, end: term3.end },
+        { name: "ภาคเรียนที่ 1", start: term1.start, end: term1.end },
+        { name: "ภาคเรียนที่ 2", start: term2.start, end: term2.end },
+        { name: "ภาคเรียนที่ 3", start: term3.start, end: term3.end },
     ]
 
     async function saveTerm(name: string, start?: Date, end?: Date) {
@@ -35,6 +35,21 @@ export default function AcademicCalendar() {
         }
     }
 
+    React.useEffect(() => {
+        async function fetchTerms() {
+            const res = await fetch("/api/term")
+            if (res.ok) {
+                const data = await res.json()
+                data.forEach((term: any) => {
+                    if (term.name === "ภาคเรียนที่ 1") setTerm1({ start: new Date(term.start), end: new Date(term.end) })
+                    if (term.name === "ภาคเรียนที่ 2") setTerm2({ start: new Date(term.start), end: new Date(term.end) })
+                    if (term.name === "ภาคเรียนที่ 3") setTerm3({ start: new Date(term.start), end: new Date(term.end) })
+                })
+            }
+        }
+        fetchTerms()
+    }, [])
+
     function getCurrentTerm() {
         const now = new Date()
         if (term1.start && term1.end && now >= term1.start && now <= term1.end) {
@@ -50,15 +65,15 @@ export default function AcademicCalendar() {
     }
 
     React.useEffect(() => {
-        if (term1.start && term1.end) saveTerm("เทอม 1", term1.start, term1.end)
+        if (term1.start && term1.end) saveTerm("ภาคเรียนที่ 1", term1.start, term1.end)
     }, [term1.start, term1.end])
 
     React.useEffect(() => {
-        if (term2.start && term2.end) saveTerm("เทอม 2", term2.start, term2.end)
+        if (term2.start && term2.end) saveTerm("ภาคเรียนที่ 2", term2.start, term2.end)
     }, [term2.start, term2.end])
 
     React.useEffect(() => {
-        if (term3.start && term3.end) saveTerm("เทอม 3", term3.start, term3.end)
+        if (term3.start && term3.end) saveTerm("ภาคเรียนที่ 3", term3.start, term3.end)
     }, [term3.start, term3.end])
 
     const currentTerm = getCurrentTerm()
@@ -79,7 +94,7 @@ export default function AcademicCalendar() {
                                 date={term1.start}
                                 onChange={date => setTerm1(t => ({ ...t, start: date }))}
                                 terms={terms}
-                                selectDate="เริ่มภาคเรียนที่ 1"
+                                selectDate={term1.start ? `เริ่ม: ${term1.start.toLocaleDateString()}` : "เริ่มภาคเรียนที่ 1"}
                             />
                             <br />
                             <CalendarCustom
@@ -128,11 +143,11 @@ export default function AcademicCalendar() {
                     </div>
                 </div>
             </div>
-            {savedTerm && (
+            {/* {savedTerm && (
                 <div className="text-green-600 font-semibold text-center mt-4">
                     บันทึกแล้ว: {savedTerm.name} ({new Date(savedTerm.start).toLocaleDateString()} ถึง {new Date(savedTerm.end).toLocaleDateString()})
                 </div>
-            )}
+            )} */}
             {currentTerm && (
                 <DisplayCalendarCustom
                     termNumber={currentTerm.termNumber}

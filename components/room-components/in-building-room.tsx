@@ -13,7 +13,7 @@ export default function InbuildingRoom() {
     return (
         <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border m-5 shadow-sm mx-auto">
             <div className="mx-4">
-                <h1 className="py-3">อาคารสาขาวิศวกรรมคอมพิวเตอร์</h1>
+                <h1 className="py-3">ตึกวิศวกรรมศาสตร์</h1>
                 <div className="flex justify-between items-center gap-4 mb-2">
                     <Input type="text" placeholder="กรุณากรองเลขห้อง" className="w-5/6" />
                     <Button type="submit" variant="outline" className="w-1/6">

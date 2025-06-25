@@ -14,14 +14,14 @@ datasource db {
 }
 
 enum PlanType {
-  TRANSFER 
-  VOCATIONAL 
+  TRANSFER
+  VOCATIONAL
   FOUR_YEAR
 }
 
 model Term_tb {
   id       Int        @id @default(autoincrement())
-  name     String
+  name     String     @unique
   start    DateTime
   end      DateTime
   Plans_tb Plans_tb[]

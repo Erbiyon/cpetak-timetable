@@ -40,7 +40,7 @@ export default function CalendarCustom({
     terms
 }: CalendarCustomProps) {
     const [open, setOpen] = React.useState(false)
-    const termName = getTermName(date, terms)
+    // const termName = getTermName(date, terms)
 
     return (
         <div className="flex flex-col gap-3">
