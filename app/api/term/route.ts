@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
             })
             return NextResponse.json(created)
         } else {
-            return NextResponse.json({ error: "Invalid term name" }, { status: 400 })
+            return NextResponse.json({ error: "ชื่อภาคเรียนไม่ถูกต้อง" }, { status: 400 })
         }
     } else if (found) {
         const updated = await prisma.term_tb.update({
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
         })
         return NextResponse.json(updated)
     } else {
-        return NextResponse.json({ error: "Term limit reached" }, { status: 400 })
+        return NextResponse.json({ error: "ถึงจำนวนภาคเรียนสูงสุดแล้ว" }, { status: 400 })
     }
 }
 

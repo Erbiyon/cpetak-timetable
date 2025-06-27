@@ -40,6 +40,14 @@ model Plans_tb {
   term         Term_tb  @relation(fields: [termId], references: [id], onDelete: Cascade)
   planType     PlanType
   academicYear Int
+  yearLevelId  Int
+  yearLevel    YearLevel_tb @relation(fields: [yearLevelId], references: [id])
 
   @@map("Plans_tb")
+}
+
+model YearLevel_tb {
+  id      Int      @id @default(autoincrement())
+  name    String  
+  plans   Plans_tb[]
 }

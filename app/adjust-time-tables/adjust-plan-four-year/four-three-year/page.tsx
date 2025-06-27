@@ -1,4 +1,4 @@
-import PlansStatusCustom from "@/components/plans-status/plans-status custom";
+import PlansStatusCustom from "@/components/plans-status/plans-status-custom";
 import TimeTableCustom from "@/components/time-table/time-table-custom";
 
 export default function FourThreeYear() {

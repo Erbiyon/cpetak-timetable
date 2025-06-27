@@ -7,70 +7,97 @@ import { useEffect, useState } from "react"
 
 export default function TransferPlan() {
     const [year, setYear] = useState<string>("xxxx")
+    const [terms, setTerms] = useState<any[]>([])
+    const [yearLevels, setYearLevels] = useState<any[]>([])
 
     useEffect(() => {
         async function fetchTerm() {
             const res = await fetch("/api/term")
             if (res.ok) {
                 const data = await res.json()
+                setTerms(data)
 
                 const term1 = data.find((t: any) => t.name === "ภาคเรียนที่ 1")
                 if (term1 && term1.start) {
                     const startYear = new Date(term1.start).getFullYear() + 543
+
                     setYear(startYear.toString())
                 }
             }
         }
         fetchTerm()
+
+        async function fetchYearLevels() {
+            const res = await fetch("/api/year-level")
+            if (res.ok) {
+                const data = await res.json()
+                setYearLevels(data)
+            }
+        }
+        fetchYearLevels()
     }, [])
+
+    const academicYear = year
+    const academicYear2 = parseInt(year) + 1
+    const academicYear3 = parseInt(year) + 2
 
     return (
         <div className="container mx-auto py-4">
             <div className="py-5 mx-48">
-                <h1>แผนการเรียนสำหรับนักศึกษาที่เข้ารับการศึกษาในปีการศึกษา {year}</h1>
+                <h1>แผนการเรียนสำหรับนักศึกษาที่เข้ารับการศึกษาในปีการศึกษา {academicYear}</h1>
                 <h3>หลักสูตรวืศวกรรมคอมพิวเตอร์ <span className="text-blue-600">เทียบโอน</span> มทร.ล้านนา ตาก</h3>
             </div>
             <SelectCustom />
             <CardStudyPlansCustom>
                 <div className="flex justify-between items-center mx-8">
-                    <h2>ปี 1 ภาคเรียนที่ 1/{year}</h2>
-                    <AddSubjectCustom title={`ปี 1 ภาคเรียนที่ 1/${year}`} />
+                    <h2>{yearLevels[0]?.name} {terms[0]?.name}/{academicYear}</h2>
+                    <AddSubjectCustom
+                        title={`${yearLevels[0]?.name} ${terms[0]?.name}/${academicYear}`}
+                    />
                 </div>
             </CardStudyPlansCustom>
             <CardStudyPlansCustom>
                 <div className="flex justify-between items-center mx-8">
-                    <h2>ปี 1 ภาคเรียนที่ 2/{year}</h2>
-                    <AddSubjectCustom title={`ปี 1 ภาคเรียนที่ 2/${year}`} />
+                    <h2>{yearLevels[0]?.name} {terms[1]?.name}/{academicYear}</h2>
+                    <AddSubjectCustom
+                        title={`${yearLevels[0]?.name} ${terms[1]?.name}/${academicYear}`}
+                    />
                 </div>
             </CardStudyPlansCustom>
             <CardStudyPlansCustom>
                 <div className="flex justify-between items-center mx-8">
-                    <h2>ปี 1 ภาคเรียนที่ 3/{year}</h2>
-                    <AddSubjectCustom title={`ปี 1 ภาคเรียนที่ 3/${year}`} />
+                    <h2>{yearLevels[0]?.name} {terms[2]?.name}/{academicYear}</h2>
+                    <AddSubjectCustom title={`${yearLevels[0]?.name} ${terms[2]?.name}/${academicYear}`} />
                 </div>
             </CardStudyPlansCustom>
             <CardStudyPlansCustom>
                 <div className="flex justify-between items-center mx-8">
-                    <h2>ปี 2 ภาคเรียนที่ 1/{parseInt(year) + 1}</h2>
-                    <AddSubjectCustom title={`ปี 2 ภาคเรียนที่ 1/${parseInt(year) + 1}`} />
+                    <h2>{yearLevels[1]?.name} {terms[0]?.name}/{academicYear2}</h2>
+                    <AddSubjectCustom title={`${yearLevels[1]?.name} ${terms[0]?.name}/${academicYear2}`} />
                 </div>
             </CardStudyPlansCustom>
             <CardStudyPlansCustom>
                 <div className="flex justify-between items-center mx-8">
-                    <h2>ปี 2 ภาคเรียนที่ 2/{parseInt(year) + 1}</h2>
-                    <AddSubjectCustom title={`ปี 2 ภาคเรียนที่ 2/${parseInt(year) + 1}`} />
+                    <h2>{yearLevels[1]?.name} {terms[1]?.name}/{academicYear2}</h2>
+                    <AddSubjectCustom title={`${yearLevels[1]?.name} ${terms[1]?.name}/${academicYear2}`} />
                 </div>
             </CardStudyPlansCustom>
             <CardStudyPlansCustom>
                 <div className="flex justify-between items-center mx-8">
-                    <h2>ปี 2 ภาคเรียนที่ 3/{parseInt(year) + 1}</h2>
+                    <h2>{yearLevels[1]?.name} {terms[2]?.name}/{academicYear2}</h2>
+                    <AddSubjectCustom title={`${yearLevels[1]?.name} ${terms[2]?.name}/${academicYear2}`} />
+                </div>
+            </CardStudyPlansCustom>
+            <CardStudyPlansCustom>
+                <div className="flex justify-between items-center mx-8">
+                    <h2>{yearLevels[2]?.name} {terms[0]?.name}/{academicYear3}</h2>
                     <AddSubjectCustom title={`ปี 2 ภาคเรียนที่ 3/${parseInt(year) + 1}`} />
                 </div>
             </CardStudyPlansCustom>
             <CardStudyPlansCustom>
                 <div className="flex justify-between items-center mx-8">
-                    <h2>ปี 3 ภาคเรียนที่ 1/{parseInt(year) + 2}</h2>
-                    <AddSubjectCustom title={`ปี 3 ภาคเรียนที่ 1/${parseInt(year) + 2}`} />
+                    <h2>{yearLevels[2]?.name} {terms[0]?.name}/{academicYear3}</h2>
+                    <AddSubjectCustom title={`${yearLevels[2]?.name} ${terms[0]?.name}/${academicYear3}`} />
                 </div>
             </CardStudyPlansCustom>
         </div>

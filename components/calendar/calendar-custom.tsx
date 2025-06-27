@@ -23,15 +23,15 @@ type CalendarCustomProps = {
     selectDate?: string
 }
 
-function getTermName(date?: Date, terms?: TermRange[]) {
-    if (!date || !terms) return undefined
-    for (const term of terms) {
-        if (term.start && term.end && date >= term.start && date <= term.end) {
-            return term.name
-        }
-    }
-    return undefined
-}
+// function getTermName(date?: Date, terms?: TermRange[]) {
+//     if (!date || !terms) return undefined
+//     for (const term of terms) {
+//         if (term.start && term.end && date >= term.start && date <= term.end) {
+//             return term.name
+//         }
+//     }
+//     return undefined
+// }
 
 export default function CalendarCustom({
     selectDate,
