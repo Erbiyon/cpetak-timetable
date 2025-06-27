@@ -94,7 +94,7 @@ export default function AcademicCalendar() {
                                 date={term1.start}
                                 onChange={date => setTerm1(t => ({ ...t, start: date }))}
                                 terms={terms}
-                                selectDate={term1.start ? `เริ่ม: ${term1.start.toLocaleDateString()}` : "เริ่มภาคเรียนที่ 1"}
+                                selectDate="เริ่มภาคเรียนที่ 1"
                             />
                             <br />
                             <CalendarCustom
