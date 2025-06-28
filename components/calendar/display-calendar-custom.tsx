@@ -1,3 +1,5 @@
+import React from "react"
+
 type DisplayCalendarCustomProps = {
     termNumber?: number
     start?: Date
@@ -11,6 +13,18 @@ export default function DisplayCalendarCustom({
 }: DisplayCalendarCustomProps) {
     const year = start ? (start.getFullYear() + 543).toString() : "xxxx"
     const term = termNumber ?? "?"
+
+
+    React.useEffect(() => {
+        if (term !== "?" && year !== "xxxx") {
+            const termYear = `${term}/${year}`
+            fetch("/api/term-year", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ termYear }),
+            })
+        }
+    }, [term, year])
 
     return (
         <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border mx-12 mb-8 p-4 shadow-sm">

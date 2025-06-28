@@ -50,4 +50,13 @@ model YearLevel_tb {
   id      Int      @id @default(autoincrement())
   name    String  
   plans   Plans_tb[]
+
+   @@map("YearLevel_tb")
+}
+
+model TermYear_tb {
+  id       Int    @id @default(1)
+  termYear String
+  
+  @@map("TermYear_tb")
 }
