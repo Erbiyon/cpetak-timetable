@@ -26,7 +26,9 @@ export default function DveOneYear() {
                     <TimeTableCustom />
                 </div>
             </div>
-            <PlansStatusCustom />
+            <PlansStatusCustom
+                termYear={termYear}
+            />
         </div>
     )
 }

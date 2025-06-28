@@ -1,7 +1,7 @@
+import TransferPlan from "./study-plans/transfer-plan/page";
+
 export default function Home() {
     return (
-        <div className="container mx-auto">
-            Home page
-        </div>
+        <TransferPlan />
     );
 }
