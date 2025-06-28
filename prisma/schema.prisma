@@ -30,33 +30,34 @@ model Term_tb {
 }
 
 model Plans_tb {
-  id           Int      @id @default(autoincrement())
-  subjectCode  String
-  subjectName  String
-  credit       Int
-  lectureHour  Int
-  labHour      Int
-  termId       Int
-  term         Term_tb  @relation(fields: [termId], references: [id], onDelete: Cascade)
-  planType     PlanType
-  academicYear Int
-  yearLevelId  Int
-  yearLevel    YearLevel_tb @relation(fields: [yearLevelId], references: [id])
+  id             Int           @id @default(autoincrement())
+  subjectCode    String
+  subjectName    String
+  credit         Int
+  lectureHour    Int
+  labHour        Int
+  termYear       String
+  yearLevel      String
+  planType       PlanType
+  Term_tb        Term_tb?      @relation(fields: [term_tbId], references: [id])
+  term_tbId      Int?
+  YearLevel_tb   YearLevel_tb? @relation(fields: [yearLevel_tbId], references: [id])
+  yearLevel_tbId Int?
 
   @@map("Plans_tb")
 }
 
 model YearLevel_tb {
-  id      Int      @id @default(autoincrement())
-  name    String  
-  plans   Plans_tb[]
+  id       Int        @id @default(autoincrement())
+  name     String
+  Plans_tb Plans_tb[]
 
-   @@map("YearLevel_tb")
+  @@map("YearLevel_tb")
 }
 
 model TermYear_tb {
   id       Int    @id @default(1)
   termYear String
-  
+
   @@map("TermYear_tb")
 }

@@ -61,6 +61,8 @@ export default function TransferPlan() {
                     <h2>{yearLevels[0]?.name} {terms[1]?.name}/{academicYear}</h2>
                     <AddSubjectCustom
                         title={`${yearLevels[0]?.name} ${terms[1]?.name}/${academicYear}`}
+                        termYear={`${terms[1]?.name}/${academicYear}`}
+                        yearLevels={yearLevels}
                     />
                 </div>
             </CardStudyPlansCustom>
