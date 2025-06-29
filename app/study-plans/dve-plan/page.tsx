@@ -67,84 +67,102 @@ export default function DvePlan() {
                 termYear={`${terms[0]?.name}/${academicYear}`}
                 yearLevel={yearLevels[0]?.name}
             >
-                <div className="flex justify-between items-center mx-8">
-                    <h2>{yearLevels[0]?.name} {terms[0]?.name}/{academicYear}</h2>
-                    <AddSubjectCustom
-                        planType="DVE"
-                        termYear={`${terms[0]?.name}/${academicYear}`}
-                        yearLevel={yearLevels[0]?.name}
-                    />
-                </div>
+                {({ onAdded }) => (
+                    <div className="flex justify-between items-center mx-8">
+                        <h2>{yearLevels[0]?.name} {terms[0]?.name}/{academicYear}</h2>
+                        <AddSubjectCustom
+                            planType="DVE"
+                            termYear={`${terms[0]?.name}/${academicYear}`}
+                            yearLevel={yearLevels[0]?.name}
+                            onAdded={onAdded}
+                        />
+                    </div>
+                )}
             </CardStudyPlansCustom>
             <CardStudyPlansCustom
                 planType="DVE"
                 termYear={`${terms[1]?.name}/${academicYear}`}
                 yearLevel={yearLevels[0]?.name}
             >
-                <div className="flex justify-between items-center mx-8">
-                    <h2>{yearLevels[0]?.name} {terms[1]?.name}/{academicYear}</h2>
-                    <AddSubjectCustom
-                        planType="DVE"
-                        termYear={`${terms[1]?.name}/${academicYear}`}
-                        yearLevel={yearLevels[0]?.name}
-                    />
-                </div>
+                {({ onAdded }) => (
+                    <div className="flex justify-between items-center mx-8">
+                        <h2>{yearLevels[0]?.name} {terms[1]?.name}/{academicYear}</h2>
+                        <AddSubjectCustom
+                            planType="DVE"
+                            termYear={`${terms[1]?.name}/${academicYear}`}
+                            yearLevel={yearLevels[0]?.name}
+                            onAdded={onAdded}
+                        />
+                    </div>
+                )}
             </CardStudyPlansCustom>
             <CardStudyPlansCustom
                 planType="DVE"
                 termYear={`${terms[2]?.name}/${academicYear}`}
                 yearLevel={yearLevels[0]?.name}
             >
-                <div className="flex justify-between items-center mx-8">
-                    <h2>{yearLevels[0]?.name} {terms[2]?.name}/{academicYear}</h2>
-                    <AddSubjectCustom
-                        planType="DVE"
-                        termYear={`${terms[2]?.name}/${academicYear}`}
-                        yearLevel={yearLevels[0]?.name}
-                    />
-                </div>
+                {({ onAdded }) => (
+                    <div className="flex justify-between items-center mx-8">
+                        <h2>{yearLevels[0]?.name} {terms[2]?.name}/{academicYear}</h2>
+                        <AddSubjectCustom
+                            planType="DVE"
+                            termYear={`${terms[2]?.name}/${academicYear}`}
+                            yearLevel={yearLevels[0]?.name}
+                            onAdded={onAdded}
+                        />
+                    </div>
+                )}
             </CardStudyPlansCustom>
             <CardStudyPlansCustom
                 planType="DVE"
                 termYear={`${terms[0]?.name}/${academicYear2}`}
                 yearLevel={yearLevels[1]?.name}
             >
-                <div className="flex justify-between items-center mx-8">
-                    <h2>{yearLevels[1]?.name} {terms[0]?.name}/{academicYear2}</h2>
-                    <AddSubjectCustom
-                        planType="DVE"
-                        termYear={`${terms[0]?.name}/${academicYear2}`}
-                        yearLevel={yearLevels[1]?.name}
-                    />
-                </div>
+                {({ onAdded }) => (
+                    <div className="flex justify-between items-center mx-8">
+                        <h2>{yearLevels[1]?.name} {terms[0]?.name}/{academicYear2}</h2>
+                        <AddSubjectCustom
+                            planType="DVE"
+                            termYear={`${terms[0]?.name}/${academicYear2}`}
+                            yearLevel={yearLevels[1]?.name}
+                            onAdded={onAdded}
+                        />
+                    </div>
+                )}
             </CardStudyPlansCustom>
             <CardStudyPlansCustom
                 planType="DVE"
                 termYear={`${terms[1]?.name}/${academicYear2}`}
                 yearLevel={yearLevels[1]?.name}
             >
-                <div className="flex justify-between items-center mx-8">
-                    <h2>{yearLevels[1]?.name} {terms[1]?.name}/{academicYear2}</h2>
-                    <AddSubjectCustom
-                        planType="DVE"
-                        termYear={`${terms[1]?.name}/${academicYear2}`}
-                        yearLevel={yearLevels[1]?.name}
-                    />
-                </div>
+                {({ onAdded }) => (
+                    <div className="flex justify-between items-center mx-8">
+                        <h2>{yearLevels[1]?.name} {terms[1]?.name}/{academicYear2}</h2>
+                        <AddSubjectCustom
+                            planType="DVE"
+                            termYear={`${terms[1]?.name}/${academicYear2}`}
+                            yearLevel={yearLevels[1]?.name}
+                            onAdded={onAdded}
+                        />
+                    </div>
+                )}
             </CardStudyPlansCustom>
             <CardStudyPlansCustom
                 planType="DVE"
                 termYear={`${terms[2]?.name}/${academicYear2}`}
                 yearLevel={yearLevels[1]?.name}
             >
-                <div className="flex justify-between items-center mx-8">
-                    <h2>{yearLevels[1]?.name} {terms[2]?.name}/{academicYear2}</h2>
-                    <AddSubjectCustom
-                        planType="DVE"
-                        termYear={`${terms[2]?.name}/${academicYear2}`}
-                        yearLevel={yearLevels[1]?.name}
-                    />
-                </div>
+                {({ onAdded }) => (
+                    <div className="flex justify-between items-center mx-8">
+                        <h2>{yearLevels[1]?.name} {terms[2]?.name}/{academicYear2}</h2>
+                        <AddSubjectCustom
+                            planType="DVE"
+                            termYear={`${terms[2]?.name}/${academicYear2}`}
+                            yearLevel={yearLevels[1]?.name}
+                            onAdded={onAdded}
+                        />
+                    </div>
+                )}
             </CardStudyPlansCustom>
         </div>
     )

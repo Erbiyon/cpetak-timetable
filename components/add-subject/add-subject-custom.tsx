@@ -13,17 +13,18 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-type AddSubjectCustomProps = {
-    description?: string,
-    termYear?: string,
-    yearLevel?: string,
-    planType?: string
+interface AddSubjectCustomProps {
+    planType: string;
+    termYear: string;
+    yearLevel: string;
+    onAdded?: () => void;
 }
 
 export function AddSubjectCustom({
     planType,
     termYear,
-    yearLevel
+    yearLevel,
+    onAdded
 }: AddSubjectCustomProps) {
     const initialForm = {
         subjectCode: "",
@@ -88,6 +89,7 @@ export function AddSubjectCustom({
             setFieldErrors({})
 
             closeRef.current?.click()
+            if (typeof onAdded === "function") onAdded();
         } catch (err: any) {
             setFieldErrors({ api: err.message })
         } finally {

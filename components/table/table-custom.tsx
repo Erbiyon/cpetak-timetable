@@ -8,10 +8,11 @@ import {
 } from "@/components/ui/table"
 import { useEffect, useState } from "react"
 
-export function TableCustom({ planType, termYear, yearLevel }: {
+export function TableCustom({ planType, termYear, yearLevel, refreshKey }: {
     planType: string,
     termYear: string,
     yearLevel: string,
+    refreshKey: number
 }) {
     const [plans, setPlans] = useState<any[]>([]);
 
@@ -30,10 +31,10 @@ export function TableCustom({ planType, termYear, yearLevel }: {
                 setPlans([]);
             }
         }
-        if (planType && termYear && yearLevel) {
+        if (planType && termYear && yearLevel && refreshKey) {
             fetchPlans();
         }
-    }, [planType, termYear, yearLevel]);
+    }, [planType, termYear, yearLevel, refreshKey]);
 
     return (
         <Table>
