@@ -13,18 +13,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum PlanType {
-  TRANSFER
-  VOCATIONAL
-  FOUR_YEAR
-}
-
 model Term_tb {
   id       Int        @id @default(autoincrement())
   name     String     @unique
   start    DateTime
   end      DateTime
-  Plans_tb Plans_tb[]
 
   @@map("Term_tb")
 }
@@ -36,13 +29,9 @@ model Plans_tb {
   credit         Int
   lectureHour    Int
   labHour        Int
-  termYear       String
-  yearLevel      String
-  planType       PlanType
-  Term_tb        Term_tb?      @relation(fields: [term_tbId], references: [id])
-  term_tbId      Int?
-  YearLevel_tb   YearLevel_tb? @relation(fields: [yearLevel_tbId], references: [id])
-  yearLevel_tbId Int?
+  termYear       String?
+  yearLevel      String?
+  planType       String?
 
   @@map("Plans_tb")
 }
@@ -50,7 +39,6 @@ model Plans_tb {
 model YearLevel_tb {
   id       Int        @id @default(autoincrement())
   name     String
-  Plans_tb Plans_tb[]
 
   @@map("YearLevel_tb")
 }

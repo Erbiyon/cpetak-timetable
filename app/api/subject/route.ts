@@ -54,3 +54,10 @@ export async function POST(req: NextRequest) {
         );
     }
 }
+
+export async function GET() {
+    const terms = await prisma.plans_tb.findMany({
+        orderBy: { id: "asc" }
+    })
+    return NextResponse.json(terms)
+}

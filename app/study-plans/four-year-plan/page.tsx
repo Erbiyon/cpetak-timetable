@@ -53,7 +53,9 @@ export default function FourYearPlan() {
                 <div className="flex justify-between items-center mx-8">
                     <h2>{yearLevels[0]?.name} {terms[0]?.name}/{academicYear}</h2>
                     <AddSubjectCustom
-                        title={`${yearLevels[0]?.name} ${terms[0]?.name}/${academicYear}`}
+                        planType="FOUR_YEAR"
+                        termYear={`${terms[0]?.name}/${academicYear}`}
+                        yearLevel={yearLevels[0]?.name}
                     />
                 </div>
             </CardStudyPlansCustom>
@@ -61,7 +63,9 @@ export default function FourYearPlan() {
                 <div className="flex justify-between items-center mx-8">
                     <h2>{yearLevels[0]?.name} {terms[1]?.name}/{academicYear}</h2>
                     <AddSubjectCustom
-                        title={`${yearLevels[0]?.name} ${terms[1]?.name}/${academicYear}`}
+                        planType="FOUR_YEAR"
+                        termYear={`${terms[1]?.name}/${academicYear}`}
+                        yearLevel={yearLevels[0]?.name}
                     />
                 </div>
             </CardStudyPlansCustom>
@@ -69,7 +73,9 @@ export default function FourYearPlan() {
                 <div className="flex justify-between items-center mx-8">
                     <h2>{yearLevels[1]?.name} {terms[0]?.name}/{academicYear2}</h2>
                     <AddSubjectCustom
-                        title={`${yearLevels[1]?.name} ${terms[0]?.name}/${academicYear2}`}
+                        planType="FOUR_YEAR"
+                        termYear={`${terms[0]?.name}/${academicYear2}`}
+                        yearLevel={yearLevels[1]?.name}
                     />
                 </div>
             </CardStudyPlansCustom>
@@ -77,7 +83,9 @@ export default function FourYearPlan() {
                 <div className="flex justify-between items-center mx-8">
                     <h2>{yearLevels[1]?.name} {terms[1]?.name}/{academicYear2}</h2>
                     <AddSubjectCustom
-                        title={`${yearLevels[1]?.name} ${terms[1]?.name}/${academicYear2}`}
+                        planType="FOUR_YEAR"
+                        termYear={`${terms[1]?.name}/${academicYear2}`}
+                        yearLevel={yearLevels[1]?.name}
                     />
                 </div>
             </CardStudyPlansCustom>
@@ -85,7 +93,9 @@ export default function FourYearPlan() {
                 <div className="flex justify-between items-center mx-8">
                     <h2>{yearLevels[2]?.name} {terms[0]?.name}/{academicYear3}</h2>
                     <AddSubjectCustom
-                        title={`${yearLevels[2]?.name} ${terms[0]?.name}/${academicYear3}`}
+                        planType="FOUR_YEAR"
+                        termYear={`${terms[0]?.name}/${academicYear3}`}
+                        yearLevel={yearLevels[2]?.name}
                     />
                 </div>
             </CardStudyPlansCustom>
@@ -93,7 +103,9 @@ export default function FourYearPlan() {
                 <div className="flex justify-between items-center mx-8">
                     <h2>{yearLevels[2]?.name} {terms[1]?.name}/{academicYear3}</h2>
                     <AddSubjectCustom
-                        title={`${yearLevels[2]?.name} ${terms[1]?.name}/${academicYear3}`}
+                        planType="FOUR_YEAR"
+                        termYear={`${terms[1]?.name}/${academicYear3}`}
+                        yearLevel={yearLevels[2]?.name}
                     />
                 </div>
             </CardStudyPlansCustom>
@@ -101,7 +113,9 @@ export default function FourYearPlan() {
                 <div className="flex justify-between items-center mx-8">
                     <h2>{yearLevels[3]?.name} {terms[0]?.name}/{academicYear4}</h2>
                     <AddSubjectCustom
-                        title={`${yearLevels[3]?.name} ${terms[0]?.name}/${academicYear4}`}
+                        planType="FOUR_YEAR"
+                        termYear={`${terms[0]?.name}/${academicYear4}`}
+                        yearLevel={yearLevels[3]?.name}
                     />
                 </div>
             </CardStudyPlansCustom>
@@ -109,7 +123,9 @@ export default function FourYearPlan() {
                 <div className="flex justify-between items-center mx-8">
                     <h2>{yearLevels[3]?.name} {terms[1]?.name}/{academicYear4}</h2>
                     <AddSubjectCustom
-                        title={`${yearLevels[3]?.name} ${terms[1]?.name}/${academicYear4}`}
+                        planType="FOUR_YEAR"
+                        termYear={`${terms[1]?.name}/${academicYear4}`}
+                        yearLevel={yearLevels[3]?.name}
                     />
                 </div>
             </CardStudyPlansCustom>

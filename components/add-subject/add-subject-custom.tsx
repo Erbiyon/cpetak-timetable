@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 type AddSubjectCustomProps = {
-    title?: string,
     description?: string,
     termYear?: string,
     yearLevel?: string,
@@ -22,26 +21,34 @@ type AddSubjectCustomProps = {
 }
 
 export function AddSubjectCustom({
-    title,
     planType,
     termYear,
     yearLevel
-}: AddSubjectCustomProps
-) {
+}: AddSubjectCustomProps) {
     const initialForm = {
         subjectCode: "",
         subjectName: "",
         credit: "",
         lectureHour: "",
         labHour: "",
-        planType: { planType },
-        termYear: { termYear },
-        yearLevel: { yearLevel }
+        planType: `${planType}`,
+        termYear: `${termYear}`,
+        yearLevel: `${yearLevel}`
     }
+
     const [form, setForm] = useState(initialForm)
     const [loading, setLoading] = useState(false)
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({})
     const closeRef = useRef<HTMLButtonElement>(null)
+
+    useEffect(() => {
+        setForm({
+            ...initialForm,
+            planType: planType || "",
+            termYear: termYear || "",
+            yearLevel: yearLevel || ""
+        })
+    }, [planType, termYear, yearLevel])
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value })
@@ -101,7 +108,7 @@ export function AddSubjectCustom({
             <DialogContent className="sm:max-w-[425px]">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
-                        <DialogTitle>{title}</DialogTitle>
+                        <DialogTitle>{`${yearLevel} ${termYear}`}</DialogTitle>
                         <DialogDescription className="pb-2">
                             กรุณากรอกรายละเอียดของวิชาที่ต้องการเพิ่ม
                         </DialogDescription>
