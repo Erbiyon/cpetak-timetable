@@ -37,9 +37,9 @@ export default function TransferPlan() {
         fetchYearLevels()
     }, [])
 
-    const academicYear = year
-    const academicYear2 = parseInt(year) + 1
-    const academicYear3 = parseInt(year) + 2
+    const academicYear = year || "xxxx"
+    const academicYear2 = parseInt(year) + 1 || "xxxx"
+    const academicYear3 = parseInt(year) + 2 || "xxxx"
 
     return (
         <div className="container mx-auto py-4">

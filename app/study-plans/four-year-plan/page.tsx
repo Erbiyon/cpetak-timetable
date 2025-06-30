@@ -37,10 +37,10 @@ export default function FourYearPlan() {
         fetchYearLevels()
     }, [])
 
-    const academicYear = year
-    const academicYear2 = parseInt(year) + 1
-    const academicYear3 = parseInt(year) + 2
-    const academicYear4 = parseInt(year) + 3
+    const academicYear = year || "xxxx"
+    const academicYear2 = parseInt(year) + 1 || "xxxx"
+    const academicYear3 = parseInt(year) + 2 || "xxxx"
+    const academicYear4 = parseInt(year) + 3 || "xxxx"
 
     return (
         <div className="container mx-auto py-4">

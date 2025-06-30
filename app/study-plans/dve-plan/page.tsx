@@ -10,14 +10,13 @@ interface CardStudyPlansCustomProps {
     termYear: string;
     yearLevel: string;
     children: (props: { onAdded: () => void }) => React.ReactNode; // Accepts a function as children
-    // ...other props...
 }
 
 interface AddSubjectCustomProps {
     planType: string;
     termYear: string;
     yearLevel: string;
-    onAdded?: () => void; // Add this line
+    onAdded?: () => void;
 }
 
 export default function DvePlan() {
@@ -52,8 +51,8 @@ export default function DvePlan() {
         fetchYearLevels()
     }, [])
 
-    const academicYear = year
-    const academicYear2 = parseInt(year) + 1
+    const academicYear = year || "xxxx"
+    const academicYear2 = parseInt(year) + 1 || "xxxx"
 
     return (
         <div className="container mx-auto py-4">

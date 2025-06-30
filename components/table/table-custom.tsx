@@ -7,6 +7,8 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { useEffect, useState } from "react"
+import DelectSubjectButtonCustom from "../delect-subject-button/delect-subject-button-custom";
+import EditSubjectButtonCustom from "../edit-subject-button/edit-subject-button-custom";
 
 export function TableCustom({ planType, termYear, yearLevel, refreshKey }: {
     planType: string,
@@ -15,6 +17,7 @@ export function TableCustom({ planType, termYear, yearLevel, refreshKey }: {
     refreshKey: number
 }) {
     const [plans, setPlans] = useState<any[]>([]);
+    const [localRefreshKey, setLocalRefreshKey] = useState(0);
 
     useEffect(() => {
         async function fetchPlans() {
@@ -31,10 +34,10 @@ export function TableCustom({ planType, termYear, yearLevel, refreshKey }: {
                 setPlans([]);
             }
         }
-        if (planType && termYear && yearLevel && refreshKey) {
+        if (planType && termYear && yearLevel) {
             fetchPlans();
         }
-    }, [planType, termYear, yearLevel, refreshKey]);
+    }, [planType, termYear, yearLevel, refreshKey, localRefreshKey]);
 
     return (
         <Table>
@@ -57,7 +60,12 @@ export function TableCustom({ planType, termYear, yearLevel, refreshKey }: {
                         <TableCell>{plan.lectureHour}</TableCell>
                         <TableCell>{plan.labHour}</TableCell>
                         <TableCell>
-                            {/* ปุ่มดำเนินการ */}
+                            <EditSubjectButtonCustom plan={plan} onUpdated={() => setLocalRefreshKey(k => k + 1)} />
+                            <DelectSubjectButtonCustom
+                                planId={plan.id}
+                                subjectName={plan.subjectName}
+                                onDeleted={() => setLocalRefreshKey(k => k + 1)}
+                            />
                         </TableCell>
                     </TableRow>
                 )) : (
