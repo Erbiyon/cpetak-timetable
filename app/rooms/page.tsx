@@ -1,3 +1,5 @@
+"use client";
+
 import InbuildingRoom from "@/components/room-components/in-building-room";
 import IndepartmentRoom from "@/components/room-components/in-department-room";
 import OutdepartmentRoom from "@/components/room-components/out-departmant-room";

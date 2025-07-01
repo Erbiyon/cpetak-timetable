@@ -6,7 +6,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { AddTeacherCustom } from "../add-teacher/add-teacher-custom"
 
 export default function OutdepartmentTeacher() {
     return (
@@ -15,8 +14,8 @@ export default function OutdepartmentTeacher() {
                 <h2>อาจารย์ภายนอกสาขา</h2>
             </div>
             <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-6.5 shadow-sm mx-8 max-h-[64vh] overflow-y-auto">
-                <Table>
-                    <TableHeader className="sticky top-0 z-10 bg-card">
+                <Table className="sticky top-0 z-10 bg-card">
+                    <TableHeader>
                         <TableRow>
                             <TableHead>ชื่อจริง</TableHead>
                             <TableHead>นามสกุล</TableHead>

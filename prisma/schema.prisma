@@ -49,3 +49,9 @@ model TermYear_tb {
 
   @@map("TermYear_tb")
 }
+
+model Room_tb {
+  id       Int        @id @default(autoincrement())
+  roomCode String
+  roomType String
+}
