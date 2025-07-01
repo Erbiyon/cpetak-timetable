@@ -33,7 +33,10 @@ export function NavigationMenuCustom() {
                                             <Link href="/study-plans/four-year-plan">แผนการเรียน 4 ปี</Link>
                                         </NavigationMenuLink>
                                         <NavigationMenuLink asChild>
-                                            <Link href="/study-plans/dve-plan">แผนการเรียน ปวส.</Link>
+                                            <Link href="/study-plans/dve-lvc-plan">แผนการเรียน ปวช ขึ้น ปวส.</Link>
+                                        </NavigationMenuLink>
+                                        <NavigationMenuLink asChild>
+                                            <Link href="/study-plans/dve-msix-plan">แผนการเรียน ม.6 ขึ้น ปวส.</Link>
                                         </NavigationMenuLink>
                                     </li>
                                 </ul>

@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
             termYear,
             yearLevel,
             planType,
+            dep
         } = body;
 
         if (
@@ -42,7 +43,8 @@ export async function POST(req: NextRequest) {
                 labHour: Number(labHour),
                 yearLevel,
                 planType,
-                termYear
+                termYear,
+                dep
             },
         });
 

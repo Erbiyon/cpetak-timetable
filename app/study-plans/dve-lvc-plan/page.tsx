@@ -5,21 +5,21 @@ import CardStudyPlansCustom from "@/components/card-study-plans-table/card-study
 import { SelectCustom } from "@/components/select/select-custom";
 import { useEffect, useState } from "react"
 
-interface CardStudyPlansCustomProps {
-    planType: string;
-    termYear: string;
-    yearLevel: string;
-    children: (props: { onAdded: () => void }) => React.ReactNode; // Accepts a function as children
-}
+// type CardStudyPlansCustomProps = {
+//     planType: string;
+//     termYear: string;
+//     yearLevel: string;
+//     children: (props: { onAdded: () => void }) => React.ReactNode;
+// }
 
-interface AddSubjectCustomProps {
-    planType: string;
-    termYear: string;
-    yearLevel: string;
-    onAdded?: () => void;
-}
+// type AddSubjectCustomProps = {
+//     planType: string;
+//     termYear: string;
+//     yearLevel: string;
+//     onAdded?: () => void;
+// }
 
-export default function DvePlan() {
+export default function DveLvcPlan() {
     const [year, setYear] = useState<string>("xxxx")
     const [terms, setTerms] = useState<any[]>([])
     const [yearLevels, setYearLevels] = useState<any[]>([])
@@ -58,11 +58,11 @@ export default function DvePlan() {
         <div className="container mx-auto py-4">
             <div className="py-5 mx-48">
                 <h1>แผนการเรียนสำหรับนักศึกษาที่เข้ารับการศึกษาในปีการศึกษา {academicYear}</h1>
-                <h3>หลักสูตรวืศวกรรมคอมพิวเตอร์ <span className="text-yellow-600">ปวส.</span> มทร.ล้านนา ตาก</h3>
+                <h3>หลักสูตรวืศวกรรมคอมพิวเตอร์ <span className="text-yellow-600">ปวช. ขึ้น ปวส.</span> มทร.ล้านนา ตาก</h3>
             </div>
             <SelectCustom />
             <CardStudyPlansCustom
-                planType="DVE"
+                planType="DVE-LVC"
                 termYear={`${terms[0]?.name}/${academicYear}`}
                 yearLevel={yearLevels[0]?.name}
             >
@@ -70,7 +70,7 @@ export default function DvePlan() {
                     <div className="flex justify-between items-center mx-8">
                         <h2>{yearLevels[0]?.name} {terms[0]?.name}/{academicYear}</h2>
                         <AddSubjectCustom
-                            planType="DVE"
+                            planType="DVE-LVC"
                             termYear={`${terms[0]?.name}/${academicYear}`}
                             yearLevel={yearLevels[0]?.name}
                             onAdded={onAdded}
@@ -79,7 +79,7 @@ export default function DvePlan() {
                 )}
             </CardStudyPlansCustom>
             <CardStudyPlansCustom
-                planType="DVE"
+                planType="DVE-LVC"
                 termYear={`${terms[1]?.name}/${academicYear}`}
                 yearLevel={yearLevels[0]?.name}
             >
@@ -87,7 +87,7 @@ export default function DvePlan() {
                     <div className="flex justify-between items-center mx-8">
                         <h2>{yearLevels[0]?.name} {terms[1]?.name}/{academicYear}</h2>
                         <AddSubjectCustom
-                            planType="DVE"
+                            planType="DVE-LVC"
                             termYear={`${terms[1]?.name}/${academicYear}`}
                             yearLevel={yearLevels[0]?.name}
                             onAdded={onAdded}
@@ -96,7 +96,7 @@ export default function DvePlan() {
                 )}
             </CardStudyPlansCustom>
             <CardStudyPlansCustom
-                planType="DVE"
+                planType="DVE-LVC"
                 termYear={`${terms[2]?.name}/${academicYear}`}
                 yearLevel={yearLevels[0]?.name}
             >
@@ -104,7 +104,7 @@ export default function DvePlan() {
                     <div className="flex justify-between items-center mx-8">
                         <h2>{yearLevels[0]?.name} {terms[2]?.name}/{academicYear}</h2>
                         <AddSubjectCustom
-                            planType="DVE"
+                            planType="DVE-LVC"
                             termYear={`${terms[2]?.name}/${academicYear}`}
                             yearLevel={yearLevels[0]?.name}
                             onAdded={onAdded}
@@ -113,7 +113,7 @@ export default function DvePlan() {
                 )}
             </CardStudyPlansCustom>
             <CardStudyPlansCustom
-                planType="DVE"
+                planType="DVE-LVC"
                 termYear={`${terms[0]?.name}/${academicYear2}`}
                 yearLevel={yearLevels[1]?.name}
             >
@@ -121,7 +121,7 @@ export default function DvePlan() {
                     <div className="flex justify-between items-center mx-8">
                         <h2>{yearLevels[1]?.name} {terms[0]?.name}/{academicYear2}</h2>
                         <AddSubjectCustom
-                            planType="DVE"
+                            planType="DVE-LVC"
                             termYear={`${terms[0]?.name}/${academicYear2}`}
                             yearLevel={yearLevels[1]?.name}
                             onAdded={onAdded}
@@ -130,7 +130,7 @@ export default function DvePlan() {
                 )}
             </CardStudyPlansCustom>
             <CardStudyPlansCustom
-                planType="DVE"
+                planType="DVE-LVC"
                 termYear={`${terms[1]?.name}/${academicYear2}`}
                 yearLevel={yearLevels[1]?.name}
             >
@@ -138,7 +138,7 @@ export default function DvePlan() {
                     <div className="flex justify-between items-center mx-8">
                         <h2>{yearLevels[1]?.name} {terms[1]?.name}/{academicYear2}</h2>
                         <AddSubjectCustom
-                            planType="DVE"
+                            planType="DVE-LVC"
                             termYear={`${terms[1]?.name}/${academicYear2}`}
                             yearLevel={yearLevels[1]?.name}
                             onAdded={onAdded}
@@ -147,7 +147,7 @@ export default function DvePlan() {
                 )}
             </CardStudyPlansCustom>
             <CardStudyPlansCustom
-                planType="DVE"
+                planType="DVE-LVC"
                 termYear={`${terms[2]?.name}/${academicYear2}`}
                 yearLevel={yearLevels[1]?.name}
             >
@@ -155,7 +155,7 @@ export default function DvePlan() {
                     <div className="flex justify-between items-center mx-8">
                         <h2>{yearLevels[1]?.name} {terms[2]?.name}/{academicYear2}</h2>
                         <AddSubjectCustom
-                            planType="DVE"
+                            planType="DVE-LVC"
                             termYear={`${terms[2]?.name}/${academicYear2}`}
                             yearLevel={yearLevels[1]?.name}
                             onAdded={onAdded}

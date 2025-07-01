@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "../ui/checkbox"
 
 type AddSubjectCustomProps = {
     planType: string;
@@ -34,7 +35,8 @@ export function AddSubjectCustom({
         labHour: "",
         planType: `${planType}`,
         termYear: `${termYear}`,
-        yearLevel: `${yearLevel}`
+        yearLevel: `${yearLevel}`,
+        dep: "วิชาในสาขา"
     }
 
     const [form, setForm] = useState(initialForm)
@@ -47,7 +49,8 @@ export function AddSubjectCustom({
             ...initialForm,
             planType: planType || "",
             termYear: termYear || "",
-            yearLevel: yearLevel || ""
+            yearLevel: yearLevel || "",
+            dep: "วิชาในสาขา"
         })
     }, [planType, termYear, yearLevel])
 
@@ -142,6 +145,16 @@ export function AddSubjectCustom({
                                     pattern="[0-9]*"
                                 />
                                 {fieldErrors.credit && <span className="text-red-500 text-xs">{fieldErrors.credit}</span>}
+                                <div className="flex items-center gap-3">
+                                    <Checkbox
+                                        id="dep"
+                                        checked={form.dep === "นอกสาขา"}
+                                        onCheckedChange={checked =>
+                                            setForm({ ...form, dep: checked ? "นอกสาขา" : "วิชาในสาขา" })
+                                        }
+                                    />
+                                    <Label htmlFor="dep">วิชานอกสาขา</Label>
+                                </div>
                             </div>
                             <div className="flex flex-col gap-3 w-1/3">
                                 <Label htmlFor="lecture-hours">ชั่วโมง บรรยาย</Label>

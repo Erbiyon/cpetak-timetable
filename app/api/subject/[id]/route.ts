@@ -31,12 +31,13 @@ export async function PUT(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
-    const { id } = await context.params;
     try {
+        const { id } = await context.params;
         const numId = Number(id);
         if (isNaN(numId)) {
             return NextResponse.json({ error: "Invalid id" }, { status: 400 });
         }
+
         const body = await request.json();
         const {
             subjectCode,
@@ -47,9 +48,24 @@ export async function PUT(
             termYear,
             yearLevel,
             planType,
+            dep
         } = body;
 
-        const updated = await prisma.plans_tb.update({
+        if (
+            !subjectCode ||
+            !subjectName ||
+            !credit ||
+            !termYear ||
+            !yearLevel ||
+            !planType
+        ) {
+            return NextResponse.json(
+                { error: "กรุณากรอกข้อมูลให้ครบถ้วน" },
+                { status: 400 }
+            );
+        }
+
+        const updatedSubject = await prisma.plans_tb.update({
             where: { id: numId },
             data: {
                 subjectCode,
@@ -57,13 +73,14 @@ export async function PUT(
                 credit: Number(credit),
                 lectureHour: Number(lectureHour),
                 labHour: Number(labHour),
-                termYear,
                 yearLevel,
                 planType,
+                termYear,
+                dep
             },
         });
 
-        return NextResponse.json(updated, { status: 200 });
+        return NextResponse.json(updatedSubject, { status: 200 });
     } catch (error: any) {
         return NextResponse.json(
             { error: error.message || "เกิดข้อผิดพลาด" },

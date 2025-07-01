@@ -41,7 +41,7 @@ export function TableCustom({ planType, termYear, yearLevel, refreshKey }: {
 
     return (
         <Table>
-            <TableHeader className="sticky top-0 z-10">
+            <TableHeader className="sticky top-0 z-10 bg-card">
                 <TableRow>
                     <TableHead>รหัสวิชา</TableHead>
                     <TableHead>ชื่อวิชา</TableHead>

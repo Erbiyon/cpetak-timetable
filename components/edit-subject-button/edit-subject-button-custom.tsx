@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { Checkbox } from "../ui/checkbox";
 
 export default function EditSubjectButtonCustom({ plan, onUpdated }: {
     plan: {
@@ -24,7 +25,8 @@ export default function EditSubjectButtonCustom({ plan, onUpdated }: {
         labHour: number,
         termYear: string,
         yearLevel: string,
-        planType: string
+        planType: string,
+        dep?: string
     },
     onUpdated?: () => void
 }) {
@@ -36,7 +38,8 @@ export default function EditSubjectButtonCustom({ plan, onUpdated }: {
         labHour: plan.labHour,
         termYear: plan.termYear,
         yearLevel: plan.yearLevel,
-        planType: plan.planType
+        planType: plan.planType,
+        dep: plan.dep ?? "วิชาในสาขา"
     });
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
@@ -51,9 +54,9 @@ export default function EditSubjectButtonCustom({ plan, onUpdated }: {
         const errors: { [key: string]: string } = {};
         if (!form.subjectCode) errors.subjectCode = "กรอกรหัสวิชา";
         if (!form.subjectName) errors.subjectName = "กรอกชื่อวิชา";
-        if (!form.credit) errors.credit = "กรอกหน่วยกิต";
-        if (!form.lectureHour) errors.lectureHour = "กรอกชั่วโมงบรรยาย";
-        if (!form.labHour) errors.labHour = "กรอกชั่วโมงปฏิบัติ";
+        if (form.credit === null || form.credit === undefined) errors.credit = "กรอกหน่วยกิต";
+        if (form.lectureHour === null || form.lectureHour === undefined) errors.lectureHour = "กรอกชั่วโมงบรรยาย";
+        if (form.labHour === null || form.labHour === undefined) errors.labHour = "กรอกชั่วโมงปฏิบัติ";
         return errors;
     };
 
@@ -123,6 +126,16 @@ export default function EditSubjectButtonCustom({ plan, onUpdated }: {
                                     onChange={handleChange}
                                 />
                                 {fieldErrors.credit && <span className="text-red-500 text-xs">{fieldErrors.credit}</span>}
+                                <div className="flex items-center gap-3">
+                                    <Checkbox
+                                        id="dep"
+                                        checked={form.dep === "นอกสาขา"}
+                                        onCheckedChange={checked =>
+                                            setForm({ ...form, dep: checked ? "นอกสาขา" : "วิชาในสาขา" })
+                                        }
+                                    />
+                                    <Label htmlFor="dep">วิชานอกสาขา</Label>
+                                </div>
                             </div>
                             <div className="flex flex-col gap-3 w-1/3">
                                 <Label htmlFor="lecture-hours">ชั่วโมง บรรยาย</Label>
