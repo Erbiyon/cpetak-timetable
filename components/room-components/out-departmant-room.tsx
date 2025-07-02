@@ -1,3 +1,4 @@
+import { teardownTraceSubscriber } from "next/dist/build/swc/generated-native";
 import AddRoomSubjectOutCustom from "../add-room-subject-out/add-room-subject-out-custom";
 import {
     Table,
@@ -21,30 +22,39 @@ type Subject = {
 
 export default function OutdepartmentRoom() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [termYear, setTermYear] = useState<string>("x/xxxx")
 
     const fetchSubjects = async () => {
         const res = await fetch("/api/subject");
         const data = await res.json();
-        setSubjects(data.filter((s: any) => s.dep === "นอกสาขา"));
+        setSubjects(data.filter((s: any) => s.dep === "นอกสาขา" && s.termYear === `ภาคเรียนที่ ${termYear}`));
     };
 
     useEffect(() => {
         fetchSubjects();
     }, []);
 
-    const handleAssignRoom = async (subjectId: number, roomId: number) => {
-        await fetch(`/api/subject/${subjectId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ roomId }),
-        });
-        // รีเฟรชข้อมูล
-    };
+    useEffect(() => {
+        async function fetchTermYear() {
+            const res = await fetch("/api/term-year")
+            if (res.ok) {
+                const data = await res.json()
+                setTermYear(data.termYear)
+            }
+        }
+        fetchTermYear()
+    }, []);
+
+    useEffect(() => {
+        if (termYear !== "x/xxxx") {
+            fetchSubjects();
+        }
+    }, [termYear]);
 
     return (
         <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border m-5 shadow-sm mx-auto">
             <div className="mx-4">
-                <h1 className="py-4">อาคารนอกสาขา</h1>
+                <h1 className="py-4">อาคารนอกสาขา ภาคเรียนที่ {termYear}</h1>
                 <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border mb-5 shadow-sm max-h-[71vh] overflow-y-auto">
                     <Table>
                         <TableHeader className="sticky top-0 z-10 bg-card">

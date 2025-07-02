@@ -1,3 +1,5 @@
+"use client"
+
 import {
     Table,
     TableBody,
@@ -7,13 +9,39 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { AddTeacherCustom } from "../add-teacher/add-teacher-custom"
+import { useEffect, useState } from "react"
+import { Edit } from "lucide-react"
+import EditTeacherButtonCustom from "../edit-delect-teacher-buttom/edit-teacher-buttom-custom"
+import DeleteTeacherButtonCustom from "../edit-delect-teacher-buttom/delect-teacher-buttom-custom"
+
+type Teacher = {
+    id: number
+    tId: string
+    tName: string
+    tLastName: string
+}
 
 export default function IndepartmentTeacher() {
+    const [teachers, setTeachers] = useState<Teacher[]>([])
+    const [loading, setLoading] = useState(true)
+
+    const fetchTeachers = async () => {
+        setLoading(true)
+        const res = await fetch("/api/teacher")
+        const data = await res.json()
+        setTeachers(data)
+        setLoading(false)
+    }
+
+    useEffect(() => {
+        fetchTeachers()
+    }, [])
+
     return (
         <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-5 py-5 shadow-sm mx-auto">
             <div className="flex justify-between items-center mx-8">
                 <h2>อาจารย์ภายในสาขา</h2>
-                <AddTeacherCustom />
+                <AddTeacherCustom onAdded={fetchTeachers} />
             </div>
             <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-5 shadow-sm mx-8 max-h-[64vh] overflow-y-auto">
                 <Table>
@@ -26,9 +54,30 @@ export default function IndepartmentTeacher() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow>
-                            <TableCell></TableCell>
-                        </TableRow>
+                        {teachers.length > 0 ? (
+                            teachers.map((t) => (
+                                <TableRow key={t.id}>
+                                    <TableCell>{t.tId}</TableCell>
+                                    <TableCell>{t.tName}</TableCell>
+                                    <TableCell>{t.tLastName}</TableCell>
+                                    <TableCell>
+                                        <EditTeacherButtonCustom
+                                            teacher={t}
+                                            onUpdated={fetchTeachers}
+                                        />
+                                        <DeleteTeacherButtonCustom
+                                            teacherId={t.id}
+                                            teacherName={`${t.tName} ${t.tLastName}`}
+                                            onDeleted={fetchTeachers}
+                                        />
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell className="text-center" colSpan={4}>ไม่มีข้อมูล</TableCell>
+                            </TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </div>

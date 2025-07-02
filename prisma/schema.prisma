@@ -61,3 +61,12 @@ model Room_tb {
 
   @@map("Room_tb")
 }
+
+model Teacher_tb {
+  id          Int      @id @default(autoincrement())
+  tId         String
+  tName       String
+  tLastName   String
+
+  @@map("Teacher_tb")
+}

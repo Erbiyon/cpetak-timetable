@@ -109,8 +109,9 @@ export default function TransferPlan() {
                         <h2>{yearLevels[1]?.name} {terms[0]?.name}/{academicYear2}</h2>
                         <AddSubjectCustom
                             planType="TRANSFER"
-                            termYear={`${terms[2]?.name}/${academicYear}`}
-                            yearLevel={yearLevels[0]?.name}
+                            termYear={`${terms[1]?.name}/${academicYear2}`}
+                            yearLevel={yearLevels[1]?.name}
+                            onAdded={onAdded}
                         />
                     </div>
                 )}
