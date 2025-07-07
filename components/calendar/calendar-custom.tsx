@@ -23,15 +23,14 @@ type CalendarCustomProps = {
     selectDate?: string
 }
 
-// function getTermName(date?: Date, terms?: TermRange[]) {
-//     if (!date || !terms) return undefined
-//     for (const term of terms) {
-//         if (term.start && term.end && date >= term.start && date <= term.end) {
-//             return term.name
-//         }
-//     }
-//     return undefined
-// }
+const thaiMonths = [
+    "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+    "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
+]
+
+function formatThaiDate(date: Date) {
+    return `${date.getDate()}/${thaiMonths[date.getMonth()]}/${date.getFullYear() + 543}`
+}
 
 export default function CalendarCustom({
     selectDate,
@@ -40,7 +39,6 @@ export default function CalendarCustom({
     terms
 }: CalendarCustomProps) {
     const [open, setOpen] = React.useState(false)
-    // const termName = getTermName(date, terms)
 
     return (
         <div className="flex flex-col gap-3">
@@ -51,7 +49,10 @@ export default function CalendarCustom({
                         id="date"
                         className="w-48 justify-between font-normal"
                     >
-                        {date ? date.toLocaleDateString() : `${selectDate}`}
+                        {date
+                            ? formatThaiDate(date)
+                            : `${selectDate}`
+                        }
                         <ChevronDownIcon />
                     </Button>
                 </PopoverTrigger>
@@ -61,7 +62,7 @@ export default function CalendarCustom({
                         selected={date}
                         captionLayout="dropdown"
                         startMonth={new Date(2025, 0)}
-                        endMonth={new Date(2075, 12)}
+                        endMonth={new Date(2075, 11)}
                         onSelect={(selectedDate) => {
                             onChange?.(selectedDate)
                             setOpen(false)
@@ -69,12 +70,6 @@ export default function CalendarCustom({
                     />
                 </PopoverContent>
             </Popover>
-            {/* <div className="mt-2 text-sm text-gray-700">
-                {date ? `วันที่ที่เลือก: ${date.toLocaleDateString()}` : "ยังไม่ได้เลือกวันที่"}
-                {termName && (
-                    <div className="text-green-700">อยู่ใน {termName}</div>
-                )}
-            </div> */}
         </div>
     )
 }

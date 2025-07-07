@@ -1,11 +1,11 @@
 "use client";
 
+import React, { useState } from "react";
 import PlansStatusCustom from "@/components/plans-status/plans-status-custom";
 import TimeTableCustom from "@/components/time-table/time-table-custom";
-import React, { useState } from "react";
 
 export default function TransferOneYear() {
-    const [termYear, setTermYear] = useState<string>("x/xxxx")
+    const [termYear, setTermYear] = useState<string | null>(null);
 
     React.useEffect(() => {
         async function fetchTermYear() {
@@ -18,16 +18,28 @@ export default function TransferOneYear() {
         fetchTermYear()
     }, []);
 
+    if (termYear === null) {
+        // render loading หรือ skeleton เพื่อให้ SSR/CSR ตรงกัน
+        return <div>Loading...</div>;
+    }
+
     return (
-        <div>
-            <div className="bg-card text-card-foreground rounded-xl border my-5 py-4 shadow-sm mx-auto max-w-fit">
-                <div className="mx-4 pb-1">แผนการเรียน เทียบโอน ปี 1 ภาคเรียนที่ {termYear}</div>
-                <div className="bg-card text-card-foreground px-4">
-                    <TimeTableCustom />
+        <div className="mx-auto px-4">
+            <div className="bg-card text-card-foreground rounded-xl border my-5 py-6 shadow-sm mx-auto max-w-7xl">
+                <div className="mx-8 pb-2 text-lg font-semibold">
+                    ตารางเรียน เทียบโอน ปี 1 ภาคเรียนที่ {termYear}
+                </div>
+                <div className="bg-card text-card-foreground px-8">
+                    <TimeTableCustom
+                        boxPositions={{}}
+                        boxes={[]}
+                    />
                 </div>
             </div>
             <PlansStatusCustom
                 termYear={termYear}
+                boxPositions={{}}
+                boxes={[]}
             />
         </div>
     )

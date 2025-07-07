@@ -6,6 +6,15 @@ type DisplayCalendarCustomProps = {
     end?: Date
 }
 
+const thaiMonths = [
+    "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+    "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
+]
+
+function formatThaiDate(date: Date) {
+    return `${date.getDate()}/${thaiMonths[date.getMonth()]}/${date.getFullYear() + 543}`
+}
+
 export default function DisplayCalendarCustom({
     termNumber,
     start,
@@ -34,7 +43,8 @@ export default function DisplayCalendarCustom({
             <div className="text-center text-lg my-3">
                 <div className="max-w-7xl mx-auto items-center">
                     {start && end
-                        ? `${start.toLocaleDateString()} ถึง ${end.toLocaleDateString()}` : "ว/ด/ป ถึง ว/ด/ป"
+                        ? `${formatThaiDate(start)} ถึง ${formatThaiDate(end)}`
+                        : "ว/ด/ป ถึง ว/ด/ป"
                     }
                 </div>
             </div>
