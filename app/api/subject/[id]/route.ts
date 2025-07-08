@@ -55,9 +55,12 @@ export async function PUT(
             !subjectCode ||
             !subjectName ||
             !credit ||
+            !lectureHour ||
+            !labHour ||
             !termYear ||
             !yearLevel ||
-            !planType
+            !planType ||
+            (dep !== "นอกสาขา" && dep !== "วิชาในสาขา")
         ) {
             return NextResponse.json(
                 { error: "กรุณากรอกข้อมูลให้ครบถ้วน" },

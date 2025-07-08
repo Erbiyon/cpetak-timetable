@@ -19,6 +19,7 @@ type Teacher = {
     tId: string
     tName: string
     tLastName: string
+    teacherType: string // เพิ่ม field teacherType
 }
 
 export default function IndepartmentTeacher() {
@@ -27,7 +28,8 @@ export default function IndepartmentTeacher() {
 
     const fetchTeachers = async () => {
         setLoading(true)
-        const res = await fetch("/api/teacher")
+        // ปรับปรุง API endpoint ให้ดึงเฉพาะอาจารย์ภายในสาขา
+        const res = await fetch("/api/teacher?inDepartment=true")
         const data = await res.json()
         setTeachers(data)
         setLoading(false)
@@ -54,7 +56,11 @@ export default function IndepartmentTeacher() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {teachers.length > 0 ? (
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={4} className="text-center">กำลังโหลด...</TableCell>
+                            </TableRow>
+                        ) : teachers.length > 0 ? (
                             teachers.map((t) => (
                                 <TableRow key={t.id}>
                                     <TableCell>{t.tId}</TableCell>
@@ -75,7 +81,7 @@ export default function IndepartmentTeacher() {
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell className="text-center" colSpan={4}>ไม่มีข้อมูล</TableCell>
+                                <TableCell className="text-center" colSpan={4}>ไม่มีข้อมูลอาจารย์ภายในสาขา</TableCell>
                             </TableRow>
                         )}
                     </TableBody>

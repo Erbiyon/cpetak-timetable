@@ -60,7 +60,10 @@ export function TableCustom({ planType, termYear, yearLevel, refreshKey }: {
                         <TableCell>{plan.lectureHour}</TableCell>
                         <TableCell>{plan.labHour}</TableCell>
                         <TableCell>
-                            <EditSubjectButtonCustom plan={plan} onUpdated={() => setLocalRefreshKey(k => k + 1)} />
+                            <EditSubjectButtonCustom
+                                plan={plan}
+                                onUpdated={() => setLocalRefreshKey(k => k + 1)}
+                            />
                             <DelectSubjectButtonCustom
                                 planId={plan.id}
                                 subjectName={plan.subjectName}

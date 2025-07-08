@@ -23,7 +23,7 @@ model Term_tb {
 }
 
 model Plans_tb {
-  id             Int      @id @default(autoincrement())
+  id             Int        @id @default(autoincrement())
   subjectCode    String
   subjectName    String
   credit         Int
@@ -34,7 +34,9 @@ model Plans_tb {
   planType       String?
   dep            String?      
   roomId         Int?        
-  room           Room_tb? @relation(fields: [roomId], references: [id])
+  room           Room_tb?    @relation(fields: [roomId], references: [id])
+  teacherId      Int?
+  teacher        Teacher_tb? @relation(fields: [teacherId], references: [id])
 
   @@map("Plans_tb")
 }
@@ -63,10 +65,12 @@ model Room_tb {
 }
 
 model Teacher_tb {
-  id          Int      @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   tId         String
   tName       String
   tLastName   String
+  teacherType String
+  plans       Plans_tb[]
 
   @@map("Teacher_tb")
 }

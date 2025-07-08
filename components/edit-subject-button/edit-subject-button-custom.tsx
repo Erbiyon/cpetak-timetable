@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button"
 import { Pencil } from 'lucide-react';
 import {
@@ -39,11 +39,29 @@ export default function EditSubjectButtonCustom({ plan, onUpdated }: {
         termYear: plan.termYear,
         yearLevel: plan.yearLevel,
         planType: plan.planType,
-        dep: plan.dep ?? "วิชาในสาขา"
+        dep: plan.dep === "นอกสาขา" ? "นอกสาขา" : "วิชาในสาขา"
     });
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+
+    // Reset form data when Dialog opens
+    useEffect(() => {
+        if (open) {
+            setForm({
+                subjectCode: plan.subjectCode,
+                subjectName: plan.subjectName,
+                credit: plan.credit,
+                lectureHour: plan.lectureHour,
+                labHour: plan.labHour,
+                termYear: plan.termYear,
+                yearLevel: plan.yearLevel,
+                planType: plan.planType,
+                dep: plan.dep === "นอกสาขา" ? "นอกสาขา" : "วิชาในสาขา"
+            });
+            setFieldErrors({});
+        }
+    }, [open, plan]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
