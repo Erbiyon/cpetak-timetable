@@ -54,9 +54,9 @@ export async function PUT(
         if (
             !subjectCode ||
             !subjectName ||
-            !credit ||
-            !lectureHour ||
-            !labHour ||
+            credit == null || credit === '' ||
+            lectureHour == null || lectureHour === '' ||
+            labHour == null || labHour === '' ||
             !termYear ||
             !yearLevel ||
             !planType ||

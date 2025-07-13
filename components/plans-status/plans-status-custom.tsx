@@ -108,7 +108,11 @@ export default function PlansStatusCustom({
             <div className="flex-[4_4_0%] bg-card text-card-foreground rounded-xl border shadow-sm p-6 flex-col gap-4">
                 <div className="flex justify-between items-center mb-4">
                     <div className="font-semibold">
-                        แผนการเรียน {planType === 'TRANSFER' ? 'เทียบโอน' : planType} {yearLevel} ภาคเรียนที่ {termYear}
+                        แผนการเรียน {
+                            planType === 'TRANSFER' ? 'เทียบโอน' :
+                                planType === 'FOUR_YEAR' ? '4 ปี' :
+                                    planType
+                        } {yearLevel} ภาคเรียนที่ {termYear}
                     </div>
                     <div className="text-sm text-muted-foreground">
                         จำนวนวิชาทั้งหมด: {filteredPlans.length} วิชา
@@ -196,7 +200,7 @@ function SubjectCard({
                     >
                         {/* ปุ่ม PlusCircle ที่มุมขวาบน */}
                         <div
-                            className="absolute top-[-8px] right-[-8px] z-20"
+                            className="absolute top-[-8px] right-[-8px]"
                             onClick={handleButtonClick}
                             onMouseEnter={() => setOpenTooltip(false)} // ปิด tooltip เมื่อเมาส์อยู่เหนือปุ่ม
                         >
@@ -210,7 +214,7 @@ function SubjectCard({
 
                         {/* ปุ่ม CutButton ที่มุมล่างขวา */}
                         <div
-                            className="absolute bottom-[-1px] right-[-1px] z-20"
+                            className="absolute bottom-[-1px] right-[-1px]"
                             onClick={handleButtonClick}
                             onMouseEnter={() => setOpenTooltip(false)} // ปิด tooltip เมื่อเมาส์อยู่เหนือปุ่ม
                         >
