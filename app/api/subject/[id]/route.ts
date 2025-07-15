@@ -91,3 +91,74 @@ export async function PUT(
         );
     }
 }
+
+export async function PATCH(
+    req: NextRequest,
+    context: { params: { id: string } }
+) {
+    try {
+        const id = context.params.id;
+        const subjectId = parseInt(id);
+
+        if (isNaN(subjectId)) {
+            return NextResponse.json(
+                { error: "รหัสวิชาไม่ถูกต้อง" },
+                { status: 400 }
+            );
+        }
+
+        // รับข้อมูลที่จะอัปเดต
+        const data = await req.json();
+
+        // สร้าง object เฉพาะฟิลด์ที่ต้องการอัปเดต
+        const updateData: any = {};
+
+        // เพิ่มข้อมูล roomId และ teacherId ตามที่ระบุ
+        if (data.hasOwnProperty('roomId')) {
+            updateData.roomId = data.roomId;
+        }
+
+        if (data.hasOwnProperty('teacherId')) {
+            updateData.teacherId = data.teacherId;
+        }
+
+        // เพิ่มการอัปเดตฟิลด์ section ในตาราง Plans_tb
+        if (data.hasOwnProperty('section')) {
+            updateData.section = data.section;
+        }
+
+        console.log("อัปเดตข้อมูล Plans_tb:", {
+            subjectId,
+            updateData
+        });
+
+        // อัปเดตข้อมูลในตาราง Plans_tb
+        const updatedSubject = await prisma.plans_tb.update({
+            where: { id: subjectId },
+            data: updateData,
+            include: {
+                room: true,
+                teacher: true
+            }
+        });
+
+        // ถ้ามีการอัปเดต section ให้อัปเดต Timetable_tb ด้วย
+        if (data.hasOwnProperty('section')) {
+            // อัปเดตทุกรายการในตาราง Timetable_tb ที่เกี่ยวข้องกับ planId นี้
+            await prisma.timetable_tb.updateMany({
+                where: { planId: subjectId },
+                data: { section: data.section }
+            });
+        }
+
+        return NextResponse.json(updatedSubject);
+    } catch (error: any) {
+        console.error("Error updating subject:", error);
+        return NextResponse.json(
+            { error: error.message || "เกิดข้อผิดพลาดในการอัปเดตข้อมูล" },
+            { status: 500 }
+        );
+    } finally {
+        await prisma.$disconnect();
+    }
+}

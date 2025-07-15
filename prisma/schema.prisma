@@ -37,7 +37,10 @@ model Plans_tb {
   room           Room_tb?    @relation(fields: [roomId], references: [id])
   teacherId      Int?
   teacher        Teacher_tb? @relation(fields: [teacherId], references: [id])
+  timetables     Timetable_tb[] 
+  section        String?
 
+  @@index([section])
   @@map("Plans_tb")
 }
 
@@ -60,6 +63,7 @@ model Room_tb {
   roomCode String
   roomType String
   plans    Plans_tb[]
+  timetables Timetable_tb[]
 
   @@map("Room_tb")
 }
@@ -71,6 +75,32 @@ model Teacher_tb {
   tLastName   String
   teacherType String
   plans       Plans_tb[]
+  timetables Timetable_tb[]
 
   @@map("Teacher_tb")
+}
+
+model Timetable_tb {
+  id          Int      @id @default(autoincrement())
+  planId      Int      
+  termYear    String   
+  yearLevel   String   
+  planType    String   
+  day         Int      
+  startPeriod Int      
+  endPeriod   Int      
+  roomId      Int?     
+  teacherId   Int?     
+  section     String?  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  plan   Plans_tb   @relation(fields: [planId], references: [id], onDelete: Cascade)
+  room   Room_tb?   @relation(fields: [roomId], references: [id])
+  teacher Teacher_tb? @relation(fields: [teacherId], references: [id])
+
+  @@index([day, startPeriod, endPeriod])
+  @@index([roomId])
+  @@index([teacherId])
+  @@map("Timetable_tb")
 }

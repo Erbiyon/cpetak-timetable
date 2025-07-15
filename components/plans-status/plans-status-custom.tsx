@@ -9,21 +9,36 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useState } from "react";
+import { ConflictDetails } from "../conflict-details/conflict-details";
 
 type SplitData = {
     part1: { lectureHour: number; labHour: number; partNumber: number };
     part2: { lectureHour: number; labHour: number; partNumber: number };
 };
 
+type ConflictType = {
+    type: string;
+    message: string;
+    conflicts?: any[];
+    maxConsecutive?: number;
+};
+
 interface PlansStatusCustomProps {
-    termYear?: string;
+    termYear: string;
     yearLevel?: string;
     planType?: string;
-    plans: any[];
-    assignments?: { [subjectId: number]: { day: number; periods: number[] } | null };
+    plans?: any[];
+    assignments?: { [subjectId: number]: any };
     assignedCount?: number;
-    onRemoveAssignment?: ((subjectId: number) => void) | null;
-    onSplitSubject: (subjectId: number, splitData: SplitData) => void;
+    onRemoveAssignment?: ((subjectId: number) => void | null | Promise<void>) | undefined;
+    onSplitSubject?: (subjectId: number, splitData: SplitData) => void;
+    conflicts?: Array<{
+        type: string;
+        message: string;
+        conflicts?: any[];
+        maxConsecutive?: number;
+    }>;
+    onSubjectUpdate?: () => void; // เพิ่ม prop นี้ใน PlansStatusCustomProps
 }
 
 export default function PlansStatusCustom({
@@ -33,8 +48,10 @@ export default function PlansStatusCustom({
     plans = [],
     assignments = {},
     assignedCount = 0,
-    onRemoveAssignment = null,
-    onSplitSubject
+    onRemoveAssignment = undefined,
+    onSplitSubject,
+    conflicts = [],
+    onSubjectUpdate, // เพิ่มใน props ที่รับ
 }: PlansStatusCustomProps) {
     // เพิ่ม log เพื่อดูค่าที่ได้รับ
     console.log("PlansStatusCustom received:", { termYear, yearLevel, planType, plansCount: plans.length });
@@ -135,6 +152,7 @@ export default function PlansStatusCustom({
                                 key={plan.id}
                                 subject={plan}
                                 onSplitSubject={handleSplitSubjectAdapter}
+                                onUpdate={onSubjectUpdate} // ส่ง callback ไป
                             />
                         ))}
                     </div>
@@ -142,7 +160,7 @@ export default function PlansStatusCustom({
             </div>
             <div className="flex-[2_2_0%] bg-card text-card-foreground rounded-xl border shadow-sm p-2 px-4 flex-col gap-4">
                 <div className="pb-2 font-medium">สถานะ</div>
-                <div className="rounded-xl border shadow-sm max-h-32 overflow-y-auto">
+                <div className="rounded-xl border shadow-sm max-h-40 overflow-y-auto">
                     <div className="m-2 text-xs">
                         <div className="flex items-center gap-2 mb-2">
                             <div className="w-3 h-3 rounded-full bg-green-500"></div>
@@ -156,6 +174,20 @@ export default function PlansStatusCustom({
                                 รอจัดตาราง: {filteredPlans.length - assignedCount}/{filteredPlans.length} วิชา
                             </span>
                         </div>
+
+                        {/* แสดงการชนกัน */}
+                        {conflicts && conflicts.length > 0 && (
+                            <div className="mt-3 border-t pt-2">
+                                <div className="font-medium mb-1 text-red-500">พบการชนกัน:</div>
+                                {conflicts.map((conflict, index) => (
+                                    <div key={index} className="flex items-start gap-2 mb-1.5">
+                                        <div className="w-3 h-3 rounded-full bg-red-500 mt-0.5"></div>
+                                        <div className="text-red-500">{conflict.message}</div>
+                                        <ConflictDetails conflict={conflict} />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -166,13 +198,15 @@ export default function PlansStatusCustom({
 // Card วิชาที่สามารถลากได้
 function SubjectCard({
     subject,
-    onSplitSubject
+    onSplitSubject,
+    onUpdate
 }: {
     subject: any;
     onSplitSubject?: ((subjectId: number, splitData: {
         part1: { lectureHour: number; labHour: number };
         part2: { lectureHour: number; labHour: number };
     }) => void) | null;
+    onUpdate?: () => void;
 }) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `subject-${subject.id}`,
@@ -213,7 +247,8 @@ function SubjectCard({
                             <AddSubDetail
                                 subject={subject}
                                 onUpdate={() => {
-                                    // อาจเพิ่ม callback ในกรณีที่ต้องการรีโหลดข้อมูลหลังอัพเดท
+                                    // เรียก callback เมื่อมีการอัปเดตข้อมูล
+                                    if (onUpdate) onUpdate();
                                 }}
                             />
                         </div>
@@ -286,4 +321,173 @@ function SubjectCard({
             </Tooltip>
         </TooltipProvider>
     );
+}
+
+// แก้ไขฟังก์ชัน handleSplitSubject ในคอมโพเนนต์ TransferOneYear
+
+// เพิ่มฟังก์ชันใหม่
+async function handleSplitSubject(
+    plans: any[],
+    setPlans: (plans: any[]) => void,
+    subjectId: number,
+    splitData: {
+        part1: { lectureHour: number; labHour: number; partNumber: number };
+        part2: { lectureHour: number; labHour: number; partNumber: number };
+    }
+) {
+    // หาวิชาที่จะแบ่ง
+    const subjectToSplit = plans.find(plan => plan.id === subjectId);
+
+    if (!subjectToSplit) return;
+
+    // คำนวณชั่วโมงรวมของแต่ละส่วน
+    const part1TotalHours = splitData.part1.lectureHour + splitData.part1.labHour;
+    const part2TotalHours = splitData.part2.lectureHour + splitData.part2.labHour;
+
+    // ดึงชื่อวิชาเดิมออกมา (ตัด "(ส่วนที่ X)" ออก ถ้ามี)
+    const baseSubjectName = subjectToSplit.subjectName.replace(/\s*\(ส่วนที่ \d+\)\s*$/, '');
+
+    // กรณีส่วนที่ 1 เป็น 0 ชั่วโมง - ไม่ต้องสร้างส่วนที่ 1 ใช้แค่ส่วนที่ 2
+    if (part1TotalHours === 0) {
+        // ปรับปรุงวิชาเดิมเป็นข้อมูลของส่วนที่ 2
+        const updatedPlans = plans.map(plan => {
+            if (plan.id === subjectId) {
+                return {
+                    ...plan,
+                    lectureHour: splitData.part2.lectureHour,
+                    labHour: splitData.part2.labHour,
+                    subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part2.partNumber})`,
+                };
+            }
+            return plan;
+        });
+
+        // อัปเดต state
+        setPlans(updatedPlans);
+
+        // บันทึกการเปลี่ยนแปลงลงฐานข้อมูล
+        try {
+            await fetch('/api/subject', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: subjectId,
+                    lectureHour: splitData.part2.lectureHour,
+                    labHour: splitData.part2.labHour,
+                    subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part2.partNumber})`,
+                }),
+            });
+        } catch (error) {
+            console.error("Failed to update subject:", error);
+        }
+
+        return;
+    }
+
+    // กรณีส่วนที่ 2 เป็น 0 ชั่วโมง - ไม่ต้องสร้างส่วนที่ 2 ใช้แค่ส่วนที่ 1
+    if (part2TotalHours === 0) {
+        // ปรับปรุงวิชาเดิมเป็นข้อมูลของส่วนที่ 1
+        const updatedPlans = plans.map(plan => {
+            if (plan.id === subjectId) {
+                return {
+                    ...plan,
+                    lectureHour: splitData.part1.lectureHour,
+                    labHour: splitData.part1.labHour,
+                    subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part1.partNumber})`,
+                };
+            }
+            return plan;
+        });
+
+        // อัปเดต state
+        setPlans(updatedPlans);
+
+        // บันทึกการเปลี่ยนแปลงลงฐานข้อมูล
+        try {
+            await fetch('/api/subject', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: subjectId,
+                    lectureHour: splitData.part1.lectureHour,
+                    labHour: splitData.part1.labHour,
+                    subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part1.partNumber})`,
+                }),
+            });
+        } catch (error) {
+            console.error("Failed to update subject:", error);
+        }
+
+        return;
+    }
+
+    // กรณีทั้ง 2 ส่วนมีชั่วโมง - แบ่งตามปกติ
+    const updatedPlans = plans.map(plan => {
+        if (plan.id === subjectId) {
+            return {
+                ...plan,
+                lectureHour: splitData.part1.lectureHour,
+                labHour: splitData.part1.labHour,
+                subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part1.partNumber})`,
+            };
+        }
+        return plan;
+    });
+
+    // สร้างวิชาใหม่สำหรับส่วนที่สอง
+    try {
+        // บันทึกการเปลี่ยนแปลงของวิชาเดิม (ส่วนที่ 1)
+        await fetch('/api/subject', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                id: subjectId,
+                lectureHour: splitData.part1.lectureHour,
+                labHour: splitData.part1.labHour,
+                subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part1.partNumber})`,
+            }),
+        });
+
+        // สร้างวิชาใหม่สำหรับส่วนที่ 2
+        const createResponse = await fetch('/api/subject', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                subjectCode: subjectToSplit.subjectCode,
+                subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part2.partNumber})`,
+                credit: subjectToSplit.credit,
+                lectureHour: splitData.part2.lectureHour,
+                labHour: splitData.part2.labHour,
+                termYear: subjectToSplit.termYear,
+                yearLevel: subjectToSplit.yearLevel,
+                planType: subjectToSplit.planType,
+                dep: subjectToSplit.dep,
+                roomId: subjectToSplit.roomId,
+                teacherId: subjectToSplit.teacherId,
+                section: subjectToSplit.section,
+            }),
+        });
+
+        if (createResponse.ok) {
+            // ดึง ID ของวิชาที่สร้างใหม่จากการตอบกลับ
+            const newSubject = await createResponse.json();
+
+            // อัปเดต state ด้วยข้อมูลที่ได้รับจากการบันทึก
+            setPlans([...updatedPlans, newSubject]);
+        } else {
+            throw new Error("Failed to create new subject part");
+        }
+    } catch (error) {
+        console.error("Failed to split subject:", error);
+        // คืนค่า state เดิมในกรณีเกิดข้อผิดพลาด
+        // อาจเพิ่ม code แสดง error notification ตรงนี้
+    }
 }

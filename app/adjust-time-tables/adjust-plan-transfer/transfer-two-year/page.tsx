@@ -13,6 +13,7 @@ export default function TransferOneYear() {
     const [activeSubject, setActiveSubject] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [dragOverCell, setDragOverCell] = useState<{ day: number; period: number } | null>(null);
+    const [conflicts, setConflicts] = useState<any[]>([]);  // เพิ่ม state เก็บข้อมูลการชนกัน
 
     // สถานะของวิชาในตาราง
     const [tableAssignments, setTableAssignments] = useState<{
@@ -58,6 +59,33 @@ export default function TransferOneYear() {
                     console.warn("API ไม่ตอบสนอง");
                     setPlans([]);
                 }
+
+                // ดึงข้อมูลตารางเรียนที่บันทึกไว้
+                if (termYear) {
+                    const timetableRes = await fetch(`/api/timetable?termYear=${termYear}&yearLevel=ปี 2&planType=TRANSFER`);
+                    if (timetableRes.ok) {
+                        const timetableData = await timetableRes.json();
+
+                        // แปลงข้อมูลเป็นรูปแบบ tableAssignments
+                        const assignments: { [subjectId: number]: { day: number, periods: number[] } } = {};
+
+                        timetableData.forEach((item: any) => {
+                            const periods: number[] = [];
+                            for (let p = item.startPeriod; p <= item.endPeriod; p++) {
+                                // ข้ามคาบกิจกรรมวันพุธ (คาบ 14-17)
+                                if (item.day === 2 && p >= 14 && p <= 17) continue;
+                                periods.push(p);
+                            }
+
+                            assignments[item.planId] = {
+                                day: item.day,
+                                periods: periods
+                            };
+                        });
+
+                        setTableAssignments(assignments);
+                    }
+                }
             } catch (error) {
                 console.error("Error fetching data:", error);
                 setPlans([]);
@@ -67,7 +95,7 @@ export default function TransferOneYear() {
         }
 
         fetchData();
-    }, []);
+    }, [termYear]);
 
     useEffect(() => {
         if (plans.length > 0) {
@@ -119,7 +147,7 @@ export default function TransferOneYear() {
         }
     }
 
-    function handleDragEnd(event: any) {
+    async function handleDragEnd(event: any) {
         const { active, over } = event;
 
         // รีเซ็ต drag over cell
@@ -145,9 +173,20 @@ export default function TransferOneYear() {
         // ถ้า drop บน cell ในตาราง
         if (over.id.startsWith('cell-')) {
             const [_, day, period] = over.id.split('-').map(Number);
+
+            // ค้นหาข้อมูลวิชาที่เป็นเวอร์ชันล่าสุด (มีการอัปเดตจาก AddSubDetail)
             const subject = plans.find(plan => plan.id === subjectId);
 
             if (subject) {
+                // เพิ่ม Debug เพื่อตรวจสอบข้อมูลวิชาที่กำลังจะวางลงตาราง
+                console.log("กำลังวางวิชา:", {
+                    subjectCode: subject.subjectCode,
+                    subjectName: subject.subjectName,
+                    room: subject.room,
+                    teacher: subject.teacher,
+                    section: subject.section,
+                });
+
                 // คำนวณคาบเรียนจากชั่วโมง
                 const totalHours = (subject.lectureHour || 0) + (subject.labHour || 0);
                 const totalPeriods = totalHours * 2;
@@ -205,11 +244,51 @@ export default function TransferOneYear() {
                     return; // ไม่ดำเนินการต่อ
                 }
 
-                // กำหนดวิชาลงในตาราง
+                // กำหนดวิชาลงในตาราง - ใช้ข้อมูลวิชาล่าสุดจาก plans
                 setTableAssignments(prev => ({
                     ...prev,
                     [subjectId]: { day, periods }
                 }));
+
+                // บันทึกลง Database
+                try {
+                    const startPeriod = Math.min(...periods);
+                    const endPeriod = Math.max(...periods);
+
+                    const response = await fetch('/api/timetable', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            planId: subjectId,
+                            termYear: termYear || '1',
+                            yearLevel: 'ปี 2', // Change from 'ปี 1' to 'ปี 2'
+                            planType: 'TRANSFER',
+                            day,
+                            startPeriod,
+                            endPeriod,
+                            roomId: subject.roomId || null,
+                            teacherId: subject.teacherId || null,
+                            section: subject.section || null
+                        }),
+                    });
+
+                    const data = await response.json();
+
+                    // ถ้ามีการชนกัน (409 Conflict)
+                    if (response.status === 409 && data.conflicts) {
+                        setConflicts(data.conflicts);
+                    } else if (!response.ok) {
+                        throw new Error(data.error || 'เกิดข้อผิดพลาดในการบันทึกตาราง');
+                    } else {
+                        // บันทึกสำเร็จ
+                        console.log("บันทึกตารางเรียนสำเร็จ", data);
+                        setConflicts([]); // เคลียร์การชนกัน
+                    }
+                } catch (error) {
+                    console.error("เกิดข้อผิดพลาดในการบันทึกตารางเรียน:", error);
+                }
             }
         }
 
@@ -217,97 +296,80 @@ export default function TransferOneYear() {
     }
 
     // ฟังก์ชั่นสำหรับลบวิชาออกจากตาราง
-    function handleRemoveAssignment(subjectId: number) {
-        setTableAssignments(prev => {
-            const newAssignments = { ...prev };
-            delete newAssignments[subjectId]; // ลบการจัดวางสำหรับวิชานี้
-            return newAssignments;
-        });
+    async function handleRemoveAssignment(subjectId: number) {
+        try {
+            // ลบข้อมูลจากฐานข้อมูล
+            await fetch(`/api/timetable/${subjectId}`, {
+                method: 'DELETE',
+            });
+
+            // ลบข้อมูลจาก state
+            setTableAssignments(prev => {
+                const newAssignments = { ...prev };
+                delete newAssignments[subjectId];
+                return newAssignments;
+            });
+
+            // เคลียร์ conflicts ที่อาจเกี่ยวข้องกับวิชานี้
+            setConflicts(prev => prev.filter(conflict =>
+                !conflict.conflicts?.some((item: any) => item.planId === subjectId)
+            ));
+        } catch (error) {
+            console.error("เกิดข้อผิดพลาดในการลบข้อมูลตารางเรียน:", error);
+        }
     }
 
     // ฟังก์ชันสำหรับแบ่งวิชา
-    function handleSplitSubject(
+    async function handleSplitSubject(
         subjectId: number,
         splitData: {
             part1: { lectureHour: number; labHour: number; partNumber: number };
             part2: { lectureHour: number; labHour: number; partNumber: number };
         }
     ) {
-        // หาวิชาที่จะแบ่ง
-        const subjectToSplit = plans.find(plan => plan.id === subjectId);
+        try {
+            setIsLoading(true); // แสดง loading indicator
 
-        if (!subjectToSplit) return;
-
-        // คำนวณชั่วโมงรวมของแต่ละส่วน
-        const part1TotalHours = splitData.part1.lectureHour + splitData.part1.labHour;
-        const part2TotalHours = splitData.part2.lectureHour + splitData.part2.labHour;
-
-        // ดึงชื่อวิชาเดิมออกมา (ตัด "(ส่วนที่ X)" ออก ถ้ามี)
-        const baseSubjectName = subjectToSplit.subjectName.replace(/\s*\(ส่วนที่ \d+\)\s*$/, '');
-
-        // กรณีส่วนที่ 1 เป็น 0 ชั่วโมง - ไม่ต้องสร้างส่วนที่ 1 ใช้แค่ส่วนที่ 2
-        if (part1TotalHours === 0) {
-            // ปรับปรุงวิชาเดิมเป็นข้อมูลของส่วนที่ 2
-            const updatedPlans = plans.map(plan => {
-                if (plan.id === subjectId) {
-                    return {
-                        ...plan,
-                        lectureHour: splitData.part2.lectureHour,
-                        labHour: splitData.part2.labHour,
-                        subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part2.partNumber})`,
-                    };
-                }
-                return plan;
+            // เรียก API เพื่อแบ่งวิชา
+            const response = await fetch('/api/subject/split', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    subjectId,
+                    splitData
+                }),
             });
 
-            setPlans(updatedPlans);
-            return;
-        }
-
-        // กรณีส่วนที่ 2 เป็น 0 ชั่วโมง - ไม่ต้องสร้างส่วนที่ 2 ใช้แค่ส่วนที่ 1
-        if (part2TotalHours === 0) {
-            // ปรับปรุงวิชาเดิมเป็นข้อมูลของส่วนที่ 1
-            const updatedPlans = plans.map(plan => {
-                if (plan.id === subjectId) {
-                    return {
-                        ...plan,
-                        lectureHour: splitData.part1.lectureHour,
-                        labHour: splitData.part1.labHour,
-                        subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part1.partNumber})`,
-                    };
-                }
-                return plan;
-            });
-
-            setPlans(updatedPlans);
-            return;
-        }
-
-        // กรณีทั้ง 2 ส่วนมีชั่วโมง - แบ่งตามปกติ
-        const updatedPlans = plans.map(plan => {
-            if (plan.id === subjectId) {
-                return {
-                    ...plan,
-                    lectureHour: splitData.part1.lectureHour,
-                    labHour: splitData.part1.labHour,
-                    subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part1.partNumber})`,
-                };
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to split subject');
             }
-            return plan;
-        });
 
-        // สร้างวิชาใหม่สำหรับส่วนที่สอง
-        const newSubjectId = Math.max(...plans.map(p => p.id)) + 1;
-        const newSubject = {
-            ...subjectToSplit,
-            id: newSubjectId,
-            lectureHour: splitData.part2.lectureHour,
-            labHour: splitData.part2.labHour,
-            subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part2.partNumber})`,
-        };
+            // รับข้อมูลวิชาทั้งสองส่วนที่อัปเดตแล้วจาก backend
+            const { updatedSubject, newSubject } = await response.json();
 
-        // อัพเดทรายการวิชา
-        setPlans([...updatedPlans, newSubject]);
+            console.log("Split successful:", { updatedSubject, newSubject });
+
+            // อัปเดต state plans - แทนที่วิชาเดิมด้วยวิชาที่อัปเดตแล้ว และเพิ่มวิชาใหม่
+            setPlans(prevPlans => {
+                const updatedPlans = prevPlans.map(plan =>
+                    plan.id === subjectId ? updatedSubject : plan
+                );
+                return [...updatedPlans, newSubject];
+            });
+
+            // ถ้ามี assignment ของวิชาเดิม ให้ลบออก
+            if (tableAssignments[subjectId]) {
+                await handleRemoveAssignment(subjectId);
+            }
+        } catch (error) {
+            console.error("Error splitting subject:", error);
+            // แสดง error notification ถ้าต้องการ
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     // แสดง loading indicator
@@ -392,6 +454,47 @@ export default function TransferOneYear() {
     // ข้อมูลสำหรับแสดง preview
     const previewInfo = getPreviewPeriods();
 
+    // ฟังก์ชันนี้จะถูกเรียกเมื่อมีการอัปเดตข้อมูลวิชา
+    function handleSubjectUpdate() {
+        // บังคับให้ render ใหม่ทันที
+        setPlans([...plans]);
+
+        // บันทึกข้อมูลที่อัปเดตลง database
+        Object.entries(tableAssignments).forEach(async ([subjectId, assignment]) => {
+            if (!assignment) return;
+
+            const subject = plans.find(p => p.id === parseInt(subjectId));
+            if (!subject) return;
+
+            const { day, periods } = assignment;
+            const startPeriod = Math.min(...periods);
+            const endPeriod = Math.max(...periods);
+
+            try {
+                await fetch('/api/timetable', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        planId: parseInt(subjectId),
+                        termYear: termYear || '1',
+                        yearLevel: 'ปี 2', // Change from 'ปี 1' to 'ปี 2'
+                        planType: 'TRANSFER',
+                        day,
+                        startPeriod,
+                        endPeriod,
+                        roomId: subject.roomId || null,
+                        teacherId: subject.teacherId || null,
+                        section: subject.section || null
+                    }),
+                });
+            } catch (error) {
+                console.error("Failed to update subject details:", error);
+            }
+        });
+    }
+
     return (
         <DndContext
             sensors={sensors}
@@ -416,14 +519,16 @@ export default function TransferOneYear() {
                     </div>
                 </div>
                 <PlansStatusCustom
-                    termYear={termYear}
+                    termYear={termYear || ""}
                     yearLevel="ปี 2"
                     planType="TRANSFER"
                     plans={plans}
                     assignments={tableAssignments}
                     assignedCount={assignedSubjectsCount}
                     onRemoveAssignment={handleRemoveAssignment}
-                    onSplitSubject={handleSplitSubject} // เพิ่ม prop นี้
+                    onSplitSubject={handleSplitSubject}
+                    conflicts={conflicts}
+                    onSubjectUpdate={handleSubjectUpdate} // เพิ่ม prop นี้
                 />
             </div>
 

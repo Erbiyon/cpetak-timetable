@@ -59,6 +59,8 @@ export default function AddSubDetail({ subject, onUpdate }: {
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // เพิ่ม state สำหรับแสดงสถานะการโหลด section
+    const [loadingSection, setLoadingSection] = useState(false);
 
     // อัปเดตเมื่อมีการเลือกห้อง
     useEffect(() => {
@@ -163,8 +165,34 @@ export default function AddSubDetail({ subject, onUpdate }: {
                 }
             };
 
+            // เพิ่มฟังก์ชันดึงข้อมูล section จาก timetable_tb
+            const fetchTimetableSection = async () => {
+                if (subject.id) {
+                    try {
+                        setLoadingSection(true);
+                        const res = await fetch(`/api/timetable?planId=${subject.id}`);
+                        if (res.ok) {
+                            const timetableData = await res.json();
+                            // ถ้ามีข้อมูลในตาราง timetable และมี section
+                            if (timetableData.length > 0 && timetableData[0].section) {
+                                setSection(timetableData[0].section);
+                                // อัปเดต section ในอ็อบเจกต์ subject ด้วย
+                                if (subject) {
+                                    subject.section = timetableData[0].section;
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Failed to fetch timetable section:", error);
+                    } finally {
+                        setLoadingSection(false);
+                    }
+                }
+            };
+
             fetchRooms();
             fetchTeachers();
+            fetchTimetableSection(); // เรียกฟังก์ชันใหม่
         }
     }, [open, subject]);
 
@@ -177,9 +205,9 @@ export default function AddSubDetail({ subject, onUpdate }: {
         }
 
         try {
-            // อัปเดตข้อมูลใน subject object โดยตรง
-            // ซึ่งทำไว้แล้วใน useEffect แต่ให้ทำซ้ำอีกครั้งเพื่อความมั่นใจ
+            setLoading(true);
 
+            // อัปเดตข้อมูลใน subject object
             if (selectedRoom) {
                 subject.room = selectedRoom;
                 subject.roomId = selectedRoom.id;
@@ -188,34 +216,69 @@ export default function AddSubDetail({ subject, onUpdate }: {
                 subject.roomId = null;
             }
 
-            // แก้ไขส่วนการอัปเดตข้อมูลอาจารย์ในฟังก์ชัน handleSubmit
-
-            // เปลี่ยนเงื่อนไขการอัปเดตข้อมูลอาจารย์
             if (selectedTeacher) {
                 subject.teacher = selectedTeacher;
                 subject.teacherId = selectedTeacher.id;
             } else {
-                // ไม่ว่าจะมี teacherId อยู่แล้วหรือไม่ ถ้าไม่ได้เลือก ก็ให้เป็น null
                 subject.teacher = null;
                 subject.teacherId = null;
             }
 
             subject.section = section || null;
 
-            console.log("ข้อมูลที่จะแสดงใน tooltip:", {
-                room: subject.room?.roomCode || null,
-                teacher: subject.teacher ? `${subject.teacher.tName} ${subject.teacher.tLastName}` : null,
-                section: subject.section || null
+            console.log("ข้อมูลที่จะส่งไปอัปเดต:", {
+                id: subject.id,
+                roomId: subject.roomId,
+                teacherId: subject.teacherId,
+                section: subject.section
             });
+
+            // บันทึกการเปลี่ยนแปลงลงฐานข้อมูล
+            const updateResponse = await fetch(`/api/subject/${subject.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    roomId: subject.roomId,
+                    teacherId: subject.teacherId,
+                    section: subject.section
+                }),
+            });
+
+            if (!updateResponse.ok) {
+                const errorText = await updateResponse.text();
+                throw new Error(`การอัปเดตข้อมูลล้มเหลว: ${errorText}`);
+            }
+
+            const updatedData = await updateResponse.json();
+            console.log("อัปเดตข้อมูลสำเร็จ:", updatedData);
+            // Add this logging to confirm section is correctly updated
+            console.log("Section after update:", updatedData.section);
 
             // ปิด dialog
             setOpen(false);
 
-            // เรียก callback เพื่อรีเรนเดอร์ UI
+            // Force a refresh of the subject data to ensure section is loaded
+            try {
+                const refreshResponse = await fetch(`/api/subject/${subject.id}`);
+                if (refreshResponse.ok) {
+                    const refreshedData = await refreshResponse.json();
+                    // Update the local subject object with refreshed data
+                    Object.assign(subject, refreshedData);
+                    console.log("Subject refreshed:", subject);
+                }
+            } catch (error) {
+                console.error("Failed to refresh subject data:", error);
+            }
+
+            // เรียก callback เพื่ออัปเดต UI
             if (onUpdate) onUpdate();
         } catch (error: any) {
             console.error("Submit Error:", error);
             setError(error.message || "เกิดข้อผิดพลาดในการดำเนินการ");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -310,16 +373,20 @@ export default function AddSubDetail({ subject, onUpdate }: {
 
                         <div className="grid gap-3">
                             <Label htmlFor="section">Section</Label>
-                            <Input
-                                id="section"
-                                name="section"
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                value={section}
-                                onChange={(e) => setSection(e.target.value)}
-                                placeholder="ระบุ section (ตัวเลข)"
-                            />
+                            <div className="relative">
+                                <Input
+                                    id="section"
+                                    name="section"
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    value={section}
+                                    onChange={(e) => setSection(e.target.value)}
+                                    placeholder={loadingSection ? "กำลังโหลดข้อมูล..." : "ระบุ section (ตัวเลข)"}
+                                    disabled={loadingSection}
+
+                                />
+                            </div>
                         </div>
 
                         {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -332,12 +399,19 @@ export default function AddSubDetail({ subject, onUpdate }: {
                                 onClick={() => {
                                     if (onUpdate) onUpdate(); // เรียก callback เมื่อกดยกเลิก
                                 }}
+                                disabled={loading}
                             >
                                 ยกเลิก
                             </Button>
                         </DialogClose>
-                        <Button type="submit">
-                            ตกลง
+                        <Button type="submit" disabled={loading}>
+                            {loading ? (
+                                <>
+                                    กำลังบันทึก...
+                                </>
+                            ) : (
+                                'ตกลง'
+                            )}
                         </Button>
                     </DialogFooter>
                 </form>

@@ -404,6 +404,11 @@ function SubjectInCell({
                         <div className="text-center">
                             <div className="font-medium text-green-950 dark:text-green-50">
                                 {subject.subjectCode}
+                                {subject.section && (
+                                    <span className="text-[9px] ml-1 bg-green-200 dark:bg-green-700 px-1 py-0.5 rounded">
+                                        sec.{subject.section}
+                                    </span>
+                                )}
                             </div>
                             <div className="text-[10px] truncate text-green-900 dark:text-green-100">
                                 {subject.subjectName}
@@ -417,18 +422,16 @@ function SubjectInCell({
                                         {colspan} คาบ
                                     </span>
                                 )}
-                                {subject.section && (
-                                    <span className="bg-blue-200/50 dark:bg-blue-700/50 px-1 rounded">
-                                        Sec {subject.section}
-                                    </span>
-                                )}
                             </div>
                         </div>
                     </div>
                 </TooltipTrigger>
                 <TooltipContent side="top" align="center" className="bg-slate-950 text-slate-50 dark:bg-slate-900">
                     <div className="text-xs p-1">
-                        <div className="font-medium">{subject.subjectCode}</div>
+                        <div className="font-medium">
+                            {subject.subjectCode}
+                            {subject.section && <span className="ml-2">Section: {subject.section}</span>}
+                        </div>
                         <div className="mt-1">{subject.subjectName}</div>
                         <div className="mt-2 grid grid-cols-2 gap-2">
                             <div>จำนวนหน่วยกิต:</div>
