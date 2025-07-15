@@ -98,10 +98,16 @@ export function NavigationMenuCustom() {
                             <ul className="grid w-[200px] gap-4">
                                 <li>
                                     <NavigationMenuLink asChild>
-                                        <Link href="/adjust-time-tables/adjust-plan-dve/dve-one-year">จัดตารางเรียน ปี 1</Link>
+                                        <Link href="/adjust-time-tables/adjust-plan-dve/dve-one-year">ปวช. ขึ้น ปวส. ปี 1</Link>
                                     </NavigationMenuLink>
                                     <NavigationMenuLink asChild>
-                                        <Link href="/adjust-time-tables/adjust-plan-dve/dve-two-year">จัดตารางเรียน ปี 2</Link>
+                                        <Link href="/adjust-time-tables/adjust-plan-dve/dve-two-year">ปวช. ขึ้น ปวส. ปี 2</Link>
+                                    </NavigationMenuLink>
+                                    <NavigationMenuLink asChild>
+                                        <Link href="/adjust-time-tables/adjust-plan-dve/dve-ms-one-year">ม.6 ขึ้น ปวส. ปี 1</Link>
+                                    </NavigationMenuLink>
+                                    <NavigationMenuLink asChild>
+                                        <Link href="/adjust-time-tables/adjust-plan-dve/dve-ms-two-year">ม.6 ขึ้น ปวส. ปี 2</Link>
                                     </NavigationMenuLink>
                                 </li>
                             </ul>

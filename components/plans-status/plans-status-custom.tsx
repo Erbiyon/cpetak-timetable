@@ -111,7 +111,9 @@ export default function PlansStatusCustom({
                         แผนการเรียน {
                             planType === 'TRANSFER' ? 'เทียบโอน' :
                                 planType === 'FOUR_YEAR' ? '4 ปี' :
-                                    planType
+                                    planType === 'DVE-LVC' ? 'ปวช. ขึ้น ปวส.' :
+                                        planType === 'DVE-MSIX' ? 'ม.6 ขึ้น ปวส.' :
+                                            planType
                         } {yearLevel} ภาคเรียนที่ {termYear}
                     </div>
                     <div className="text-sm text-muted-foreground">
@@ -121,7 +123,11 @@ export default function PlansStatusCustom({
                 <div className="rounded-xl border shadow-sm py-4 px-4 overflow-visible">
                     <div className="text-center text-sm mb-2">
                         ลากวิชาจากรายการด้านล่างไปวางในตารางเพื่อจัดตารางเรียน
-                        {assignedCount > 0 && <div className="text-xs text-muted-foreground">สามารถลากวิชาที่อยู่ในตารางมาวางใหม่ หรือคลิกขวาที่วิชาในตารางเพื่อนำออก</div>}
+                        {assignedCount > 0 &&
+                            <div className="text-xs text-muted-foreground">
+                                สามารถลากวิชาที่อยู่ในตารางมาวางใหม่ หรือคลิกขวาที่วิชาในตารางเพื่อนำออก
+                            </div>
+                        }
                     </div>
                     <div className="flex flex-wrap gap-3 justify-center">
                         {unassignedPlans.map((plan) => (

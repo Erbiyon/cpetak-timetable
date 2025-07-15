@@ -61,7 +61,7 @@ export default function CalendarCustom({
                         mode="single"
                         selected={date}
                         captionLayout="dropdown"
-                        startMonth={new Date(2025, 0)}
+                        startMonth={new Date(2022, 0)}
                         endMonth={new Date(2075, 11)}
                         onSelect={(selectedDate) => {
                             onChange?.(selectedDate)

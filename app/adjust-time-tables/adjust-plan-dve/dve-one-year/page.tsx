@@ -403,7 +403,7 @@ export default function TransferOneYear() {
             <div className="mx-auto px-4">
                 <div className="bg-card text-card-foreground rounded-xl border my-5 py-6 shadow-sm mx-auto max-w-7xl">
                     <div className="mx-8 pb-2 text-lg font-semibold">
-                        ตารางเรียน ปวส. ปี 1 ภาคเรียนที่ {termYear}
+                        ตารางเรียน ปวช. ขึ้น ปวส. ปี 1 ภาคเรียนที่ {termYear}
                     </div>
                     <div className="bg-card text-card-foreground px-8">
                         <TimeTableCustom
