@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { PencilIcon } from "lucide-react"
+import { CopyPlus } from "lucide-react"
 import React, { useEffect, useState } from "react"
 
 export default function AddRoomSubjectOutCustom({
@@ -116,7 +116,7 @@ export default function AddRoomSubjectOutCustom({
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button variant="ghost" className="px-2 h-8">
-                    <PencilIcon color="#00ff00" />
+                    <CopyPlus color="#00ff00" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">

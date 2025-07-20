@@ -4,55 +4,60 @@ import { AddSubjectCustom } from "@/components/add-subject/add-subject-custom";
 import CardStudyPlansCustom from "@/components/card-study-plans-table/card-study-plans-custom";
 import { SelectCustom } from "@/components/select/select-custom";
 import { useEffect, useState } from "react"
-
-// type CardStudyPlansCustomProps = {
-//     planType: string;
-//     termYear: string;
-//     yearLevel: string;
-//     children: (props: { onAdded: () => void }) => React.ReactNode;
-// }
-
-// type AddSubjectCustomProps = {
-//     planType: string;
-//     termYear: string;
-//     yearLevel: string;
-//     onAdded?: () => void;
-// }
+import { Loader2 } from "lucide-react"
 
 export default function DveLvcPlan() {
     const [year, setYear] = useState<string>("xxxx")
     const [terms, setTerms] = useState<any[]>([])
     const [yearLevels, setYearLevels] = useState<any[]>([])
+    const [loading, setLoading] = useState(true) // เพิ่ม loading state
 
     useEffect(() => {
-        async function fetchTerm() {
-            const res = await fetch("/api/term")
-            if (res.ok) {
-                const data = await res.json()
-                setTerms(data)
+        async function fetchData() {
+            try {
+                setLoading(true)
 
-                const term1 = data.find((t: any) => t.name === "ภาคเรียนที่ 1")
-                if (term1 && term1.start) {
-                    const startYear = new Date(term1.start).getFullYear() + 543
+                // Fetch terms
+                const termRes = await fetch("/api/term")
+                if (termRes.ok) {
+                    const termData = await termRes.json()
+                    setTerms(termData)
 
-                    setYear(startYear.toString())
+                    const term1 = termData.find((t: any) => t.name === "ภาคเรียนที่ 1")
+                    if (term1 && term1.start) {
+                        const startYear = new Date(term1.start).getFullYear() + 543
+                        setYear(startYear.toString())
+                    }
                 }
-            }
-        }
-        fetchTerm()
 
-        async function fetchYearLevels() {
-            const res = await fetch("/api/year-level")
-            if (res.ok) {
-                const data = await res.json()
-                setYearLevels(data)
+                // Fetch year levels
+                const yearRes = await fetch("/api/year-level")
+                if (yearRes.ok) {
+                    const yearData = await yearRes.json()
+                    setYearLevels(yearData)
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error)
+            } finally {
+                setLoading(false)
             }
         }
-        fetchYearLevels()
+        fetchData()
     }, [])
 
     const academicYear = year || "xxxx"
     const academicYear2 = parseInt(year) + 1 || "xxxx"
+
+    if (loading) {
+        return (
+            <div className="container mx-auto py-4">
+                <div className="flex justify-center items-center h-screen">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <span className="ml-2">กำลังโหลดข้อมูล...</span>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="container mx-auto py-4">
@@ -61,6 +66,8 @@ export default function DveLvcPlan() {
                 <h3>หลักสูตรวืศวกรรมคอมพิวเตอร์ <span className="text-yellow-600">ปวช. ขึ้น ปวส.</span> มทร.ล้านนา ตาก</h3>
             </div>
             <SelectCustom />
+
+            {/* รายการ CardStudyPlansCustom เหมือนเดิม */}
             <CardStudyPlansCustom
                 planType="DVE-LVC"
                 termYear={`${terms[0]?.name}/${academicYear}`}

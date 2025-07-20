@@ -3,6 +3,7 @@
 import CalendarCustom from "@/components/calendar/calendar-custom"
 import DisplayCalendarCustom from "@/components/calendar/display-calendar-custom"
 import { Label } from "@radix-ui/react-label"
+import { Loader2 } from "lucide-react"
 import React from "react"
 
 export default function AcademicCalendar() {
@@ -10,6 +11,7 @@ export default function AcademicCalendar() {
     const [term2, setTerm2] = React.useState<{ start?: Date; end?: Date }>({})
     const [term3, setTerm3] = React.useState<{ start?: Date; end?: Date }>({})
     const [savedTerm, setSavedTerm] = React.useState<any>(null)
+    const [loading, setLoading] = React.useState(true) // เพิ่ม loading state
 
     const terms = [
         { name: "ภาคเรียนที่ 1", start: term1.start, end: term1.end },
@@ -19,32 +21,43 @@ export default function AcademicCalendar() {
 
     async function saveTerm(name: string, start?: Date, end?: Date) {
         if (start && end) {
-            const res = await fetch("/api/term", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    name,
-                    start,
-                    end,
-                }),
-            })
-            if (res.ok) {
-                const data = await res.json()
-                setSavedTerm(data)
+            try {
+                const res = await fetch("/api/term", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        name,
+                        start,
+                        end,
+                    }),
+                })
+                if (res.ok) {
+                    const data = await res.json()
+                    setSavedTerm(data)
+                }
+            } catch (error) {
+                console.error("Error saving term:", error)
             }
         }
     }
 
     React.useEffect(() => {
         async function fetchTerms() {
-            const res = await fetch("/api/term")
-            if (res.ok) {
-                const data = await res.json()
-                data.forEach((term: any) => {
-                    if (term.name === "ภาคเรียนที่ 1") setTerm1({ start: new Date(term.start), end: new Date(term.end) })
-                    if (term.name === "ภาคเรียนที่ 2") setTerm2({ start: new Date(term.start), end: new Date(term.end) })
-                    if (term.name === "ภาคเรียนที่ 3") setTerm3({ start: new Date(term.start), end: new Date(term.end) })
-                })
+            try {
+                setLoading(true) // เริ่ม loading
+                const res = await fetch("/api/term")
+                if (res.ok) {
+                    const data = await res.json()
+                    data.forEach((term: any) => {
+                        if (term.name === "ภาคเรียนที่ 1") setTerm1({ start: new Date(term.start), end: new Date(term.end) })
+                        if (term.name === "ภาคเรียนที่ 2") setTerm2({ start: new Date(term.start), end: new Date(term.end) })
+                        if (term.name === "ภาคเรียนที่ 3") setTerm3({ start: new Date(term.start), end: new Date(term.end) })
+                    })
+                }
+            } catch (error) {
+                console.error("Error fetching terms:", error)
+            } finally {
+                setLoading(false) // หยุด loading
             }
         }
         fetchTerms()
@@ -124,6 +137,21 @@ export default function AcademicCalendar() {
         return otherTerms
             .filter(term => term.start && term.end && (start <= term.end && end >= term.start))
             .map(term => term.name)
+    }
+
+    // แสดง loading หากยังโหลดข้อมูลอยู่
+    if (loading) {
+        return (
+            <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl m-10 shadow-sm mx-98">
+                <div className="text-center text-2xl font-bold my-5">
+                    ปฏิทินการศึกษา
+                </div>
+                <div className="flex justify-center items-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <span className="ml-2">กำลังโหลดข้อมูล...</span>
+                </div>
+            </div>
+        )
     }
 
     return (

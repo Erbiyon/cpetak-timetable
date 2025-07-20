@@ -6,6 +6,7 @@ import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import PlansStatusCustom from "@/components/plans-status/plans-status-custom";
 import TimeTableCustom from "@/components/time-table/time-table-custom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Loader2 } from "lucide-react";
 
 export default function TransferOneYear() {
     const [termYear, setTermYear] = useState<string | undefined>(undefined);
@@ -406,7 +407,10 @@ export default function TransferOneYear() {
 
     // แสดง loading indicator
     if (isLoading) {
-        return <div className="flex justify-center items-center h-screen">กำลังโหลดข้อมูล...</div>;
+        return <div className="flex justify-center items-center h-screen">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2">กำลังโหลดข้อมูล...</span>
+        </div>;
     }
 
     // จำนวนวิชาที่จัดตารางแล้ว
@@ -551,7 +555,7 @@ export default function TransferOneYear() {
                     </div>
                 </div>
                 <PlansStatusCustom
-                    termYear={termYear}
+                    termYear={termYear || ""}
                     yearLevel="ปี 1"
                     planType="DVE-MSIX"
                     plans={plans}

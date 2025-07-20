@@ -113,6 +113,10 @@ export function AddTeacherCustom({ onAdded }: { onAdded?: () => void }) {
                         </div>
                         {/* ไม่แสดง input field สำหรับ teacherType เนื่องจากกำหนดค่าคงที่ในโค้ด */}
                         {fieldErrors.api && <span className="text-red-500 text-xs">{fieldErrors.api}</span>}
+
+                        <div className="text-xs text-muted-foreground mt-2 border-t pt-2">
+                            หมายเหตุ: ข้อมูลจะถูกบันทึกเป็นอาจารย์ภายในสาขา
+                        </div>
                     </div>
                     <DialogFooter className="my-4">
                         <DialogClose asChild>

@@ -59,45 +59,60 @@ export async function POST(req: NextRequest) {
 }
 
 // API ดึงข้อมูลตารางทั้งหมด
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
     try {
-        const url = new URL(req.url);
-        const termYear = url.searchParams.get('termYear');
-        const yearLevel = url.searchParams.get('yearLevel');
-        const planType = url.searchParams.get('planType');
-        const planId = url.searchParams.get('planId');
-        const roomId = url.searchParams.get('roomId');
+        const url = new URL(request.url);
+        const roomIdParam = url.searchParams.get("roomId");
+        const teacherIdParam = url.searchParams.get("teacherId");
+        const termYear = url.searchParams.get("termYear");
 
-        // สร้างเงื่อนไขการค้นหา
+        const roomId = roomIdParam ? parseInt(roomIdParam) : undefined;
+        const teacherId = teacherIdParam ? parseInt(teacherIdParam) : undefined;
+
+        // ต้องมีอย่างน้อย roomId หรือ teacherId
+        if ((!roomId || isNaN(roomId)) && (!teacherId || isNaN(teacherId))) {
+            return NextResponse.json([], { status: 200 });
+        }
+
+        console.log("API: Fetching timetable for:", { roomId, teacherId, termYear });
+
+        // สร้าง where condition
         const whereCondition: any = {};
-        if (termYear) whereCondition.termYear = termYear;
-        if (yearLevel) whereCondition.yearLevel = yearLevel;
-        if (planType) whereCondition.planType = planType;
-        // เพิ่มเงื่อนไขค้นหาตาม planId
-        if (planId) whereCondition.planId = parseInt(planId);
 
-        // ดึงข้อมูลตารางเรียนพร้อมข้อมูลความสัมพันธ์
+        // เพิ่มเงื่อนไข roomId ถ้ามี
+        if (roomId && !isNaN(roomId)) {
+            whereCondition.roomId = roomId;
+        }
+
+        // เพิ่มเงื่อนไข teacherId ถ้ามี
+        if (teacherId && !isNaN(teacherId)) {
+            whereCondition.teacherId = teacherId;
+        }
+
+        // เพิ่มเงื่อนไขภาคเรียนถ้ามีการส่งมา
+        if (termYear) {
+            whereCondition.termYear = termYear;
+        }
+
         const timetables = await prisma.timetable_tb.findMany({
             where: whereCondition,
             include: {
                 plan: true,
                 room: true,
-                teacher: true
+                teacher: true,
             },
-            orderBy: {
-                id: 'desc' // เรียงจากรายการล่าสุด เพื่อให้ได้ค่า section ล่าสุด
-            }
+            orderBy: [
+                { day: 'asc' },
+                { startPeriod: 'asc' }
+            ]
         });
+
+        console.log(`API: Found ${timetables.length} entries for the specified criteria`);
 
         return NextResponse.json(timetables);
     } catch (error: any) {
-        console.error("Error fetching timetables:", error);
-        return NextResponse.json(
-            { error: error.message || "เกิดข้อผิดพลาดในการดึงข้อมูล" },
-            { status: 500 }
-        );
-    } finally {
-        await prisma.$disconnect();
+        console.error("Error fetching timetable:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
 
