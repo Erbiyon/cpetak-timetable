@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Sarabun } from "next/font/google";
 import "./globals.css";
-import { NavigationMenuCustom } from "@/components/navbar/navbar-custom";
 import ThemeProviderCustom from "@/components/theme-provider/theme-provider-custom";
+import HideNavbar from "@/components/hide-navbar/hide-navbar";
 
 const sarabun = Sarabun({
     subsets: ["thai", "latin"],
@@ -25,7 +25,7 @@ export default function RootLayout({
                 className={`${sarabun.className} antialiased`}
             >
                 <ThemeProviderCustom>
-                    <NavigationMenuCustom />
+                    <HideNavbar />
                     {children}
                 </ThemeProviderCustom>
             </body>
