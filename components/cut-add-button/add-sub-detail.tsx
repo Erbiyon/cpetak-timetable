@@ -390,6 +390,12 @@ export default function AddSubDetail({ subject, onUpdate }: {
                         </div>
 
                         {error && <p className="text-red-500 text-sm">{error}</p>}
+
+                        {subject.dep === "นอกสาขา" && (
+                            <div className="text-xs text-muted-foreground mt-2 border-t pt-2">
+                                หมายเหตุ: จำเป็นต้องระบุห้องเรียนและอาจารย์ที่สอนสำหรับวิชานอกสาขา
+                            </div>
+                        )}
                     </div>
                     <DialogFooter>
                         <DialogClose asChild>

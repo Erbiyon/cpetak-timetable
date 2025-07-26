@@ -65,16 +65,13 @@ export async function GET(request: NextRequest) {
         const roomIdParam = url.searchParams.get("roomId");
         const teacherIdParam = url.searchParams.get("teacherId");
         const termYear = url.searchParams.get("termYear");
+        const yearLevel = url.searchParams.get("yearLevel");
+        const planType = url.searchParams.get("planType");
 
         const roomId = roomIdParam ? parseInt(roomIdParam) : undefined;
         const teacherId = teacherIdParam ? parseInt(teacherIdParam) : undefined;
 
-        // ต้องมีอย่างน้อย roomId หรือ teacherId
-        if ((!roomId || isNaN(roomId)) && (!teacherId || isNaN(teacherId))) {
-            return NextResponse.json([], { status: 200 });
-        }
-
-        console.log("API: Fetching timetable for:", { roomId, teacherId, termYear });
+        console.log("API: Fetching timetable for:", { roomId, teacherId, termYear, yearLevel, planType });
 
         // สร้าง where condition
         const whereCondition: any = {};
@@ -92,6 +89,21 @@ export async function GET(request: NextRequest) {
         // เพิ่มเงื่อนไขภาคเรียนถ้ามีการส่งมา
         if (termYear) {
             whereCondition.termYear = termYear;
+        }
+
+        // เพิ่มเงื่อนไข yearLevel ถ้ามี
+        if (yearLevel) {
+            whereCondition.yearLevel = yearLevel;
+        }
+
+        // เพิ่มเงื่อนไข planType ถ้ามี
+        if (planType) {
+            whereCondition.planType = planType;
+        }
+
+        // ถ้าไม่มีเงื่อนไขใดๆ ให้ส่งค่าว่างกลับ
+        if (Object.keys(whereCondition).length === 0) {
+            return NextResponse.json([]);
         }
 
         const timetables = await prisma.timetable_tb.findMany({
@@ -196,8 +208,6 @@ async function checkTimeConflicts({
                 conflicts: teacherConflicts
             });
         }
-
-        // ลบส่วนตรวจสอบการสอนต่อเนื่องเกินไป 2.1 ทั้งหมดออก
     }
 
     // 3. ตรวจสอบการชนกันของนักศึกษาชั้นปีเดียวกัน (ยกเว้นกรณีมี section แยก)

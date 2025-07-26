@@ -39,6 +39,32 @@ export default function TransferOneYear() {
                 if (termRes.ok) {
                     const termData = await termRes.json();
                     setTermYear(termData.termYear);
+
+                    // ดึงข้อมูลตารางเรียนที่บันทึกไว้ทันทีที่ได้ termYear
+                    const timetableRes = await fetch(`/api/timetable?termYear=${termData.termYear}&yearLevel=ปี 1&planType=TRANSFER`);
+                    if (timetableRes.ok) {
+                        const timetableData = await timetableRes.json();
+                        console.log("Loaded timetable data:", timetableData);
+
+                        // แปลงข้อมูลเป็นรูปแบบ tableAssignments
+                        const assignments: { [subjectId: number]: { day: number, periods: number[] } } = {};
+
+                        timetableData.forEach((item: any) => {
+                            const periods: number[] = [];
+                            for (let p = item.startPeriod; p <= item.endPeriod; p++) {
+                                // ข้ามคาบกิจกรรมวันพุธ (คาบ 14-17)
+                                if (item.day === 2 && p >= 14 && p <= 17) continue;
+                                periods.push(p);
+                            }
+
+                            assignments[item.planId] = {
+                                day: item.day,
+                                periods: periods
+                            };
+                        });
+
+                        setTableAssignments(assignments);
+                    }
                 }
 
                 // ดึงข้อมูลแผนการเรียนจาก API
@@ -61,32 +87,6 @@ export default function TransferOneYear() {
                     setPlans([]);
                 }
 
-                // ดึงข้อมูลตารางเรียนที่บันทึกไว้
-                if (termYear) {
-                    const timetableRes = await fetch(`/api/timetable?termYear=${termYear}&yearLevel=ปี 1&planType=TRANSFER`);
-                    if (timetableRes.ok) {
-                        const timetableData = await timetableRes.json();
-
-                        // แปลงข้อมูลเป็นรูปแบบ tableAssignments
-                        const assignments: { [subjectId: number]: { day: number, periods: number[] } } = {};
-
-                        timetableData.forEach((item: any) => {
-                            const periods: number[] = [];
-                            for (let p = item.startPeriod; p <= item.endPeriod; p++) {
-                                // ข้ามคาบกิจกรรมวันพุธ (คาบ 14-17)
-                                if (item.day === 2 && p >= 14 && p <= 17) continue;
-                                periods.push(p);
-                            }
-
-                            assignments[item.planId] = {
-                                day: item.day,
-                                periods: periods
-                            };
-                        });
-
-                        setTableAssignments(assignments);
-                    }
-                }
             } catch (error) {
                 console.error("Error fetching data:", error);
                 setPlans([]);
@@ -96,7 +96,7 @@ export default function TransferOneYear() {
         }
 
         fetchData();
-    }, [termYear]);
+    }, []); // ลบ dependency termYear ออก เพราะเราจะจัดการใน function
 
     useEffect(() => {
         if (plans.length > 0) {

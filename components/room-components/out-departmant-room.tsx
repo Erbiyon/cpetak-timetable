@@ -135,7 +135,7 @@ export default function OutdepartmentRoom() {
         <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-5 py-5 shadow-sm mx-auto">
             <div className="flex justify-between items-center mx-8">
                 <h2 className="text-xl font-bold">
-                    อาคารนอกสาขา
+                    เพิ่มห้องเรียนของวิชานอกสาขา
                     {termYear && (
                         <span className="text-sm font-normal text-muted-foreground ml-2">
                             ({termYear})
@@ -181,6 +181,7 @@ export default function OutdepartmentRoom() {
                                                 <TableHeader>
                                                     <TableRow>
                                                         <TableHead className="w-[120px]">เลขห้อง</TableHead>
+                                                        <TableHead className="w-[100px]">ประเภท</TableHead>
                                                         <TableHead className="w-[100px]">รหัสวิชา</TableHead>
                                                         <TableHead>ชื่อวิชา</TableHead>
                                                         <TableHead className="text-center w-[100px]">ดำเนินการ</TableHead>
@@ -191,6 +192,20 @@ export default function OutdepartmentRoom() {
                                                         <TableRow key={subject.id} className="hover:bg-muted/50">
                                                             <TableCell className="font-medium">
                                                                 {subject.room?.roomCode || "-"}
+                                                            </TableCell>
+                                                            <TableCell className="text-xs">
+                                                                {subject.room?.roomCode ? (
+                                                                    <span className={
+                                                                        subject.room.roomCode.toUpperCase().startsWith("ENG")
+                                                                            ? "text-blue-600"
+                                                                            : "text-gray-600"
+                                                                    }>
+                                                                        {subject.room.roomCode.toUpperCase().startsWith("ENG")
+                                                                            ? "ตึกวิศวกรรม"
+                                                                            : "นอกสาขา"
+                                                                        }
+                                                                    </span>
+                                                                ) : "-"}
                                                             </TableCell>
                                                             <TableCell className="font-mono text-sm">
                                                                 {subject.subjectCode}

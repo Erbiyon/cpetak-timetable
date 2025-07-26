@@ -30,6 +30,14 @@ export default function AddRoomSubjectOutCustom({
     const [inputRoomCode, setInputRoomCode] = useState("")
     const [error, setError] = useState<string | null>(null)
 
+    // ฟังก์ชันกำหนดประเภทห้องตามเลขห้อง
+    const getRoomType = (roomCode: string): string => {
+        if (roomCode.toUpperCase().startsWith("ENG")) {
+            return "ตึกวิศวกรรมศาสตร์"
+        }
+        return "ห้องเรียนนอกสาขา"
+    }
+
     // เมื่อเปิด Dialog ให้เซ็ตค่าห้องที่เลือกไว้ (ถ้ามี)
     useEffect(() => {
         if (open) {
@@ -59,7 +67,11 @@ export default function AddRoomSubjectOutCustom({
                     if (room && room.id) {
                         roomId = room.id
                     } else {
-                        // ถ้าไม่พบห้อง ให้สร้างห้องใหม่
+                        // ถ้าไม่พบห้อง ให้สร้างห้องใหม่ โดยตรวจสอบประเภทห้องจากเลขห้อง
+                        const roomType = getRoomType(roomCodeValue)
+
+                        console.log(`Creating new room: ${roomCodeValue} as ${roomType}`)
+
                         const createRes = await fetch("/api/room", {
                             method: "POST",
                             headers: {
@@ -67,15 +79,17 @@ export default function AddRoomSubjectOutCustom({
                             },
                             body: JSON.stringify({
                                 roomCode: roomCodeValue,
-                                roomType: "ห้องเรียนนอกสาขา"
+                                roomType: roomType
                             }),
                         })
 
                         if (createRes.ok) {
                             const newRoom = await createRes.json()
                             roomId = newRoom.id
+                            console.log(`New room created with ID: ${roomId}`)
                         } else {
-                            throw new Error("ไม่สามารถสร้างห้องใหม่ได้")
+                            const errorData = await createRes.json()
+                            throw new Error(errorData.error || "ไม่สามารถสร้างห้องใหม่ได้")
                         }
                     }
                 } else {
@@ -112,6 +126,12 @@ export default function AddRoomSubjectOutCustom({
         }
     }
 
+    // แสดงข้อมูลประเภทห้องที่จะถูกสร้าง
+    const getDisplayRoomType = (roomCode: string): string => {
+        if (!roomCode.trim()) return ""
+        return getRoomType(roomCode.trim())
+    }
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -139,6 +159,25 @@ export default function AddRoomSubjectOutCustom({
                             placeholder="กรอกเลขห้อง (เว้นว่างหากไม่ระบุ)"
                         />
                     </div>
+
+                    {/* แสดงประเภทห้องที่จะถูกสร้าง */}
+                    {inputRoomCode.trim() && (
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right text-sm text-muted-foreground">
+                                ประเภทห้อง
+                            </Label>
+                            <div className="col-span-3">
+                                <span className="text-sm font-medium">
+                                    {getDisplayRoomType(inputRoomCode)}
+                                </span>
+                                {inputRoomCode.toUpperCase().startsWith("ENG") && (
+                                    <div className="text-xs text-blue-600 mt-1">
+                                        ห้องขึ้นต้นด้วย "ENG" จะเป็นตึกวิศวกรรมศาสตร์
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {error && <p className="text-red-500 text-sm">{error}</p>}
                 </div>
