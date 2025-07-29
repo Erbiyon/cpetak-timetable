@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
     const yearLevel = url.searchParams.get('yearLevel') || undefined;
     const termYear = url.searchParams.get('termYear') || undefined;
     const planType = url.searchParams.get('planType') || undefined;
+    const dep = url.searchParams.get('dep') || undefined; // เพิ่มพารามิเตอร์ dep
 
     try {
         // สร้างเงื่อนไขการค้นหา
@@ -79,17 +80,39 @@ export async function GET(req: NextRequest) {
             where.planType = { contains: planType };
         }
 
+        if (dep) {
+            where.dep = { contains: dep }; // เพิ่มการกรองตาม dep
+        }
+
+        console.log('Subject API - Query params:', { yearLevel, termYear, planType, dep });
+        console.log('Subject API - Where clause:', where);
+
         // ดึงข้อมูลจาก database ด้วย Prisma
         const plans = await prisma.plans_tb.findMany({
             where,
             include: {
-                room: true,
-                teacher: true  // เพิ่ม include สำหรับ teacher
+                room: {
+                    select: {
+                        id: true,
+                        roomCode: true,
+                        roomType: true
+                    }
+                },
+                teacher: {
+                    select: {
+                        id: true,
+                        tName: true,
+                        tLastName: true,
+                        tId: true
+                    }
+                }
             },
             orderBy: {
                 subjectCode: 'asc'
             }
         });
+
+        console.log(`Subject API - Found ${plans.length} subjects`);
 
         // ส่งข้อมูลกลับไป
         return NextResponse.json(plans);

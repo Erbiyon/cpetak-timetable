@@ -184,7 +184,7 @@ export default function ClassSchedule() {
 
     // สร้าง UI
     return (
-        <div className="container mx-auto py-2">
+        <div className="container mx-auto px-6">
             <h2 className="text-2xl font-bold mb-2">ตารางสอน</h2>
 
             <Card className="mb-2">

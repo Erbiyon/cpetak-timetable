@@ -196,7 +196,7 @@ export default function RoomsUse() {
 
     // สร้าง UI
     return (
-        <div className="container mx-auto py-4">
+        <div className="container mx-auto px-6 pt-2">
             <h2 className="text-2xl font-bold mb-2">ตารางการใช้ห้องเรียน</h2>
 
             <Card className="mb-2">

@@ -30,7 +30,8 @@ export default function LoginPage() {
     const [adminId, setAdminId] = useState("")
     const [adminPassword, setAdminPassword] = useState("")
     const [error, setError] = useState("")
-    const [rememberMe, setRememberMe] = useState(false)
+    const [rememberTeacher, setRememberTeacher] = useState(false) // แยกสำหรับอาจารย์
+    const [rememberAdmin, setRememberAdmin] = useState(false)     // แยกสำหรับผู้ดูแล
     const [isClient, setIsClient] = useState(false)
     const [showTeacherPassword, setShowTeacherPassword] = useState(false)
     const [showAdminPassword, setShowAdminPassword] = useState(false)
@@ -41,10 +42,18 @@ export default function LoginPage() {
         setIsClient(true)
 
         if (typeof window !== 'undefined') {
-            const remembered = localStorage.getItem("rememberedTeacherId")
-            if (remembered) {
-                setTeacherId(remembered)
-                setRememberMe(true)
+            // โหลดข้อมูลที่จดจำของอาจารย์
+            const rememberedTeacher = localStorage.getItem("rememberedTeacherId")
+            if (rememberedTeacher) {
+                setTeacherId(rememberedTeacher)
+                setRememberTeacher(true)
+            }
+
+            // โหลดข้อมูลที่จดจำของผู้ดูแล
+            const rememberedAdmin = localStorage.getItem("rememberedAdminId")
+            if (rememberedAdmin) {
+                setAdminId(rememberedAdmin)
+                setRememberAdmin(true)
             }
         }
     }, [])
@@ -64,9 +73,9 @@ export default function LoginPage() {
             if (result?.error) {
                 setError("รหัสประจำตัวหรือรหัสผ่านไม่ถูกต้อง")
             } else {
-                // บันทึกการจดจำถ้าเลือก (เฉพาะ client-side)
+                // บันทึกการจดจำสำหรับอาจารย์ (เฉพาะ client-side)
                 if (isClient && typeof window !== 'undefined') {
-                    if (rememberMe) {
+                    if (rememberTeacher) {
                         localStorage.setItem("rememberedTeacherId", teacherId)
                     } else {
                         localStorage.removeItem("rememberedTeacherId")
@@ -98,6 +107,15 @@ export default function LoginPage() {
             if (result?.error) {
                 setError("รหัสผู้ดูแลหรือรหัสผ่านไม่ถูกต้อง")
             } else {
+                // บันทึกการจดจำสำหรับผู้ดูแล (เฉพาะ client-side)
+                if (isClient && typeof window !== 'undefined') {
+                    if (rememberAdmin) {
+                        localStorage.setItem("rememberedAdminId", adminId)
+                    } else {
+                        localStorage.removeItem("rememberedAdminId")
+                    }
+                }
+
                 router.push("/study-plans/transfer-plan")
             }
         } catch (error) {
@@ -193,8 +211,8 @@ export default function LoginPage() {
                                     <div className="flex items-center space-x-2 my-2">
                                         <Checkbox
                                             id="remember-teacher"
-                                            checked={rememberMe}
-                                            onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                                            checked={rememberTeacher}
+                                            onCheckedChange={(checked) => setRememberTeacher(checked as boolean)}
                                         />
                                         <Label
                                             htmlFor="remember-teacher"
@@ -266,6 +284,19 @@ export default function LoginPage() {
                                                 )}
                                             </Button>
                                         </div>
+                                    </div>
+                                    <div className="flex items-center space-x-2 my-2">
+                                        <Checkbox
+                                            id="remember-admin"
+                                            checked={rememberAdmin}
+                                            onCheckedChange={(checked) => setRememberAdmin(checked as boolean)}
+                                        />
+                                        <Label
+                                            htmlFor="remember-admin"
+                                            className="text-sm cursor-pointer"
+                                        >
+                                            จดจำรหัสผู้ดูแล
+                                        </Label>
                                     </div>
                                     {error && (
                                         <div className="text-red-500 text-sm">{error}</div>
