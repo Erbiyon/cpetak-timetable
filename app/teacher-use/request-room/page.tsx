@@ -21,7 +21,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, AlertCircle, Plus, User } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, Plus, User, UserCheck } from "lucide-react";
 
 type Subject = {
     id: number;
@@ -171,7 +171,7 @@ export default function RequestRoomPage() {
             fetchSubjects();
             fetchRooms();
         }
-    }, [currentTermYear]); // ลบ refreshKey ออก
+    }, [currentTermYear]);
 
     // Function สำหรับ refresh ข้อมูลโดยไม่เปลี่ยน scroll
     const refreshData = async () => {
@@ -477,7 +477,7 @@ export default function RequestRoomPage() {
                                                                 </TableCell>
                                                                 <TableCell>
                                                                     <Select
-                                                                        value={subject.roomId?.toString() || "none"} // เปลี่ยนจาก "" เป็น "none"
+                                                                        value={subject.roomId?.toString() || "none"}
                                                                         onValueChange={(value) => handleRoomUpdate(subject.id, value)}
                                                                         disabled={updating === subject.id || !isMySubject(subject)}
                                                                     >
@@ -485,7 +485,7 @@ export default function RequestRoomPage() {
                                                                             <SelectValue placeholder="เลือกห้อง" />
                                                                         </SelectTrigger>
                                                                         <SelectContent>
-                                                                            <SelectItem value="none">ไม่เลือกห้อง</SelectItem> {/* เปลี่ยนจาก value="" เป็น value="none" */}
+                                                                            <SelectItem value="none">ไม่เลือกห้อง</SelectItem>
                                                                             {rooms.map(room => (
                                                                                 <SelectItem key={room.id} value={room.id.toString()}>
                                                                                     {room.roomCode}
@@ -528,12 +528,30 @@ export default function RequestRoomPage() {
                                                                                 </span>
                                                                             )}
 
-                                                                            {/* ไอคอนสถานะห้อง */}
-                                                                            {subject.roomId ? (
-                                                                                <CheckCircle className="h-4 w-4 text-green-600" />
-                                                                            ) : (
-                                                                                <AlertCircle className="h-4 w-4 text-orange-600" />
-                                                                            )}
+                                                                            {/* ไอคอนสถานะอาจารย์และห้อง */}
+                                                                            <div className="flex items-center gap-1 ml-2">
+                                                                                {/* ไอคอนสถานะอาจารย์ */}
+                                                                                {subject.teacherId ? (
+                                                                                    <div title="มีอาจารย์ผู้สอน">
+                                                                                        <UserCheck className="h-4 w-4 text-blue-600" />
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div title="ยังไม่มีอาจารย์ผู้สอน">
+                                                                                        <User className="h-4 w-4 text-gray-400" />
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* ไอคอนสถานะห้อง */}
+                                                                                {subject.roomId ? (
+                                                                                    <div title="เลือกห้องแล้ว">
+                                                                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div title="ยังไม่เลือกห้อง">
+                                                                                        <AlertCircle className="h-4 w-4 text-orange-600" />
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
                                                                     )}
                                                                 </TableCell>
