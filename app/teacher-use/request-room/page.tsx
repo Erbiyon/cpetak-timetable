@@ -21,7 +21,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, AlertCircle, Building, Plus, User } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, Plus, User } from "lucide-react";
 
 type Subject = {
     id: number;
@@ -308,6 +308,11 @@ export default function RequestRoomPage() {
         }
     };
 
+    // ตรวจสอบว่าเป็นวิชาของอาจารย์คนนี้หรือไม่
+    const isMySubject = (subject: Subject) => {
+        return subject.teacherId && subject.teacherId.toString() === session?.user?.id;
+    };
+
     // จัดกลุ่มวิชาตาม planType และ yearLevel
     const groupedSubjects: GroupedSubjects = subjects.reduce((acc, subject) => {
         if (!acc[subject.planType]) {
@@ -329,18 +334,6 @@ export default function RequestRoomPage() {
             };
             return getYearNumber(a) - getYearNumber(b);
         });
-    };
-
-    // สรุปการเลือกห้อง
-    const roomSummary = subjects.filter(subject => subject.roomId).length;
-    const totalSubjects = subjects.length;
-    const mySubjects = subjects.filter(subject =>
-        subject.teacherId && subject.teacherId.toString() === session?.user?.id
-    ).length;
-
-    // ตรวจสอบว่าเป็นวิชาของอาจารย์คนนี้หรือไม่
-    const isMySubject = (subject: Subject) => {
-        return subject.teacherId && subject.teacherId.toString() === session?.user?.id;
     };
 
     // Debug info
@@ -378,44 +371,6 @@ export default function RequestRoomPage() {
                     )}
                 </p>
             </div>
-
-            {/* สรุปการเลือกห้อง */}
-            <Card className="mb-6">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Building className="h-5 w-5" />
-                        สรุปการจัดการวิชาและห้องเรียน
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div className="text-center p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                            <div className="text-2xl font-bold text-blue-600">
-                                {totalSubjects}
-                            </div>
-                            <div className="text-sm text-muted-foreground">วิชาทั้งหมด</div>
-                        </div>
-                        <div className="text-center p-4 bg-purple-50 dark:bg-purple-950 rounded-lg">
-                            <div className="text-2xl font-bold text-purple-600">
-                                {mySubjects}
-                            </div>
-                            <div className="text-sm text-muted-foreground">วิชาที่ฉันสอน</div>
-                        </div>
-                        <div className="text-center p-4 bg-green-50 dark:bg-green-950 rounded-lg">
-                            <div className="text-2xl font-bold text-green-600">
-                                {roomSummary}
-                            </div>
-                            <div className="text-sm text-muted-foreground">เลือกห้องแล้ว</div>
-                        </div>
-                        <div className="text-center p-4 bg-orange-50 dark:bg-orange-950 rounded-lg">
-                            <div className="text-2xl font-bold text-orange-600">
-                                {totalSubjects - roomSummary}
-                            </div>
-                            <div className="text-sm text-muted-foreground">ยังไม่เลือกห้อง</div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
 
             {/* รายการวิชา */}
             {loading ? (
@@ -565,7 +520,7 @@ export default function RequestRoomPage() {
                                                                                     className="h-6 px-2 text-xs"
                                                                                 >
                                                                                     <Plus className="h-3 w-3 mr-1" />
-                                                                                    รับสอน
+                                                                                    สอน
                                                                                 </Button>
                                                                             ) : (
                                                                                 <span className="text-xs text-muted-foreground">
