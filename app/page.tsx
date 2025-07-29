@@ -1,7 +1,7 @@
-import TransferPlan from "./study-plans/transfer-plan/page";
+import LoginPage from "./login/page";
 
 export default function Home() {
     return (
-        <TransferPlan />
+        <LoginPage />
     );
 }

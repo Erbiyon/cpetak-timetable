@@ -3,6 +3,7 @@ import { Sarabun } from "next/font/google";
 import "./globals.css";
 import ThemeProviderCustom from "@/components/theme-provider/theme-provider-custom";
 import HideNavbar from "@/components/hide-navbar/hide-navbar";
+import AuthSessionProvider from "@/components/providers/session-provider";
 
 const sarabun = Sarabun({
     subsets: ["thai", "latin"],
@@ -21,13 +22,13 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <body
-                className={`${sarabun.className} antialiased`}
-            >
-                <ThemeProviderCustom>
-                    <HideNavbar />
-                    {children}
-                </ThemeProviderCustom>
+            <body className={`${sarabun.className} antialiased`}>
+                <AuthSessionProvider>
+                    <ThemeProviderCustom>
+                        <HideNavbar />
+                        {children}
+                    </ThemeProviderCustom>
+                </AuthSessionProvider>
             </body>
         </html>
     );

@@ -7,7 +7,13 @@ export default function HideNavbar() {
     const pathname = usePathname();
 
     // หน้าที่ไม่ต้องแสดง Navigation Bar
-    const hideNavbarPages = ["/login"];
+    const hideNavbarPages = [
+        "/login",
+        "/",
+        "/teacher-use",
+        "/teacher-use/time-table",
+        "/teacher-use/request-room"
+    ];
     const shouldHideNavbar = hideNavbarPages.includes(pathname);
 
     if (shouldHideNavbar) {

@@ -131,12 +131,9 @@ export function NavigationMenuCustom() {
                         </NavigationMenuLink>
                     </NavigationMenuItem>
                     <NavigationMenuItem>
-                        <Button
-                            variant="ghost"
-                            className="text-red-600 mx-2"
-                        >
-                            Sign Out
-                        </Button>
+                        <NavigationMenuLink asChild className={`${navigationMenuTriggerStyle()} bg-card`}>
+                            <Link href="/login" className="text-red-500">Sign Out</Link>
+                        </NavigationMenuLink>
                     </NavigationMenuItem>
                     <NavigationMenuItem>
                         <DarkModeToggle />
