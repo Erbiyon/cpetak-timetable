@@ -151,7 +151,7 @@ export default function TimeTablePage() {
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-3xl font-bold">ตารางสอนของฉัน</h1>
+                    <h1 className="text-3xl font-bold">ตารางสอน</h1>
                     <p className="text-gray-600 mt-2">
                         ยินดีต้อนรับ,{" "}
                         <span className="font-semibold text-blue-600">{session.user.name}</span>
@@ -187,7 +187,7 @@ export default function TimeTablePage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>
-                            ตารางสอนของคุณ
+                            ตารางสอน
                             <span className="text-base font-normal text-muted-foreground ml-2">
                                 ({currentTermYear})
                             </span>
@@ -386,7 +386,7 @@ function SubjectInCell({
                                 <>
                                     <div className="col-span-2 border-t border-gray-600 mt-2 pt-2">
                                         <div className="flex justify-between">
-                                            <span>📍 ห้องเรียน:</span>
+                                            <span>ห้องเรียน:</span>
                                             <span className="font-medium text-green-300">{subject.room.roomCode}</span>
                                         </div>
                                     </div>
@@ -395,7 +395,7 @@ function SubjectInCell({
 
                             <div className="col-span-2 border-t border-gray-600 mt-2 pt-2">
                                 <div className="flex justify-between">
-                                    <span>⏰ เวลา:</span>
+                                    <span>เวลา:</span>
                                     <span className="font-medium text-blue-300">
                                         คาบ {subject.startPeriod} - {subject.endPeriod}
                                     </span>

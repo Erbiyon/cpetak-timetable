@@ -32,10 +32,20 @@ export default function AddRoomSubjectOutCustom({
 
     // ฟังก์ชันกำหนดประเภทห้องตามเลขห้อง
     const getRoomType = (roomCode: string): string => {
-        if (roomCode.toUpperCase().startsWith("ENG")) {
-            return "ตึกวิศวกรรมศาสตร์"
+        const trimmedCode = roomCode.trim().toUpperCase();
+
+        // ห้องขึ้นต้นด้วย "ENG" -> ตึกวิศวกรรมศาสตร์
+        if (trimmedCode.startsWith("ENG")) {
+            return "ตึกวิศวกรรมศาสตร์";
         }
-        return "ห้องเรียนนอกสาขา"
+
+        // ห้องขึ้นต้นด้วย "6" (โดยไม่มีตัวอักษรข้างหน้า) -> อาคารสาขาวิศวกรรมคอมพิวเตอร์
+        if (/^6\d*$/.test(trimmedCode)) {
+            return "อาคารสาขาวิศวกรรมคอมพิวเตอร์";
+        }
+
+        // กรณีอื่นๆ -> ห้องเรียนนอกสาขา
+        return "ห้องเรียนนอกสาขา";
     }
 
     // เมื่อเปิด Dialog ให้เซ็ตค่าห้องที่เลือกไว้ (ถ้ามี)
@@ -66,6 +76,7 @@ export default function AddRoomSubjectOutCustom({
 
                     if (room && room.id) {
                         roomId = room.id
+                        console.log(`Found existing room: ${roomCodeValue} with ID: ${roomId}`)
                     } else {
                         // ถ้าไม่พบห้อง ให้สร้างห้องใหม่ โดยตรวจสอบประเภทห้องจากเลขห้อง
                         const roomType = getRoomType(roomCodeValue)
@@ -132,6 +143,21 @@ export default function AddRoomSubjectOutCustom({
         return getRoomType(roomCode.trim())
     }
 
+    // ฟังก์ชันสำหรับแสดงคำอธิบายกฎการตั้งชื่อ
+    const getRoomTypeExplanation = (roomCode: string): string => {
+        const trimmedCode = roomCode.trim().toUpperCase();
+
+        if (trimmedCode.startsWith("ENG")) {
+            return 'ห้องขึ้นต้นด้วย "ENG" จะเป็นตึกวิศวกรรมศาสตร์';
+        }
+
+        if (/^6\d*$/.test(trimmedCode)) {
+            return 'ห้องขึ้นต้นด้วย "6" จะเป็นอาคารสาขาวิศวกรรมคอมพิวเตอร์';
+        }
+
+        return 'เป็นห้องเรียนนอกสาขา';
+    }
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -170,11 +196,9 @@ export default function AddRoomSubjectOutCustom({
                                 <span className="text-sm font-medium">
                                     {getDisplayRoomType(inputRoomCode)}
                                 </span>
-                                {inputRoomCode.toUpperCase().startsWith("ENG") && (
-                                    <div className="text-xs text-blue-600 mt-1">
-                                        ห้องขึ้นต้นด้วย "ENG" จะเป็นตึกวิศวกรรมศาสตร์
-                                    </div>
-                                )}
+                                <div className="text-xs text-blue-600 mt-1">
+                                    {getRoomTypeExplanation(inputRoomCode)}
+                                </div>
                             </div>
                         </div>
                     )}

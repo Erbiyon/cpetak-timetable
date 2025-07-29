@@ -53,150 +53,245 @@ export default function AddSubDetail({ subject, onUpdate }: {
     const [teachers, setTeachers] = useState<Teacher[]>([]);
     const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
     const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
-    const [selectedRoom, setSelectedRoom] = useState<Room | null>(null); // เพิ่มตัวแปรเก็บห้องที่เลือก
-    const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null); // เพิ่มตัวแปรเก็บอาจารย์ที่เลือก
+    const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+    const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
     const [section, setSection] = useState<string>("");
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    // เพิ่ม state สำหรับแสดงสถานะการโหลด section
     const [loadingSection, setLoadingSection] = useState(false);
+    const [loadingRooms, setLoadingRooms] = useState(false);
+    const [loadingTeachers, setLoadingTeachers] = useState(false);
 
-    // อัปเดตเมื่อมีการเลือกห้อง
-    useEffect(() => {
-        if (selectedRoomId && selectedRoomId !== "NONE") {
-            const roomId = parseInt(selectedRoomId, 10);
-            const room = rooms.find(r => r.id === roomId);
-            if (room) {
-                setSelectedRoom(room);
-                // อัปเดต subject.room ด้วย แทนที่จะส่งไป API
-                if (subject) {
-                    subject.room = room;
-                    subject.roomId = room.id;
-                }
+    // เก็บข้อมูลเดิมไว้สำหรับกรณียกเลิก
+    const [originalData, setOriginalData] = useState<{
+        roomId: number | null;
+        teacherId: number | null;
+        section: string | null;
+        room: Room | null;
+        teacher: Teacher | null;
+    } | null>(null);
+
+    // ลบ useEffect ทั้งหมดที่ mutate subject object
+    // เก็บการอัปเดตไว้เฉพาะตอน submit เท่านั้น
+
+    // โหลดข้อมูลห้องเรียน
+    const fetchRooms = async () => {
+        try {
+            setLoadingRooms(true);
+            console.log("Fetching rooms...");
+
+            const res = await fetch("/api/room");
+            if (res.ok) {
+                const data = await res.json();
+                console.log("All rooms received:", data.length);
+
+                const filteredRooms = data.filter((room: Room) =>
+                    room.roomType === "อาคารสาขาวิศวกรรมคอมพิวเตอร์" ||
+                    room.roomType === "ตึกวิศวกรรมศาสตร์"
+                );
+
+                console.log("Filtered rooms:", filteredRooms.length, filteredRooms);
+                setRooms(filteredRooms);
+            } else {
+                console.error("Failed to fetch rooms:", res.status, res.statusText);
+                setRooms([]);
             }
-        } else if (selectedRoomId === "NONE") {
-            setSelectedRoom(null);
-            if (subject) {
-                subject.room = null;
-                subject.roomId = null;
-            }
+        } catch (error) {
+            console.error("Error fetching rooms:", error);
+            setRooms([]);
+        } finally {
+            setLoadingRooms(false);
         }
-    }, [selectedRoomId, rooms, subject]);
+    };
 
-    // อัปเดตเมื่อมีการเลือกอาจารย์
-    useEffect(() => {
-        if (selectedTeacherId && selectedTeacherId !== "null") {
-            const teacherId = parseInt(selectedTeacherId, 10);
-            const teacher = teachers.find(t => t.id === teacherId);
-            if (teacher) {
-                setSelectedTeacher(teacher);
-                // อัปเดต subject.teacher โดยไม่ต้องมีเงื่อนไข
-                if (subject) {
-                    subject.teacher = teacher;
-                    subject.teacherId = teacher.id;
-                }
+    // โหลดข้อมูลอาจารย์
+    const fetchTeachers = async () => {
+        try {
+            setLoadingTeachers(true);
+            console.log("Fetching teachers...");
+
+            const res = await fetch("/api/teacher?inDepartment=true");
+            if (res.ok) {
+                const data = await res.json();
+                console.log("Teachers received:", data.length, data);
+                setTeachers(data);
+            } else {
+                console.error("Failed to fetch teachers:", res.status, res.statusText);
+                setTeachers([]);
             }
-        } else if (selectedTeacherId === "null") {
-            setSelectedTeacher(null);
-            if (subject) {
-                // เมื่อเลือก "ไม่ระบุ" ให้ล้างข้อมูลอาจารย์โดยไม่ต้องมีเงื่อนไข
-                subject.teacher = null;
-                subject.teacherId = null;
-            }
+        } catch (error) {
+            console.error("Error fetching teachers:", error);
+            setTeachers([]);
+        } finally {
+            setLoadingTeachers(false);
         }
-    }, [selectedTeacherId, teachers, subject]);
+    };
 
-    // อัปเดต section
-    useEffect(() => {
-        if (subject) {
-            subject.section = section || null;
-        }
-    }, [section, subject]);
-
-    // โหลดข้อมูลห้องและอาจารย์เมื่อเปิด Dialog
+    // โหลดข้อมูลเมื่อเปิด Dialog
     useEffect(() => {
         if (open && subject) {
+            console.log("=== AddSubDetail Opening ===");
+            console.log("Subject:", {
+                id: subject.id,
+                subjectName: subject.subjectName,
+                dep: subject.dep,
+                roomId: subject.roomId,
+                teacherId: subject.teacherId,
+                section: subject.section
+            });
+
+            // เก็บข้อมูลเดิมไว้สำหรับกรณียกเลิก
+            setOriginalData({
+                roomId: subject.roomId || null,
+                teacherId: subject.teacherId || null,
+                section: subject.section || null,
+                room: subject.room || null,
+                teacher: subject.teacher || null
+            });
+
+            // ตั้งค่า state ตามข้อมูลปัจจุบัน
             setSelectedRoomId(subject.roomId ? String(subject.roomId) : "NONE");
             setSelectedTeacherId(subject.teacherId ? String(subject.teacherId) : "null");
             setSection(subject.section || "");
             setSelectedRoom(subject.room || null);
             setSelectedTeacher(subject.teacher || null);
-            setError(null);
 
-            // โหลดข้อมูลห้องเรียน
-            const fetchRooms = async () => {
+            console.log("Initial state set:", {
+                selectedRoomId: subject.roomId ? String(subject.roomId) : "NONE",
+                selectedTeacherId: subject.teacherId ? String(subject.teacherId) : "null",
+                section: subject.section || ""
+            });
+
+            // โหลดข้อมูลล่าสุดจาก database
+            const loadFreshData = async () => {
                 try {
-                    const res = await fetch("/api/room");
+                    setLoadingSection(true);
+
+                    console.log("Loading fresh data for subject:", subject.id);
+                    const res = await fetch(`/api/subject/${subject.id}`);
+
                     if (res.ok) {
-                        const data = await res.json();
-                        // กรองเฉพาะห้องที่อยู่ในอาคารที่กำหนด
-                        const filteredRooms = data.filter((room: Room) =>
-                            room.roomType === "อาคารสาขาวิศวกรรมคอมพิวเตอร์" ||
-                            room.roomType === "ตึกวิศวกรรมศาสตร์"
-                        );
-                        setRooms(filteredRooms);
+                        const freshData = await res.json();
+                        console.log("Fresh data received:", {
+                            id: freshData.id,
+                            section: freshData.section,
+                            roomId: freshData.roomId,
+                            teacherId: freshData.teacherId,
+                            room: freshData.room,
+                            teacher: freshData.teacher
+                        });
+
+                        // อัปเดต state ด้วยข้อมูลล่าสุด
+                        setSelectedRoomId(freshData.roomId ? String(freshData.roomId) : "NONE");
+                        setSelectedTeacherId(freshData.teacherId ? String(freshData.teacherId) : "null");
+                        setSection(freshData.section || "");
+                        setSelectedRoom(freshData.room || null);
+                        setSelectedTeacher(freshData.teacher || null);
+
+                        // อัปเดตข้อมูลเดิมด้วยข้อมูลล่าสุด
+                        setOriginalData({
+                            roomId: freshData.roomId || null,
+                            teacherId: freshData.teacherId || null,
+                            section: freshData.section || null,
+                            room: freshData.room || null,
+                            teacher: freshData.teacher || null
+                        });
+
+                        console.log("State updated with fresh data");
                     }
                 } catch (error) {
-                    console.error("Failed to fetch rooms:", error);
+                    console.error("Failed to load fresh data:", error);
+                } finally {
+                    setLoadingSection(false);
                 }
             };
 
-            // โหลดข้อมูลอาจารย์
-            const fetchTeachers = async () => {
-                try {
-                    // ดึงเฉพาะอาจารย์ภายในสาขา
-                    const res = await fetch("/api/teacher?inDepartment=true");
-                    if (res.ok) {
-                        const data = await res.json();
-                        setTeachers(data);
-
-                        // ถ้ามีอาจารย์อยู่แล้ว ให้เช็คว่าอาจารย์คนนั้นอยู่ในรายการที่โหลดมาหรือไม่
-                        if (subject.teacherId) {
-                            const currentTeacher = data.find((t: Teacher) => t.id === subject.teacherId);
-                            if (currentTeacher) {
-                                // ถ้าอาจารย์ปัจจุบันอยู่ในรายการ ให้เซ็ตค่า selectedTeacher
-                                setSelectedTeacher(currentTeacher);
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error("Failed to fetch teachers:", error);
-                }
-            };
-
-            // เพิ่มฟังก์ชันดึงข้อมูล section จาก timetable_tb
-            const fetchTimetableSection = async () => {
-                if (subject.id) {
-                    try {
-                        setLoadingSection(true);
-                        const res = await fetch(`/api/timetable?planId=${subject.id}`);
-                        if (res.ok) {
-                            const timetableData = await res.json();
-                            // ถ้ามีข้อมูลในตาราง timetable และมี section
-                            if (timetableData.length > 0 && timetableData[0].section) {
-                                setSection(timetableData[0].section);
-                                // อัปเดต section ในอ็อบเจกต์ subject ด้วย
-                                if (subject) {
-                                    subject.section = timetableData[0].section;
-                                }
-                            }
-                        }
-                    } catch (error) {
-                        console.error("Failed to fetch timetable section:", error);
-                    } finally {
-                        setLoadingSection(false);
-                    }
-                }
-            };
-
+            // เริ่มโหลดข้อมูลทั้งหมดพร้อมกัน
+            loadFreshData();
             fetchRooms();
             fetchTeachers();
-            fetchTimetableSection(); // เรียกฟังก์ชันใหม่
+            setError(null);
         }
-    }, [open, subject]);
+    }, [open, subject?.id]);
 
-    // แก้ไขเมื่อกดปุ่มบันทึก - ไม่ต้องส่ง API
+    // ฟังก์ชันจัดการการเลือกห้อง
+    const handleRoomChange = (value: string) => {
+        console.log("Room selection changed:", value);
+        setSelectedRoomId(value);
+
+        if (value === "NONE") {
+            setSelectedRoom(null);
+        } else if (value !== "no-rooms") {
+            const room = rooms.find(r => r.id === parseInt(value));
+            if (room) {
+                setSelectedRoom(room);
+                console.log("Room selected:", room);
+            }
+        }
+    };
+
+    // ฟังก์ชันจัดการการเลือกอาจารย์
+    const handleTeacherChange = (value: string) => {
+        console.log("Teacher selection changed:", value);
+        setSelectedTeacherId(value);
+
+        if (value === "null") {
+            setSelectedTeacher(null);
+        } else if (value !== "no-teachers") {
+            const teacher = teachers.find(t => t.id === parseInt(value));
+            if (teacher) {
+                setSelectedTeacher(teacher);
+                console.log("Teacher selected:", teacher);
+            }
+        }
+    };
+
+    // ฟังก์ชันสำหรับยกเลิก - คืนค่าข้อมูลเดิม
+    const handleCancel = () => {
+        if (subject && originalData) {
+            console.log("Cancelling - restoring original data:", originalData);
+
+            // คืนค่าข้อมูลเดิมให้ subject object
+            Object.assign(subject, {
+                roomId: originalData.roomId,
+                teacherId: originalData.teacherId,
+                section: originalData.section,
+                room: originalData.room,
+                teacher: originalData.teacher
+            });
+
+            console.log("Subject restored to:", {
+                id: subject.id,
+                roomId: subject.roomId,
+                teacherId: subject.teacherId,
+                section: subject.section,
+                room: subject.room,
+                teacher: subject.teacher
+            });
+        }
+
+        // รีเซ็ต state
+        setSelectedRoomId(null);
+        setSelectedTeacherId(null);
+        setSelectedRoom(null);
+        setSelectedTeacher(null);
+        setSection("");
+        setError(null);
+        setOriginalData(null);
+
+        // ปิด dialog
+        setOpen(false);
+
+        // เรียก callback เพื่ออัปเดต UI
+        if (onUpdate) {
+            setTimeout(() => {
+                onUpdate();
+            }, 100);
+        }
+    };
+
+    // แก้ไขเมื่อกดปุ่มบันทึก
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!subject) {
@@ -207,31 +302,15 @@ export default function AddSubDetail({ subject, onUpdate }: {
         try {
             setLoading(true);
 
-            // อัปเดตข้อมูลใน subject object
-            if (selectedRoom) {
-                subject.room = selectedRoom;
-                subject.roomId = selectedRoom.id;
-            } else {
-                subject.room = null;
-                subject.roomId = null;
-            }
+            const submitData = {
+                roomId: selectedRoom?.id || null,
+                teacherId: selectedTeacher?.id || null,
+                section: section || null
+            };
 
-            if (selectedTeacher) {
-                subject.teacher = selectedTeacher;
-                subject.teacherId = selectedTeacher.id;
-            } else {
-                subject.teacher = null;
-                subject.teacherId = null;
-            }
-
-            subject.section = section || null;
-
-            console.log("ข้อมูลที่จะส่งไปอัปเดต:", {
-                id: subject.id,
-                roomId: subject.roomId,
-                teacherId: subject.teacherId,
-                section: subject.section
-            });
+            console.log("=== Submitting AddSubDetail ===");
+            console.log("Subject ID:", subject.id);
+            console.log("Submit data:", submitData);
 
             // บันทึกการเปลี่ยนแปลงลงฐานข้อมูล
             const updateResponse = await fetch(`/api/subject/${subject.id}`, {
@@ -239,41 +318,49 @@ export default function AddSubDetail({ subject, onUpdate }: {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    roomId: subject.roomId,
-                    teacherId: subject.teacherId,
-                    section: subject.section
-                }),
+                body: JSON.stringify(submitData),
             });
 
             if (!updateResponse.ok) {
-                const errorText = await updateResponse.text();
-                throw new Error(`การอัปเดตข้อมูลล้มเหลว: ${errorText}`);
+                const errorData = await updateResponse.json();
+                throw new Error(errorData.error || 'การอัปเดตข้อมูลล้มเหลว');
             }
 
             const updatedData = await updateResponse.json();
-            console.log("อัปเดตข้อมูลสำเร็จ:", updatedData);
-            // Add this logging to confirm section is correctly updated
-            console.log("Section after update:", updatedData.section);
+            console.log("Update response received:", updatedData);
+
+            // อัปเดต subject object ทันทีด้วยข้อมูลที่ได้รับจาก API
+            Object.assign(subject, {
+                roomId: updatedData.roomId,
+                teacherId: updatedData.teacherId,
+                section: updatedData.section,
+                room: updatedData.room,
+                teacher: updatedData.teacher
+            });
+
+            console.log("Subject object updated:", {
+                id: subject.id,
+                section: subject.section,
+                roomId: subject.roomId,
+                teacherId: subject.teacherId,
+                room: subject.room,
+                teacher: subject.teacher
+            });
+
+            // รีเซ็ต state
+            setOriginalData(null);
 
             // ปิด dialog
             setOpen(false);
 
-            // Force a refresh of the subject data to ensure section is loaded
-            try {
-                const refreshResponse = await fetch(`/api/subject/${subject.id}`);
-                if (refreshResponse.ok) {
-                    const refreshedData = await refreshResponse.json();
-                    // Update the local subject object with refreshed data
-                    Object.assign(subject, refreshedData);
-                    console.log("Subject refreshed:", subject);
-                }
-            } catch (error) {
-                console.error("Failed to refresh subject data:", error);
-            }
-
             // เรียก callback เพื่ออัปเดต UI
-            if (onUpdate) onUpdate();
+            setTimeout(() => {
+                if (onUpdate) {
+                    console.log("Calling onUpdate callback");
+                    onUpdate();
+                }
+            }, 100);
+
         } catch (error: any) {
             console.error("Submit Error:", error);
             setError(error.message || "เกิดข้อผิดพลาดในการดำเนินการ");
@@ -290,17 +377,21 @@ export default function AddSubDetail({ subject, onUpdate }: {
     }, [subject, open]);
 
     if (!subject) {
-        return null; // ไม่แสดงอะไรถ้า subject เป็น undefined
+        return null;
     }
 
     return (
-        <Dialog open={open} onOpenChange={(newOpen) => {
-            // เมื่อปิด dialog แบบคลิกข้างนอก ให้เรียก callback
-            if (open && !newOpen && onUpdate) {
-                onUpdate();
-            }
-            setOpen(newOpen);
-        }}>
+        <Dialog
+            open={open}
+            onOpenChange={(newOpen) => {
+                if (!newOpen) {
+                    // เมื่อปิด dialog (ไม่ว่าจะด้วยวิธีไหน) ให้เรียก handleCancel
+                    handleCancel();
+                } else {
+                    setOpen(newOpen);
+                }
+            }}
+        >
             <DialogTrigger asChild>
                 <Button variant="ghost"><PlusCircle color="#00ff00" /></Button>
             </DialogTrigger>
@@ -314,6 +405,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
 
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-4 py-4">
+                        {/* ห้องเรียน */}
                         <div className="grid gap-3">
                             <Label htmlFor="room">ห้องเรียน</Label>
                             {subject.dep === "นอกสาขา" ? (
@@ -325,26 +417,42 @@ export default function AddSubDetail({ subject, onUpdate }: {
                             ) : (
                                 <Select
                                     value={selectedRoomId || "NONE"}
-                                    onValueChange={setSelectedRoomId}
+                                    onValueChange={handleRoomChange}
+                                    disabled={loadingRooms}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="เลือกห้องเรียน" />
+                                        <SelectValue
+                                            placeholder={loadingRooms ? "กำลังโหลดห้องเรียน..." : "เลือกห้องเรียน"}
+                                        />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="NONE">ไม่ระบุ</SelectItem>
-                                        {rooms.map((room) => (
-                                            <SelectItem key={room.id} value={String(room.id)}>
-                                                {room.roomCode} ({room.roomType})
-                                            </SelectItem>
-                                        ))}
+                                        {rooms.length > 0 ? (
+                                            rooms.map((room) => (
+                                                <SelectItem key={room.id} value={String(room.id)}>
+                                                    {room.roomCode} ({room.roomType})
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            !loadingRooms && (
+                                                <SelectItem value="no-rooms" disabled>
+                                                    ไม่พบข้อมูลห้องเรียน
+                                                </SelectItem>
+                                            )
+                                        )}
                                     </SelectContent>
                                 </Select>
                             )}
+                            {loadingRooms && (
+                                <div className="text-xs text-muted-foreground">
+                                    กำลังโหลดข้อมูลห้องเรียน...
+                                </div>
+                            )}
                         </div>
 
+                        {/* อาจารย์ */}
                         <div className="grid gap-3">
                             <Label htmlFor="teacher">อาจารย์</Label>
-                            {/* แก้ไขเงื่อนไขการแสดง select อาจารย์ ให้เปลี่ยนแปลงได้เสมอ ยกเว้นวิชานอกสาขา */}
                             {subject.dep === "นอกสาขา" ? (
                                 <Input
                                     value={subject.teacher ? `${subject.teacher.tName} ${subject.teacher.tLastName}` : "ไม่ระบุ"}
@@ -354,23 +462,40 @@ export default function AddSubDetail({ subject, onUpdate }: {
                             ) : (
                                 <Select
                                     value={selectedTeacherId || "null"}
-                                    onValueChange={setSelectedTeacherId}
+                                    onValueChange={handleTeacherChange}
+                                    disabled={loadingTeachers}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="เลือกอาจารย์" />
+                                        <SelectValue
+                                            placeholder={loadingTeachers ? "กำลังโหลดอาจารย์..." : "เลือกอาจารย์"}
+                                        />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="null">ไม่ระบุ</SelectItem>
-                                        {teachers.map((teacher) => (
-                                            <SelectItem key={teacher.id} value={String(teacher.id)}>
-                                                {teacher.tName} {teacher.tLastName}
-                                            </SelectItem>
-                                        ))}
+                                        {teachers.length > 0 ? (
+                                            teachers.map((teacher) => (
+                                                <SelectItem key={teacher.id} value={String(teacher.id)}>
+                                                    {teacher.tName} {teacher.tLastName}
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            !loadingTeachers && (
+                                                <SelectItem value="no-teachers" disabled>
+                                                    ไม่พบข้อมูลอาจารย์
+                                                </SelectItem>
+                                            )
+                                        )}
                                     </SelectContent>
                                 </Select>
                             )}
+                            {loadingTeachers && (
+                                <div className="text-xs text-muted-foreground">
+                                    กำลังโหลดข้อมูลอาจารย์...
+                                </div>
+                            )}
                         </div>
 
+                        {/* Section */}
                         <div className="grid gap-3">
                             <Label htmlFor="section">Section</Label>
                             <div className="relative">
@@ -384,7 +509,6 @@ export default function AddSubDetail({ subject, onUpdate }: {
                                     onChange={(e) => setSection(e.target.value)}
                                     placeholder={loadingSection ? "กำลังโหลดข้อมูล..." : "ระบุ section (ตัวเลข)"}
                                     disabled={loadingSection}
-
                                 />
                             </div>
                         </div>
@@ -393,28 +517,25 @@ export default function AddSubDetail({ subject, onUpdate }: {
 
                         {subject.dep === "นอกสาขา" && (
                             <div className="text-xs text-muted-foreground mt-2 border-t pt-2">
-                                หมายเหตุ: จำเป็นต้องระบุห้องเรียนและอาจารย์ที่สอนสำหรับวิชานอกสาขา
+                                หมายเหตุ: วิชานอกสาขาไม่สามารถแก้ไขห้องเรียนและอาจารย์ได้
                             </div>
                         )}
                     </div>
                     <DialogFooter>
-                        <DialogClose asChild>
-                            <Button
-                                variant="outline"
-                                type="button"
-                                onClick={() => {
-                                    if (onUpdate) onUpdate(); // เรียก callback เมื่อกดยกเลิก
-                                }}
-                                disabled={loading}
-                            >
-                                ยกเลิก
-                            </Button>
-                        </DialogClose>
-                        <Button type="submit" disabled={loading}>
+                        <Button
+                            variant="outline"
+                            type="button"
+                            onClick={handleCancel}
+                            disabled={loading}
+                        >
+                            ยกเลิก
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={loading || loadingRooms || loadingTeachers}
+                        >
                             {loading ? (
-                                <>
-                                    กำลังบันทึก...
-                                </>
+                                <>กำลังบันทึก...</>
                             ) : (
                                 'ตกลง'
                             )}

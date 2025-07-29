@@ -1,161 +1,165 @@
-import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server"
+import { PrismaClient } from "@prisma/client"
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
-export async function DELETE(
-    request: NextRequest,
-    context: { params: Promise<{ id: string }> }
-) {
-    const { id } = await context.params;
-    try {
-        const numId = Number(id);
-        if (isNaN(numId)) {
-            return NextResponse.json({ error: "Invalid id" }, { status: 400 });
-        }
-
-        const deleted = await prisma.plans_tb.delete({
-            where: { id: numId },
-        });
-
-        return NextResponse.json(deleted, { status: 200 });
-    } catch (error: any) {
-        return NextResponse.json(
-            { error: error.message || "เกิดข้อผิดพลาด" },
-            { status: 500 }
-        );
-    }
-}
-
-export async function PUT(
-    request: NextRequest,
-    context: { params: Promise<{ id: string }> }
+// PATCH method - อัปเดตข้อมูลวิชา
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> } // เปลี่ยนเป็น Promise
 ) {
     try {
-        const { id } = await context.params;
-        const numId = Number(id);
-        if (isNaN(numId)) {
-            return NextResponse.json({ error: "Invalid id" }, { status: 400 });
-        }
-
+        const resolvedParams = await params; // await params
+        const id = parseInt(resolvedParams.id);
         const body = await request.json();
-        const {
-            subjectCode,
-            subjectName,
-            credit,
-            lectureHour,
-            labHour,
-            termYear,
-            yearLevel,
-            planType,
-            dep
-        } = body;
 
-        if (
-            !subjectCode ||
-            !subjectName ||
-            credit == null || credit === '' ||
-            lectureHour == null || lectureHour === '' ||
-            labHour == null || labHour === '' ||
-            !termYear ||
-            !yearLevel ||
-            !planType ||
-            (dep !== "นอกสาขา" && dep !== "วิชาในสาขา")
-        ) {
-            return NextResponse.json(
-                { error: "กรุณากรอกข้อมูลให้ครบถ้วน" },
-                { status: 400 }
-            );
-        }
+        console.log("PATCH - Updating subject:", id, "with data:", body);
 
-        const updatedSubject = await prisma.plans_tb.update({
-            where: { id: numId },
-            data: {
-                subjectCode,
-                subjectName,
-                credit: Number(credit),
-                lectureHour: Number(lectureHour),
-                labHour: Number(labHour),
-                yearLevel,
-                planType,
-                termYear,
-                dep
+        // ตรวจสอบข้อมูลก่อนอัปเดต
+        const existingSubject = await prisma.plans_tb.findUnique({
+            where: { id },
+            include: {
+                room: true,
+                teacher: true,
             },
         });
 
-        return NextResponse.json(updatedSubject, { status: 200 });
-    } catch (error: any) {
-        return NextResponse.json(
-            { error: error.message || "เกิดข้อผิดพลาด" },
-            { status: 500 }
-        );
-    }
-}
-
-export async function PATCH(
-    req: NextRequest,
-    context: { params: { id: string } }
-) {
-    try {
-        const id = context.params.id;
-        const subjectId = parseInt(id);
-
-        if (isNaN(subjectId)) {
+        if (!existingSubject) {
             return NextResponse.json(
-                { error: "รหัสวิชาไม่ถูกต้อง" },
-                { status: 400 }
+                { error: "ไม่พบข้อมูลวิชาที่ระบุ" },
+                { status: 404 }
             );
         }
 
-        // รับข้อมูลที่จะอัปเดต
-        const data = await req.json();
-
-        // สร้าง object เฉพาะฟิลด์ที่ต้องการอัปเดต
-        const updateData: any = {};
-
-        // เพิ่มข้อมูล roomId และ teacherId ตามที่ระบุ
-        if (data.hasOwnProperty('roomId')) {
-            updateData.roomId = data.roomId;
-        }
-
-        if (data.hasOwnProperty('teacherId')) {
-            updateData.teacherId = data.teacherId;
-        }
-
-        // เพิ่มการอัปเดตฟิลด์ section ในตาราง Plans_tb
-        if (data.hasOwnProperty('section')) {
-            updateData.section = data.section;
-        }
-
-        console.log("อัปเดตข้อมูล Plans_tb:", {
-            subjectId,
-            updateData
+        console.log("Existing subject data:", {
+            id: existingSubject.id,
+            subjectCode: existingSubject.subjectCode,
+            currentRoomId: existingSubject.roomId,
+            currentTeacherId: existingSubject.teacherId,
+            currentSection: existingSubject.section
         });
 
-        // อัปเดตข้อมูลในตาราง Plans_tb
+        // อัปเดตข้อมูล
         const updatedSubject = await prisma.plans_tb.update({
-            where: { id: subjectId },
-            data: updateData,
+            where: { id },
+            data: {
+                roomId: body.roomId === null || body.roomId === "null" ? null : body.roomId,
+                teacherId: body.teacherId === null || body.teacherId === "null" ? null : body.teacherId,
+                section: body.section === null || body.section === "" ? null : body.section,
+            },
             include: {
                 room: true,
-                teacher: true
-            }
+                teacher: true,
+            },
         });
 
-        // ถ้ามีการอัปเดต section ให้อัปเดต Timetable_tb ด้วย
-        if (data.hasOwnProperty('section')) {
-            // อัปเดตทุกรายการในตาราง Timetable_tb ที่เกี่ยวข้องกับ planId นี้
-            await prisma.timetable_tb.updateMany({
-                where: { planId: subjectId },
-                data: { section: data.section }
-            });
-        }
+        console.log("PATCH - Subject updated successfully:", {
+            id: updatedSubject.id,
+            subjectCode: updatedSubject.subjectCode,
+            subjectName: updatedSubject.subjectName,
+            section: updatedSubject.section,
+            roomId: updatedSubject.roomId,
+            teacherId: updatedSubject.teacherId,
+            room: updatedSubject.room ? {
+                id: updatedSubject.room.id,
+                roomCode: updatedSubject.room.roomCode,
+                roomType: updatedSubject.room.roomType
+            } : null,
+            teacher: updatedSubject.teacher ? {
+                id: updatedSubject.teacher.id,
+                tName: updatedSubject.teacher.tName,
+                tLastName: updatedSubject.teacher.tLastName
+            } : null
+        });
 
         return NextResponse.json(updatedSubject);
-    } catch (error: any) {
-        console.error("Error updating subject:", error);
+    } catch (error) {
+        console.error("PATCH - Error updating subject:", error);
         return NextResponse.json(
-            { error: error.message || "เกิดข้อผิดพลาดในการอัปเดตข้อมูล" },
+            { error: "Failed to update subject" },
+            { status: 500 }
+        );
+    } finally {
+        await prisma.$disconnect();
+    }
+}
+
+// GET method สำหรับดึงข้อมูลวิชาเดี่ยว
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> } // เปลี่ยนเป็น Promise
+) {
+    try {
+        const resolvedParams = await params; // await params
+        const id = parseInt(resolvedParams.id);
+
+        console.log("GET - Fetching subject:", id);
+
+        const subject = await prisma.plans_tb.findUnique({
+            where: { id },
+            include: {
+                room: true,
+                teacher: true,
+            },
+        });
+
+        if (!subject) {
+            return NextResponse.json(
+                { error: "ไม่พบข้อมูลวิชาที่ระบุ" },
+                { status: 404 }
+            );
+        }
+
+        console.log("GET - Subject found:", {
+            id: subject.id,
+            subjectCode: subject.subjectCode,
+            section: subject.section,
+            roomId: subject.roomId,
+            teacherId: subject.teacherId,
+            room: subject.room,
+            teacher: subject.teacher
+        });
+
+        return NextResponse.json(subject);
+    } catch (error) {
+        console.error("GET - Error fetching subject:", error);
+        return NextResponse.json(
+            { error: "Failed to fetch subject" },
+            { status: 500 }
+        );
+    } finally {
+        await prisma.$disconnect();
+    }
+}
+
+// DELETE method (ถ้าต้องการ)
+export async function DELETE(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> } // เปลี่ยนเป็น Promise
+) {
+    try {
+        const resolvedParams = await params; // await params
+        const id = parseInt(resolvedParams.id);
+
+        console.log("DELETE - Deleting subject:", id);
+
+        // ลบข้อมูลตารางเรียนที่เกี่ยวข้องก่อน
+        await prisma.timetable_tb.deleteMany({
+            where: { planId: id }
+        });
+
+        // ลบข้อมูลวิชา
+        const deletedSubject = await prisma.plans_tb.delete({
+            where: { id }
+        });
+
+        console.log("DELETE - Subject deleted successfully:", deletedSubject.id);
+
+        return NextResponse.json({ success: true, deletedSubject });
+    } catch (error) {
+        console.error("DELETE - Error deleting subject:", error);
+        return NextResponse.json(
+            { error: "Failed to delete subject" },
             { status: 500 }
         );
     } finally {

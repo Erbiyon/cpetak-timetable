@@ -1,87 +1,123 @@
-import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server"
+import { PrismaClient } from "@prisma/client"
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
-export async function POST(request: NextRequest) {
+// ถ้ามี dynamic route ให้แก้ไขแบบเดียวกัน
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ id?: string }> } // ถ้ามี params
+) {
     try {
-        const { subjectId, splitData } = await request.json();
+        // ถ้ามี params ให้ await
+        // const resolvedParams = await params;
 
-        // ตรวจสอบข้อมูลที่จำเป็น
-        if (!subjectId || !splitData || !splitData.part1 || !splitData.part2) {
-            return NextResponse.json(
-                { error: "Missing required data" },
-                { status: 400 }
-            );
+        const { subjectId, splitData } = await request.json()
+
+        // ค้นหาวิชาต้นฉบับ
+        const originalSubject = await prisma.plans_tb.findUnique({
+            where: { id: subjectId },
+            include: {
+                room: true,
+                teacher: true
+            }
+        })
+
+        if (!originalSubject) {
+            return NextResponse.json({ error: "ไม่พบวิชาที่ระบุ" }, { status: 404 })
         }
 
-        // ใช้ transaction เพื่อให้การทำงานทั้งหมดเป็น atomic operation
-        const result = await prisma.$transaction(async (tx) => {
-            // 1. ดึงข้อมูลวิชาที่จะแบ่ง
-            const subjectToSplit = await tx.plans_tb.findUnique({
-                where: { id: subjectId },
-                include: {
-                    timetables: true, // ดึงข้อมูลตารางเวลาด้วย
-                }
-            });
+        console.log("Original subject data:", {
+            id: originalSubject.id,
+            roomId: originalSubject.roomId,
+            teacherId: originalSubject.teacherId,
+            section: originalSubject.section,
+            room: originalSubject.room,
+            teacher: originalSubject.teacher
+        })
 
-            if (!subjectToSplit) {
-                throw new Error("Subject not found");
+        // ดึงชื่อวิชาเดิม (ตัด "(ส่วนที่ X)" ออกถ้ามี)
+        const baseSubjectName = originalSubject.subjectName.replace(/\s*\(ส่วนที่ \d+\)\s*$/, '')
+
+        // หาเลขส่วนปัจจุบัน
+        const currentPartMatch = originalSubject.subjectName.match(/\(ส่วนที่ (\d+)\)$/)
+        const currentPartNumber = currentPartMatch ? parseInt(currentPartMatch[1], 10) : 1
+
+        const { part1, part2 } = splitData
+
+        // ลบข้อมูลตารางเรียนเดิมก่อน (ถ้ามี)
+        await prisma.timetable_tb.deleteMany({
+            where: { planId: subjectId }
+        })
+
+        // อัปเดตวิชาส่วนแรก - คงข้อมูล room, teacher, section เดิม
+        const updatedSubject = await prisma.plans_tb.update({
+            where: { id: subjectId },
+            data: {
+                subjectName: `${baseSubjectName} (ส่วนที่ ${part1.partNumber})`,
+                lectureHour: part1.lectureHour,
+                labHour: part1.labHour,
+                // *** คงข้อมูลเดิม ***
+                roomId: originalSubject.roomId,
+                teacherId: originalSubject.teacherId,
+                section: originalSubject.section
+            },
+            include: {
+                room: true,
+                teacher: true
             }
+        })
 
-            // 2. ดึงชื่อวิชาเดิมออกมา (ตัด "(ส่วนที่ X)" ออก ถ้ามี)
-            const baseSubjectName = subjectToSplit.subjectName.replace(/\s*\(ส่วนที่ \d+\)\s*$/, '');
-
-            // 3. สร้างชื่อใหม่สำหรับทั้งสองส่วน
-            const part1Name = `${baseSubjectName} (ส่วนที่ ${splitData.part1.partNumber})`;
-            const part2Name = `${baseSubjectName} (ส่วนที่ ${splitData.part2.partNumber})`;
-
-            // 4. อัปเดตวิชาเดิมเป็นส่วนที่ 1
-            const updatedSubject = await tx.plans_tb.update({
-                where: { id: subjectId },
-                data: {
-                    subjectName: part1Name,
-                    lectureHour: splitData.part1.lectureHour,
-                    labHour: splitData.part1.labHour
-                }
-            });
-
-            // 5. สร้างวิชาใหม่เป็นส่วนที่ 2
-            const newSubject = await tx.plans_tb.create({
-                data: {
-                    subjectCode: subjectToSplit.subjectCode,
-                    subjectName: part2Name,
-                    credit: subjectToSplit.credit,
-                    lectureHour: splitData.part2.lectureHour,
-                    labHour: splitData.part2.labHour,
-                    termYear: subjectToSplit.termYear,
-                    yearLevel: subjectToSplit.yearLevel,
-                    planType: subjectToSplit.planType,
-                    dep: subjectToSplit.dep,
-                    roomId: subjectToSplit.roomId,
-                    teacherId: subjectToSplit.teacherId,
-                    section: subjectToSplit.section
-                }
-            });
-
-            // 6. ลบข้อมูลตารางเดิมที่อาจมีอยู่
-            if (subjectToSplit.timetables && subjectToSplit.timetables.length > 0) {
-                await tx.timetable_tb.deleteMany({
-                    where: { planId: subjectId }
-                });
+        // สร้างวิชาส่วนที่สอง - คัดลอกข้อมูล room, teacher, section จากวิชาเดิม
+        const newSubject = await prisma.plans_tb.create({
+            data: {
+                subjectCode: originalSubject.subjectCode,
+                subjectName: `${baseSubjectName} (ส่วนที่ ${part2.partNumber})`,
+                credit: originalSubject.credit,
+                lectureHour: part2.lectureHour,
+                labHour: part2.labHour,
+                termYear: originalSubject.termYear,
+                yearLevel: originalSubject.yearLevel,
+                planType: originalSubject.planType,
+                dep: originalSubject.dep,
+                // *** คัดลอกข้อมูลจากวิชาเดิม ***
+                roomId: originalSubject.roomId,
+                teacherId: originalSubject.teacherId,
+                section: originalSubject.section
+            },
+            include: {
+                room: true,
+                teacher: true
             }
+        })
 
-            return { updatedSubject, newSubject };
-        });
+        console.log("Split results:", {
+            updated: {
+                id: updatedSubject.id,
+                name: updatedSubject.subjectName,
+                roomId: updatedSubject.roomId,
+                teacherId: updatedSubject.teacherId,
+                section: updatedSubject.section
+            },
+            new: {
+                id: newSubject.id,
+                name: newSubject.subjectName,
+                roomId: newSubject.roomId,
+                teacherId: newSubject.teacherId,
+                section: newSubject.section
+            }
+        })
 
-        // ส่งข้อมูลวิชาทั้งสองส่วนกลับไป
-        return NextResponse.json(result);
+        return NextResponse.json({
+            success: true,
+            updatedSubject,
+            newSubject
+        })
 
-    } catch (error: any) {
-        console.error("Error in split API:", error);
-        return NextResponse.json(
-            { error: error.message || "Failed to split subject" },
-            { status: 500 }
-        );
+    } catch (error) {
+        console.error("Error splitting subject:", error)
+        return NextResponse.json({ error: "เกิดข้อผิดพลาดในการแบ่งวิชา" }, { status: 500 })
+    } finally {
+        await prisma.$disconnect()
     }
 }

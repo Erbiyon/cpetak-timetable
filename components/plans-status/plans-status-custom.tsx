@@ -8,7 +8,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ConflictDetails } from "../conflict-details/conflict-details";
 
 type SplitData = {
@@ -23,6 +23,7 @@ type ConflictType = {
     maxConsecutive?: number;
 };
 
+// เพิ่ม prop ใหม่ใน interface
 interface PlansStatusCustomProps {
     termYear: string;
     yearLevel?: string;
@@ -32,13 +33,14 @@ interface PlansStatusCustomProps {
     assignedCount?: number;
     onRemoveAssignment?: ((subjectId: number) => void | null | Promise<void>) | undefined;
     onSplitSubject?: (subjectId: number, splitData: SplitData) => void;
+    onMergeSubject?: (subjectId: number) => void; // เพิ่ม prop ใหม่
     conflicts?: Array<{
         type: string;
         message: string;
         conflicts?: any[];
         maxConsecutive?: number;
     }>;
-    onSubjectUpdate?: () => void; // เพิ่ม prop นี้ใน PlansStatusCustomProps
+    onSubjectUpdate?: () => void;
 }
 
 export default function PlansStatusCustom({
@@ -50,8 +52,9 @@ export default function PlansStatusCustom({
     assignedCount = 0,
     onRemoveAssignment = undefined,
     onSplitSubject,
+    onMergeSubject, // เพิ่มใน props ที่รับ
     conflicts = [],
-    onSubjectUpdate, // เพิ่มใน props ที่รับ
+    onSubjectUpdate,
 }: PlansStatusCustomProps) {
     // เพิ่ม log เพื่อดูค่าที่ได้รับ
     console.log("PlansStatusCustom received:", { termYear, yearLevel, planType, plansCount: plans.length });
@@ -152,7 +155,8 @@ export default function PlansStatusCustom({
                                 key={plan.id}
                                 subject={plan}
                                 onSplitSubject={handleSplitSubjectAdapter}
-                                onUpdate={onSubjectUpdate} // ส่ง callback ไป
+                                onMergeSubject={onMergeSubject} // ส่ง prop ตรงๆ
+                                onUpdate={onSubjectUpdate}
                             />
                         ))}
                     </div>
@@ -199,15 +203,29 @@ export default function PlansStatusCustom({
 function SubjectCard({
     subject,
     onSplitSubject,
+    onMergeSubject,
     onUpdate
 }: {
     subject: any;
-    onSplitSubject?: ((subjectId: number, splitData: {
-        part1: { lectureHour: number; labHour: number };
-        part2: { lectureHour: number; labHour: number };
-    }) => void) | null;
+    onSplitSubject?: ((subjectId: number, splitData: any) => void) | null;
+    onMergeSubject?: (subjectId: number) => void;
     onUpdate?: () => void;
 }) {
+    // เพิ่ม state เพื่อ force re-render
+    const [updateTrigger, setUpdateTrigger] = useState(0);
+
+    // Debug การ render
+    useEffect(() => {
+        console.log("SubjectCard render:", {
+            id: subject.id,
+            subjectCode: subject.subjectCode,
+            section: subject.section,
+            room: subject.room?.roomCode || "ไม่ระบุ",
+            teacher: subject.teacher ? `${subject.teacher.tName} ${subject.teacher.tLastName}` : "ไม่ระบุ",
+            updateTrigger
+        });
+    }, [subject, updateTrigger]);
+
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `subject-${subject.id}`,
         data: {
@@ -228,6 +246,49 @@ function SubjectCard({
         setOpenTooltip(false); // ปิด tooltip ทันที
     };
 
+    // แก้ไขฟังก์ชัน handleMergeSubjectWithRefresh
+    const handleMergeSubjectWithRefresh = async (subjectId: number) => {
+        if (onMergeSubject) {
+            try {
+                await onMergeSubject(subjectId);
+
+                // Force re-render และเรียก parent update
+                setUpdateTrigger(prev => prev + 1);
+
+                // รอให้ state อัปเดตแล้ว refresh อีกครั้ง
+                setTimeout(() => {
+                    if (onUpdate) {
+                        onUpdate();
+                    }
+                }, 500);
+            } catch (error) {
+                console.error("Error in handleMergeSubjectWithRefresh:", error);
+            }
+        }
+    };
+
+    // แก้ไข callback สำหรับ AddSubDetail
+    const handleAddSubDetailUpdate = () => {
+        console.log("=== AddSubDetail Update Callback ===");
+        console.log("Subject after update:", {
+            id: subject.id,
+            section: subject.section,
+            room: subject.room,
+            teacher: subject.teacher
+        });
+
+        // Force re-render
+        setUpdateTrigger(prev => prev + 1);
+
+        // เรียก parent update
+        if (onUpdate) {
+            setTimeout(() => {
+                console.log("Calling parent onUpdate");
+                onUpdate();
+            }, 200);
+        }
+    };
+
     return (
         <TooltipProvider delayDuration={300}>
             <Tooltip open={openTooltip} onOpenChange={setOpenTooltip}>
@@ -242,14 +303,11 @@ function SubjectCard({
                         <div
                             className="absolute top-[-8px] right-[-8px]"
                             onClick={handleButtonClick}
-                            onMouseEnter={() => setOpenTooltip(false)} // ปิด tooltip เมื่อเมาส์อยู่เหนือปุ่ม
+                            onMouseEnter={() => setOpenTooltip(false)}
                         >
                             <AddSubDetail
                                 subject={subject}
-                                onUpdate={() => {
-                                    // เรียก callback เมื่อมีการอัปเดตข้อมูล
-                                    if (onUpdate) onUpdate();
-                                }}
+                                onUpdate={handleAddSubDetailUpdate} // ใช้ callback ใหม่
                             />
                         </div>
 
@@ -257,21 +315,45 @@ function SubjectCard({
                         <div
                             className="absolute bottom-[-1px] right-[-1px]"
                             onClick={handleButtonClick}
-                            onMouseEnter={() => setOpenTooltip(false)} // ปิด tooltip เมื่อเมาส์อยู่เหนือปุ่ม
+                            onMouseEnter={() => setOpenTooltip(false)}
                         >
                             <CutButton
                                 subject={subject}
                                 onSplitSubject={onSplitSubject || undefined}
+                                onMergeSubject={handleMergeSubjectWithRefresh}
                             />
                         </div>
 
                         <div className="text-center">
                             <div className="font-medium mb-1 text-slate-900 dark:text-slate-100">
                                 {subject.subjectCode}
+                                {/* แสดง section ถ้ามี */}
+                                {subject.section && (
+                                    <span className="ml-1 text-[8px] bg-blue-200 dark:bg-blue-700 px-1 rounded">
+                                        {subject.section}
+                                    </span>
+                                )}
                             </div>
                             <div className="text-[10px] truncate max-w-[110px] text-slate-700 dark:text-slate-300">
                                 {subject.subjectName}
                             </div>
+
+                            {/* แสดงข้อมูลห้องและอาจารย์ */}
+                            {(subject.room?.roomCode || subject.teacher?.tName) && (
+                                <div className="text-[8px] mt-1 flex flex-wrap justify-center gap-1">
+                                    {subject.room?.roomCode && (
+                                        <span className="bg-yellow-200 dark:bg-yellow-700 px-1 rounded">
+                                            {subject.room.roomCode}
+                                        </span>
+                                    )}
+                                    {subject.teacher?.tName && (
+                                        <span className="bg-purple-200 dark:bg-purple-700 px-1 rounded text-[7px]">
+                                            {subject.teacher.tName}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+
                             <div className="text-[8px] mt-1 text-slate-600 dark:text-slate-400">
                                 {totalHours} ชม. (บ {lectureHours} / ป {labHours})
                             </div>

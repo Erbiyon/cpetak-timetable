@@ -11,7 +11,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Scissors } from "lucide-react"
+import { Scissors, Trash2 } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Info } from "lucide-react"
@@ -19,6 +19,7 @@ import { Info } from "lucide-react"
 export default function CutButton({
     subject,
     onSplitSubject,
+    onMergeSubject, // เพิ่ม prop ใหม่
 }: {
     subject: any
     onSplitSubject?: (
@@ -28,6 +29,7 @@ export default function CutButton({
             part2: { lectureHour: number; labHour: number; partNumber: number }
         }
     ) => void
+    onMergeSubject?: (subjectId: number) => void // เพิ่ม prop ใหม่
 }) {
     // ชั่วโมงรวมของวิชาทั้งหมด
     const totalLectureHours = subject?.lectureHour || 0
@@ -99,6 +101,20 @@ export default function CutButton({
 
         if (onSplitSubject && subject) {
             const splitData = calculateSplit()
+
+            console.log("Splitting subject with data:", {
+                originalSubject: {
+                    id: subject.id,
+                    name: subject.subjectName,
+                    roomId: subject.roomId,
+                    teacherId: subject.teacherId,
+                    section: subject.section,
+                    room: subject.room,
+                    teacher: subject.teacher
+                },
+                splitData
+            })
+
             onSplitSubject(subject.id, splitData)
         }
     }
@@ -109,13 +125,22 @@ export default function CutButton({
     // ตรวจสอบว่าวิชานี้เป็นวิชาที่แบ่งมาแล้วหรือไม่
     const isAlreadySplitSubject = subject?.subjectName?.includes('(ส่วนที่');
 
+    // จัดการการรวมวิชา
+    const handleMerge = async (e: React.FormEvent) => {
+        e.preventDefault()
+
+        if (onMergeSubject && subject) {
+            onMergeSubject(subject.id)
+        }
+    }
+
     return (
         <Dialog>
             <DialogTrigger asChild>
                 <Button
                     variant="ghost"
                     className="p-0 h-5 w-5"
-                    title="แบ่งวิชา"
+                    title={isAlreadySplitSubject ? "แบ่งวิชาเพิ่ม หรือรวมส่วนกลับ" : "แบ่งวิชา"}
                 >
                     <Scissors color="#ff0000" />
                 </Button>
@@ -123,15 +148,48 @@ export default function CutButton({
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>
-                        แบ่งวิชา {subject?.subjectCode}
+                        {isAlreadySplitSubject ? "จัดการส่วนวิชา" : "แบ่งวิชา"} {subject?.subjectCode}
                         {isAlreadySplitSubject ? ` (ส่วนที่ ${currentPartNumber})` : ''}
                     </DialogTitle>
                     <DialogDescription>
-                        คุณสามารถแบ่งวิชา {subject?.subjectName.replace(/\(ส่วนที่ \d+\)$/, '')} ออกเป็น 2 ส่วน โดยกำหนดจำนวนชั่วโมงรวมของแต่ละส่วน
+                        {isAlreadySplitSubject
+                            ? `คุณสามารถแบ่งวิชา ${subject?.subjectName.replace(/\(ส่วนที่ \d+\)$/, '')} เป็นส่วนเพิ่ม หรือรวมส่วนที่แบ่งกลับเป็นวิชาเดิม`
+                            : `คุณสามารถแบ่งวิชา ${subject?.subjectName} ออกเป็น 2 ส่วน โดยกำหนดจำนวนชั่วโมงรวมของแต่ละส่วน`
+                        }
                     </DialogDescription>
                 </DialogHeader>
+
+                {/* แสดงปุ่มรวมส่วนกลับ สำหรับวิชาที่แบ่งแล้ว */}
+                {isAlreadySplitSubject && (
+                    <div className="py-4 border-b">
+                        <Alert className="mb-4">
+                            <Info className="h-4 w-4" />
+                            <AlertDescription>
+                                การรวมส่วนจะรวมทุกส่วนของวิชานี้กลับเป็นวิชาเดิม และลบข้อมูลในตารางเรียน
+                            </AlertDescription>
+                        </Alert>
+                        <div className="flex justify-center">
+                            <DialogClose asChild>
+                                <Button
+                                    variant="destructive"
+                                    onClick={handleMerge}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                    รวมส่วนกลับเป็นวิชาเดิม
+                                </Button>
+                            </DialogClose>
+                        </div>
+                    </div>
+                )}
+
+                {/* ส่วนแบ่งวิชา (แสดงเสมอ) */}
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-4 py-4">
+                        <div className="text-sm font-medium">
+                            {isAlreadySplitSubject ? "แบ่งส่วนเพิ่ม" : "แบ่งวิชาออกเป็น 2 ส่วน"}
+                        </div>
+
                         <div className="grid gap-2">
                             <Label>
                                 จำนวนชั่วโมงทั้งหมด: {totalHours} ชม. (บรรยาย {totalLectureHours} ชม. / ปฏิบัติ{" "}

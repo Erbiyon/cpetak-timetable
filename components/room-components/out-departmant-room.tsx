@@ -198,11 +198,15 @@ export default function OutdepartmentRoom() {
                                                                     <span className={
                                                                         subject.room.roomCode.toUpperCase().startsWith("ENG")
                                                                             ? "text-blue-600"
-                                                                            : "text-gray-600"
+                                                                            : /^6\d*$/.test(subject.room.roomCode.trim())
+                                                                                ? "text-green-600"
+                                                                                : "text-gray-600"
                                                                     }>
                                                                         {subject.room.roomCode.toUpperCase().startsWith("ENG")
                                                                             ? "ตึกวิศวกรรม"
-                                                                            : "นอกสาขา"
+                                                                            : /^6\d*$/.test(subject.room.roomCode.trim())
+                                                                                ? "อาคารสาขาฯ"
+                                                                                : "นอกสาขา"
                                                                         }
                                                                     </span>
                                                                 ) : "-"}
