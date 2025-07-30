@@ -3,6 +3,43 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+export async function GET(
+    request: NextRequest,
+    { params }: { params: { id: string } }
+) {
+    try {
+        const teacherId = parseInt(params.id);
+
+        const teacher = await prisma.teacher_tb.findUnique({
+            where: { id: teacherId },
+            select: {
+                id: true,
+                tId: true,
+                tName: true,
+                tLastName: true,
+                teacherType: true,
+            },
+        });
+
+        if (!teacher) {
+            return NextResponse.json(
+                { error: "ไม่พบข้อมูลอาจารย์" },
+                { status: 404 }
+            );
+        }
+
+        return NextResponse.json(teacher);
+    } catch (error) {
+        console.error("Error fetching teacher:", error);
+        return NextResponse.json(
+            { error: "เกิดข้อผิดพลาดในการดึงข้อมูล" },
+            { status: 500 }
+        );
+    } finally {
+        await prisma.$disconnect();
+    }
+}
+
 export async function PUT(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }

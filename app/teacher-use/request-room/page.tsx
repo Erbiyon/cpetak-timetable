@@ -21,7 +21,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, AlertCircle, Plus, User, UserCheck } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, Plus, User, UserCheck, Shield } from "lucide-react";
 
 type Subject = {
     id: number;
@@ -72,12 +72,51 @@ export default function RequestRoomPage() {
     const [updating, setUpdating] = useState<number | null>(null);
     const [refreshing, setRefreshing] = useState(false);
     const [scrollPosition, setScrollPosition] = useState(0);
+    const [teacherInfo, setTeacherInfo] = useState<any>(null);
+    const [accessDenied, setAccessDenied] = useState(false);
 
+    // ตรวจสอบการยืนยันตัวตน
     useEffect(() => {
         if (status === "unauthenticated") {
             router.push("/login");
         }
     }, [status, router]);
+
+    // ดึงข้อมูลอาจารย์และตรวจสอบสิทธิ์
+    useEffect(() => {
+        if (session?.user?.id && status === "authenticated") {
+            fetchTeacherInfo();
+        }
+    }, [session, status]);
+
+    const fetchTeacherInfo = async () => {
+        try {
+            console.log('Fetching teacher info for:', session?.user?.id);
+            const response = await fetch(`/api/teacher/${session?.user?.id}`);
+
+            if (response.ok) {
+                const teacherData = await response.json();
+                console.log('Teacher info:', teacherData);
+                setTeacherInfo(teacherData);
+
+                // ตรวจสอบ teacherType
+                if (teacherData.teacherType === "อาจารย์ภายนอกสาขา") {
+                    console.log('Access denied: อาจารย์ภายนอกสาขา');
+                    setAccessDenied(true);
+                    setLoading(false);
+                    return;
+                }
+
+                setAccessDenied(false);
+            } else {
+                console.error('Failed to fetch teacher info');
+                setLoading(false);
+            }
+        } catch (error) {
+            console.error('Error fetching teacher info:', error);
+            setLoading(false);
+        }
+    };
 
     // เพิ่ม scroll position tracking
     useEffect(() => {
@@ -89,19 +128,21 @@ export default function RequestRoomPage() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // โหลดวิชาในสาขาทั้งหมด (เหมือน OutdepartmentRoom)
+    // โหลดวิชาในสาขาทั้งหมด (เฉพาะอาจารย์ที่มีสิทธิ์)
     const fetchSubjects = async (preserveScroll = false) => {
+        if (accessDenied) return;
+
         try {
             setRefreshing(true);
             const currentScrollY = preserveScroll ? window.scrollY : 0;
 
             console.log('Fetching subjects with params:', {
-                dep: 'ในสาขา',
+                dep: 'วิชาในสาขา',
                 termYear: currentTermYear
             });
 
             const params = new URLSearchParams({
-                dep: 'ในสาขา',
+                dep: 'วิชาในสาขา',
                 ...(currentTermYear && { termYear: currentTermYear })
             });
 
@@ -130,6 +171,8 @@ export default function RequestRoomPage() {
 
     // โหลดข้อมูลห้องเรียน
     const fetchRooms = async () => {
+        if (accessDenied) return;
+
         try {
             console.log('Fetching rooms...');
             const response = await fetch('/api/room');
@@ -148,6 +191,8 @@ export default function RequestRoomPage() {
     // โหลดข้อมูล term year ปัจจุบัน
     useEffect(() => {
         async function fetchTermYear() {
+            if (accessDenied) return;
+
             try {
                 const res = await fetch("/api/current-term-year");
                 if (res.ok) {
@@ -162,26 +207,32 @@ export default function RequestRoomPage() {
                 setLoading(false);
             }
         }
-        fetchTermYear();
-    }, []);
+
+        // เรียกเฉพาะเมื่อไม่ได้ถูกปฏิเสธสิทธิ์
+        if (!accessDenied && teacherInfo && teacherInfo.teacherType !== "อาจารย์ภายนอกสาขา") {
+            fetchTermYear();
+        }
+    }, [accessDenied, teacherInfo]);
 
     // โหลดข้อมูลวิชาและห้องเมื่อมีการเปลี่ยน term year
     useEffect(() => {
-        if (currentTermYear && !refreshing) {
+        if (currentTermYear && !refreshing && !accessDenied) {
             fetchSubjects();
             fetchRooms();
         }
-    }, [currentTermYear]);
+    }, [currentTermYear, accessDenied]);
 
     // Function สำหรับ refresh ข้อมูลโดยไม่เปลี่ยน scroll
     const refreshData = async () => {
-        if (currentTermYear) {
+        if (currentTermYear && !accessDenied) {
             await fetchSubjects(true); // ส่ง true เพื่อ preserve scroll
         }
     };
 
     // อัปเดตห้องเรียน
     const handleRoomUpdate = async (subjectId: number, roomId: string) => {
+        if (accessDenied) return;
+
         try {
             setUpdating(subjectId);
             console.log('Updating room for subject:', subjectId, 'to room:', roomId);
@@ -197,7 +248,6 @@ export default function RequestRoomPage() {
             });
 
             if (response.ok) {
-                // ใช้ refreshData แทน setRefreshKey
                 await refreshData();
 
                 const selectedRoom = rooms.find(room => room.id === parseInt(roomId));
@@ -218,6 +268,8 @@ export default function RequestRoomPage() {
 
     // รับสอนวิชา
     const handleTakeSubject = async (subjectId: number) => {
+        if (accessDenied) return;
+
         try {
             setUpdating(subjectId);
             console.log('Taking subject:', subjectId, 'for teacher:', session?.user?.id);
@@ -233,7 +285,6 @@ export default function RequestRoomPage() {
             });
 
             if (response.ok) {
-                // ใช้ refreshData แทน setRefreshKey
                 await refreshData();
                 console.log("รับสอนวิชาเรียบร้อยแล้ว");
             } else {
@@ -248,6 +299,8 @@ export default function RequestRoomPage() {
 
     // ยกเลิกการสอนวิชา
     const handleRemoveSubject = async (subjectId: number) => {
+        if (accessDenied) return;
+
         try {
             setUpdating(subjectId);
             console.log('Removing subject:', subjectId);
@@ -284,7 +337,6 @@ export default function RequestRoomPage() {
             });
 
             if (response.ok) {
-                // รีเฟรชข้อมูลโดยไม่เปลี่ยน scroll position
                 await refreshData();
                 console.log("ยกเลิกการสอนวิชาเรียบร้อยแล้ว");
             } else {
@@ -339,17 +391,19 @@ export default function RequestRoomPage() {
     // Debug info
     console.log('Current state:', {
         loading,
+        accessDenied,
+        teacherType: teacherInfo?.teacherType,
         totalSubjects: subjects.length,
         currentTermYear,
         session: session?.user?.id
     });
 
-    if (status === "loading") {
+    if (status === "loading" || (loading && !accessDenied)) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
                     <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-                    <div>กำลังโหลด...</div>
+                    <div>กำลังตรวจสอบสิทธิ์...</div>
                 </div>
             </div>
         );
@@ -357,6 +411,25 @@ export default function RequestRoomPage() {
 
     if (!session) {
         return null;
+    }
+
+    // แสดงหน้าการปฏิเสธสิทธิ์สำหรับอาจารย์ภายนอกสาขา
+    if (accessDenied) {
+        return (
+            <div className="container mx-auto p-6">
+                <Card className="max-w-2xl mx-auto">
+                    <CardContent className="text-center py-12">
+                        <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
+                        <h2 className="text-2xl font-bold text-red-600 mb-2">
+                            ไม่มีสิทธิ์เข้าใช้งาน
+                        </h2>
+                        <p className="text-gray-600 mb-4">
+                            หน้านี้สำหรับอาจารย์ในสาขาเท่านั้น
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
+        );
     }
 
     return (
@@ -370,6 +443,11 @@ export default function RequestRoomPage() {
                         <span className="ml-2">| ภาคเรียน: {currentTermYear}</span>
                     )}
                 </p>
+                {teacherInfo && (
+                    <div className="mt-2 text-sm text-gray-500">
+                        สำหรับ: {teacherInfo.tName} {teacherInfo.tLastName} ({teacherInfo.teacherType})
+                    </div>
+                )}
             </div>
 
             {/* รายการวิชา */}
