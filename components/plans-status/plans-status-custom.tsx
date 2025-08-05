@@ -1,5 +1,5 @@
 import { useDraggable } from "@dnd-kit/core";
-import { PlusCircle } from "lucide-react"; // เพิ่ม import ไอคอน Scissors
+import { PlusCircle, TriangleAlert, Wand } from "lucide-react"; // เพิ่ม import ไอคอน Scissors
 import CutButton from "../cut-add-button/cut-button";
 import AddSubDetail from "../cut-add-button/add-sub-detail";
 import {
@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
 import { ConflictDetails } from "../conflict-details/conflict-details";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
 
 type SplitData = {
     part1: { lectureHour: number; labHour: number; partNumber: number };
@@ -33,14 +35,18 @@ interface PlansStatusCustomProps {
     assignedCount?: number;
     onRemoveAssignment?: ((subjectId: number) => void | null | Promise<void>) | undefined;
     onSplitSubject?: (subjectId: number, splitData: SplitData) => void;
-    onMergeSubject?: (subjectId: number) => void; // เพิ่ม prop ใหม่
+    onMergeSubject?: (subjectId: number) => void;
     conflicts?: Array<{
         type: string;
         message: string;
         conflicts?: any[];
         maxConsecutive?: number;
+        mainSubject?: any;
     }>;
     onSubjectUpdate?: () => void;
+    // เพิ่ม props สำหรับ drag feedback
+    dragFailedSubjectId?: number | null;
+    onDragFailedReset?: () => void;
 }
 
 export default function PlansStatusCustom({
@@ -52,10 +58,19 @@ export default function PlansStatusCustom({
     assignedCount = 0,
     onRemoveAssignment = undefined,
     onSplitSubject,
-    onMergeSubject, // เพิ่มใน props ที่รับ
+    onMergeSubject,
     conflicts = [],
     onSubjectUpdate,
+    dragFailedSubjectId = null,
+    onDragFailedReset,
 }: PlansStatusCustomProps) {
+    // เพิ่ม state สำหรับแสดง conflict popup
+    const [showConflictDialog, setShowConflictDialog] = useState(false);
+    // เพิ่ม state เพื่อเก็บ conflicts ล่าสุดที่แสดงแล้ว
+    const [lastShownConflicts, setLastShownConflicts] = useState<any[]>([]);
+    // เพิ่ม ref เพื่อติดตาม timestamp ของ conflicts ล่าสุด
+    const [lastConflictTimestamp, setLastConflictTimestamp] = useState<number>(0);
+
     // เพิ่ม log เพื่อดูค่าที่ได้รับ
     console.log("PlansStatusCustom received:", { termYear, yearLevel, planType, plansCount: plans.length });
 
@@ -80,11 +95,49 @@ export default function PlansStatusCustom({
     // กรองเฉพาะวิชาที่ยังไม่ได้จัดลงตาราง
     const unassignedPlans = filteredPlans.filter(plan => !assignments[plan.id]);
 
+    // แก้ไข useEffect สำหรับการแสดง conflict popup
+    useEffect(() => {
+        const currentTime = Date.now();
+
+        if (conflicts && conflicts.length > 0) {
+            // ตรวจสอบว่ามี conflicts ใหม่หรือไม่ โดยใช้ timestamp
+            if (currentTime > lastConflictTimestamp + 1000) { // ให้แสดงใหม่ได้หลังจาก 1 วินาที
+                setShowConflictDialog(true);
+                setLastShownConflicts([...conflicts]);
+                setLastConflictTimestamp(currentTime);
+            }
+        } else {
+            // ถ้าไม่มี conflicts แล้ว ให้รีเซ็ต state
+            if (showConflictDialog) {
+                setShowConflictDialog(false);
+            }
+            setLastShownConflicts([]);
+        }
+    }, [conflicts]);
+
+    // เพิ่มฟังก์ชันสำหรับปิด dialog
+    const handleCloseConflictDialog = () => {
+        setShowConflictDialog(false);
+        // อัปเดต timestamp เพื่อป้องกันการแสดงซ้ำทันที
+        setLastConflictTimestamp(Date.now());
+    };
+
+    // Reset drag failed state หลังจากแสดง feedback
+    useEffect(() => {
+        if (dragFailedSubjectId && onDragFailedReset) {
+            const timer = setTimeout(() => {
+                onDragFailedReset();
+            }, 1000); // แสดง feedback 1 วินาที
+
+            return () => clearTimeout(timer);
+        }
+    }, [dragFailedSubjectId, onDragFailedReset]);
+
     // แสดง UI เมื่อไม่มีข้อมูล
     if (filteredPlans.length === 0) {
         return (
             <div className="flex gap-4 mx-auto my-5 max-w-7xl">
-                <div className="flex-[4_4_0%] bg-card text-card-foreground rounded-xl border shadow-sm p-6 flex-col gap-4">
+                <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-6 flex-col gap-4">
                     <div className="flex justify-between items-center mb-4">
                         <div className="font-semibold">
                             แผนการเรียน {planType === 'TRANSFER' ? 'เทียบโอน' : planType} {yearLevel} ภาคเรียนที่ {termYear}
@@ -94,12 +147,6 @@ export default function PlansStatusCustom({
                         <div className="text-center text-muted-foreground">
                             ไม่พบข้อมูลรายวิชาที่ตรงตามเงื่อนไข
                         </div>
-                    </div>
-                </div>
-                <div className="flex-[2_2_0%] bg-card text-card-foreground rounded-xl border shadow-sm p-2 px-4 flex-col gap-4">
-                    <div className="pb-2 font-medium">สถานะ</div>
-                    <div className="rounded-xl border shadow-sm max-h-32 overflow-y-auto p-4">
-                        <div className="text-center text-muted-foreground">ไม่มีข้อมูล</div>
                     </div>
                 </div>
             </div>
@@ -124,74 +171,223 @@ export default function PlansStatusCustom({
     };
 
     return (
-        <div className="flex gap-4 mx-auto my-5 max-w-7xl">
-            <div className="flex-[4_4_0%] bg-card text-card-foreground rounded-xl border shadow-sm p-6 flex-col gap-4">
-                <div className="flex justify-between items-center mb-4">
-                    <div className="font-semibold">
-                        แผนการเรียน {
-                            planType === 'TRANSFER' ? 'เทียบโอน' :
-                                planType === 'FOUR_YEAR' ? '4 ปี' :
-                                    planType === 'DVE-LVC' ? 'ปวช. ขึ้น ปวส.' :
-                                        planType === 'DVE-MSIX' ? 'ม.6 ขึ้น ปวส.' :
-                                            planType
-                        } {yearLevel} ภาคเรียนที่ {termYear}
+        <>
+            <div className="mx-auto my-5 max-w-7xl">
+                <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-6 flex-col gap-4">
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="font-semibold">
+                            แผนการเรียน {
+                                planType === 'TRANSFER' ? 'เทียบโอน' :
+                                    planType === 'FOUR_YEAR' ? '4 ปี' :
+                                        planType === 'DVE-LVC' ? 'ปวช. ขึ้น ปวส.' :
+                                            planType === 'DVE-MSIX' ? 'ม.6 ขึ้น ปวส.' :
+                                                planType
+                            } {yearLevel} ภาคเรียนที่ {termYear}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                            จำนวนวิชาทั้งหมด: {filteredPlans.length} วิชา | จัดตารางแล้ว: {assignedCount} วิชา
+                            <span className="ml-2"><Button variant="secondary"><Wand /> จัดตาราง</Button></span>
+                        </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                        จำนวนวิชาทั้งหมด: {filteredPlans.length} วิชา
-                    </div>
-                </div>
-                <div className="rounded-xl border shadow-sm py-4 px-4 overflow-visible">
-                    <div className="text-center text-sm mb-2">
-                        ลากวิชาจากรายการด้านล่างไปวางในตารางเพื่อจัดตารางเรียน
-                        {assignedCount > 0 &&
-                            <div className="text-xs text-muted-foreground">
-                                สามารถลากวิชาที่อยู่ในตารางมาวางใหม่ หรือคลิกขวาที่วิชาในตารางเพื่อนำออก
-                            </div>
-                        }
-                    </div>
-                    <div className="flex flex-wrap gap-3 justify-center">
-                        {unassignedPlans.map((plan) => (
-                            <SubjectCard
-                                key={plan.id}
-                                subject={plan}
-                                onSplitSubject={handleSplitSubjectAdapter}
-                                onMergeSubject={onMergeSubject} // ส่ง prop ตรงๆ
-                                onUpdate={onSubjectUpdate}
-                            />
-                        ))}
+                    <div className="rounded-xl border shadow-sm py-4 px-4 overflow-visible">
+                        <div className="text-center text-sm mb-2">
+                            ลากวิชาจากรายการด้านล่างไปวางในตารางเพื่อจัดตารางเรียน
+                            {assignedCount > 0 &&
+                                <div className="text-xs text-muted-foreground">
+                                    สามารถลากวิชาที่อยู่ในตารางมาวางใหม่ หรือคลิกขวาที่วิชาในตารางเพื่อนำออก
+                                </div>
+                            }
+                        </div>
+                        <div className="flex flex-wrap gap-3 justify-center">
+                            {unassignedPlans.map((plan) => (
+                                <SubjectCard
+                                    key={plan.id}
+                                    subject={plan}
+                                    onSplitSubject={handleSplitSubjectAdapter}
+                                    onMergeSubject={onMergeSubject}
+                                    onUpdate={onSubjectUpdate}
+                                    isDragFailed={dragFailedSubjectId === plan.id}
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
-            <div className="flex-[2_2_0%] bg-card text-card-foreground rounded-xl border shadow-sm p-2 px-4 flex-col gap-4">
-                <div className="pb-2 font-medium">สถานะ</div>
-                <div className="rounded-xl border shadow-sm max-h-40 overflow-y-auto">
-                    <div className="m-2 text-xs">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                            <span>
-                                จัดตารางแล้ว: {assignedCount}/{filteredPlans.length} วิชา
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                            <span>
-                                รอจัดตาราง: {filteredPlans.length - assignedCount}/{filteredPlans.length} วิชา
-                            </span>
-                        </div>
 
-                        {/* แสดงการชนกัน */}
-                        {conflicts && conflicts.length > 0 && (
-                            <div className="mt-3 border-t pt-2">
-                                <div className="font-medium mb-1 text-red-500">พบการชนกัน:</div>
-                                {conflicts.map((conflict, index) => (
-                                    <div key={index} className="flex items-start gap-2 mb-1.5">
-                                        <div className="w-3 h-3 rounded-full bg-red-500 mt-0.5"></div>
-                                        <div className="text-red-500">{conflict.message}</div>
-                                        <ConflictDetails conflict={conflict} />
+            {/* Conflict Dialog */}
+            {showConflictDialog && conflicts && conflicts.length > 0 && (
+                <ConflictDialog
+                    conflicts={conflicts}
+                    onClose={handleCloseConflictDialog}
+                />
+            )}
+        </>
+    );
+}
+
+// เพิ่ม ConflictDialog component
+function ConflictDialog({
+    conflicts,
+    onClose
+}: {
+    conflicts: Array<{
+        type: string;
+        message: string;
+        conflicts?: any[];
+        maxConsecutive?: number;
+        mainSubject?: any;
+    }>;
+    onClose: () => void;
+}) {
+    // ฟังก์ชันแปลง planType
+    const getPlanTypeText = (planType: string) => {
+        switch (planType) {
+            case "TRANSFER": return "เทียบโอน";
+            case "FOUR_YEAR": return "4 ปี";
+            case "DVE-MSIX": return "ม.6 ขึ้น ปวส.";
+            case "DVE-LVC": return "ปวช. ขึ้น ปวส.";
+            default: return planType;
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-card rounded-lg shadow-xl max-w-4xl max-h-[80vh] overflow-y-auto m-4">
+                <div className="p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-semibold text-red-600 flex items-center"><TriangleAlert className="mr-2" color="#ffff00" /> <span>พบการชนกันในตาราง</span></h2>
+                        <button
+                            onClick={onClose}
+                            className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+                        >
+                            ×
+                        </button>
+                    </div>
+
+                    <div className="space-y-6">
+                        {conflicts.map((conflict, index) => (
+                            <div key={index} className="border rounded-lg p-4 bg-card">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                    <h3 className="font-medium text-red-700 dark:text-red-500">
+                                        {conflict.message}
+                                    </h3>
+                                </div>
+
+                                {/* วิชาที่กำลังจัดตาราง */}
+                                {conflict.mainSubject && (
+                                    <div className="p-3 bg-card rounded border-l-4 mb-4">
+                                        <p className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-1">วิชาที่กำลังจัดตาราง</p>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <span className="font-mono font-medium">{conflict.mainSubject.subjectCode}</span>
+                                            <span>{conflict.mainSubject.subjectName}</span>
+                                            {conflict.mainSubject.yearLevel && (
+                                                <span className="px-2 py-1 bg-card rounded text-xs">
+                                                    {conflict.mainSubject.yearLevel}
+                                                </span>
+                                            )}
+                                            {conflict.mainSubject.planType && (
+                                                <span className="px-2 py-1 bg-card rounded text-xs">
+                                                    {getPlanTypeText(conflict.mainSubject.planType)}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
-                                ))}
+                                )}
+
+                                {/* รายการวิชาที่ชนกัน */}
+                                {conflict.conflicts && conflict.conflicts.length > 0 && (
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <h4 className="font-medium">รายการวิชาที่ชนกัน</h4>
+                                            <span className="px-2 py-1 bg-red-500 dark:bg-red-500 rounded text-xs">
+                                                {conflict.conflicts.length} รายการ
+                                            </span>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            {conflict.conflicts.map((item, itemIndex) => (
+                                                <div key={itemIndex} className="p-3 border rounded-lg bg-card">
+                                                    <div className="flex justify-between items-start gap-4">
+                                                        {/* ข้อมูลวิชา */}
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="font-mono font-medium bg-card text-sm">
+                                                                    {item.plan?.subjectCode}
+                                                                </span>
+                                                                <span className="text-sm font-medium">{item.plan?.subjectName}</span>
+                                                            </div>
+
+                                                            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                                                {item.plan?.yearLevel && (
+                                                                    <Badge variant="secondary" className={`px-2 py-1 rounded text-xs ${conflict.type === "YEAR_LEVEL_CONFLICT"
+                                                                        ? "bg-gray-200 text-red-500 dark:text-red-500"
+                                                                        : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
+                                                                        }`}>
+                                                                        {item.plan.yearLevel}
+                                                                    </Badge>
+                                                                )}
+                                                                {item.plan?.planType && (
+                                                                    <Badge variant="outline" className="bg-blue-500 rounded text-white text-xs">
+                                                                        {getPlanTypeText(item.plan.planType)}
+                                                                    </Badge>
+                                                                )}
+                                                                {item.section && (
+                                                                    <Badge variant="secondary" className="bg-gray-500 text-white rounded text-xs">
+                                                                        Sec {item.section}
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* ข้อมูลเวลาและทรัพยากร */}
+                                                        <div className="text-right text-sm">
+                                                            <div className="font-medium">
+                                                                {['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'][item.day]}
+                                                                คาบ {item.startPeriod === item.endPeriod
+                                                                    ? item.startPeriod + 1
+                                                                    : `${item.startPeriod + 1}-${item.endPeriod + 1}`}
+                                                            </div>
+
+                                                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 space-y-1">
+                                                                {item.room?.roomCode && (
+                                                                    <div className={
+                                                                        conflict.type === "ROOM_CONFLICT"
+                                                                            ? "text-red-500 dark:text-red-500 font-medium"
+                                                                            : ""
+                                                                    }>
+                                                                        ห้อง: {item.room.roomCode}
+                                                                    </div>
+                                                                )}
+                                                                {item.teacher && (
+                                                                    <div className={
+                                                                        conflict.type === "TEACHER_CONFLICT"
+                                                                            ? "text-red-500 dark:text-red-500 font-medium"
+                                                                            : ""
+                                                                    }>
+                                                                        อ.{item.teacher.tName} {item.teacher.tLastName}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        )}
+                        ))}
+                    </div>
+
+                    <div className="mt-6 flex justify-end">
+                        <Button
+                            variant="outline"
+                            onClick={onClose}
+                            className="px-4 py-2 bg-card rounded"
+                        >
+                            ปิด
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -204,12 +400,14 @@ function SubjectCard({
     subject,
     onSplitSubject,
     onMergeSubject,
-    onUpdate
+    onUpdate,
+    isDragFailed = false
 }: {
     subject: any;
     onSplitSubject?: ((subjectId: number, splitData: any) => void) | null;
     onMergeSubject?: (subjectId: number) => void;
     onUpdate?: () => void;
+    isDragFailed?: boolean;
 }) {
     // เพิ่ม state เพื่อ force re-render
     const [updateTrigger, setUpdateTrigger] = useState(0);
@@ -297,8 +495,19 @@ function SubjectCard({
                         ref={setNodeRef}
                         {...listeners}
                         {...attributes}
-                        className={`relative rounded border shadow-sm bg-card dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 w-[120px] h-[70px] flex items-center justify-center p-2 text-xs cursor-grab ${isDragging ? 'opacity-30' : ''}`}
+                        className={`relative rounded border shadow-sm bg-card dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 w-[120px] h-[70px] flex items-center justify-center p-2 text-xs cursor-grab transition-all duration-300 ${isDragging ? 'opacity-30' : ''
+                            } ${isDragFailed
+                                ? 'bg-red-100 dark:bg-red-900/20 border-red-300 dark:border-red-700 animate-pulse'
+                                : ''
+                            }`}
                     >
+                        {/* เพิ่ม icon แสดงสถานะ drag failed */}
+                        {isDragFailed && (
+                            <div className="absolute top-1 text-xs left-1">
+                                <TriangleAlert size={15} color="#ffff00" className="animate-pulse" />
+                            </div>
+                        )}
+
                         {/* ปุ่ม PlusCircle ที่มุมขวาบน */}
                         <div
                             className="absolute top-[-8px] right-[-8px]"
@@ -307,7 +516,7 @@ function SubjectCard({
                         >
                             <AddSubDetail
                                 subject={subject}
-                                onUpdate={handleAddSubDetailUpdate} // ใช้ callback ใหม่
+                                onUpdate={handleAddSubDetailUpdate}
                             />
                         </div>
 
@@ -398,6 +607,13 @@ function SubjectCard({
                                 </>
                             )}
                         </div>
+
+                        {/* แสดงข้อความเตือนเมื่อ drag failed */}
+                        {isDragFailed && (
+                            <div className="mt-2 p-2 bg-red-600 text-white rounded text-center">
+                                ไม่สามารถวางได้เนื่องจากมีการชนกัน
+                            </div>
+                        )}
                     </div>
                 </TooltipContent>
             </Tooltip>
