@@ -36,12 +36,12 @@ export default function DisplayCalendarCustom({
     }, [term, year])
 
     return (
-        <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border mx-12 mb-8 p-4 shadow-sm">
-            <div className="text-center text-2xl font-bold my-5">
+        <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border mx-4 lg:mx-12 mb-4 lg:mb-8 p-4 shadow-sm">
+            <div className="text-center text-lg lg:text-2xl font-bold my-3 lg:my-5 px-4">
                 ขณะนี้เป็นภาคเรียนที่ {term}/{year}
             </div>
-            <div className="text-center text-lg my-3">
-                <div className="max-w-7xl mx-auto items-center">
+            <div className="text-center text-base lg:text-lg my-2 lg:my-3">
+                <div className="max-w-7xl mx-auto px-4">
                     {start && end
                         ? `${formatThaiDate(start)} ถึง ${formatThaiDate(end)}`
                         : "ว/ด/ป ถึง ว/ด/ป"

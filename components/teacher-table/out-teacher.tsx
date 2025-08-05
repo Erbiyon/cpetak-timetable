@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
     Table,
@@ -7,50 +7,57 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table"
-import { AddTeacherCustom } from "../add-teacher/add-teacher-custom"
-import { useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
-import EditTeacherButtonCustom from "../edit-delect-teacher-buttom/edit-teacher-buttom-custom"
-import DeleteTeacherButtonCustom from "../edit-delect-teacher-buttom/delect-teacher-buttom-custom"
+} from "@/components/ui/table";
+import { AddTeacherCustom } from "../add-teacher/add-teacher-custom";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import EditTeacherButtonCustom from "../edit-delect-teacher-buttom/edit-teacher-buttom-custom";
+import DeleteTeacherButtonCustom from "../edit-delect-teacher-buttom/delect-teacher-buttom-custom";
 
 type Teacher = {
-    id: number
-    tId: string
-    tName: string
-    tLastName: string
-    teacherType: string
-}
+    id: number;
+    tId: string;
+    tName: string;
+    tLastName: string;
+    teacherType: string;
+};
 
-export default function IndepartmentTeacher() {
-    const [teachers, setTeachers] = useState<Teacher[]>([])
-    const [loading, setLoading] = useState(true)
+export default function OutTeacher() {
+    const [teachers, setTeachers] = useState<Teacher[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const fetchTeachers = async () => {
         try {
-            setLoading(true)
-            // ปรับปรุง API endpoint ให้ดึงเฉพาะอาจารย์ภายในสาขา
-            const res = await fetch("/api/teacher?inDepartment=true")
+            setLoading(true);
+            // ปรับปรุง API endpoint ให้ดึงเฉพาะอาจารย์ภายนอกสาขา
+            const res = await fetch("/api/teacher?inDepartment=false");
             if (res.ok) {
-                const data = await res.json()
-                setTeachers(data)
+                const data = await res.json();
+                // เพิ่มการกรองข้อมูลใน client-side เพื่อให้แน่ใจว่าได้เฉพาะอาจารย์ภายนอกสาขา
+                const filteredTeachers = data.filter((teacher: Teacher) =>
+                    teacher.teacherType === "อาจารย์ภายนอกสาขา"
+                );
+                setTeachers(filteredTeachers);
             }
         } catch (error) {
-            console.error("Error fetching teachers:", error)
+            console.error("Error fetching teachers:", error);
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
     useEffect(() => {
-        fetchTeachers()
-    }, [])
+        fetchTeachers();
+    }, []);
 
     return (
         <div className="bg-card text-card-foreground flex flex-col rounded-xl border shadow-sm max-h-[60vh] lg:max-h-[64vh] overflow-y-auto">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 p-4 lg:px-8">
-                <h2 className="text-lg lg:text-xl font-bold">อาจารย์ภายในสาขา</h2>
-                <AddTeacherCustom onAdded={fetchTeachers} />
+                <h2 className="text-lg lg:text-xl font-bold">อาจารย์ภายนอกสาขา</h2>
+                <AddTeacherCustom
+                    onAdded={fetchTeachers}
+                    teacherType="อาจารย์ภายนอกสาขา"
+                />
             </div>
 
             <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-2 lg:my-5 shadow-sm mx-4 lg:mx-8 max-h-[50vh] lg:max-h-[56vh] overflow-y-auto">
@@ -95,7 +102,7 @@ export default function IndepartmentTeacher() {
                                 ) : (
                                     <TableRow>
                                         <TableCell className="text-center text-muted-foreground py-8 text-xs lg:text-sm" colSpan={4}>
-                                            ไม่มีข้อมูลอาจารย์ภายในสาขา
+                                            ไม่มีข้อมูลอาจารย์ภายนอกสาขา
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -105,5 +112,5 @@ export default function IndepartmentTeacher() {
                 )}
             </div>
         </div>
-    )
+    );
 }

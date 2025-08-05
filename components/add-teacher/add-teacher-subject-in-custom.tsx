@@ -29,7 +29,7 @@ type Teacher = {
     teacherType: string
 }
 
-export function AddTeacherSubjectOutCustom({
+export function AddTeacherSubjectInCustom({
     subjectId,
     teacherName,
     onUpdate
@@ -43,16 +43,16 @@ export function AddTeacherSubjectOutCustom({
     const [loading, setLoading] = useState(false)
     const [open, setOpen] = useState(false)
 
-    // โหลดรายชื่ออาจารย์ภายนอกสาขา
+    // โหลดรายชื่ออาจารย์ภายในสาขา
     useEffect(() => {
         const fetchTeachers = async () => {
             try {
-                const res = await fetch("/api/teacher?inDepartment=false")
+                const res = await fetch("/api/teacher?inDepartment=true")
                 if (res.ok) {
                     const data = await res.json()
-                    // กรองเฉพาะอาจารย์ภายนอกสาขา
+                    // กรองเฉพาะอาจารย์ภายในสาขา
                     const filteredTeachers = data.filter((teacher: Teacher) =>
-                        teacher.teacherType === "อาจารย์ภายนอกสาขา"
+                        teacher.teacherType === "อาจารย์ภายในสาขา"
                     )
                     setTeachers(filteredTeachers)
                 }
@@ -116,7 +116,7 @@ export function AddTeacherSubjectOutCustom({
                         {teacherName ? "แก้ไขอาจารย์ผู้สอน" : "เพิ่มอาจารย์ผู้สอน"}
                     </DialogTitle>
                     <DialogDescription>
-                        เลือกอาจารย์ภายนอกสาขาที่จะสอนวิชานี้
+                        เลือกอาจารย์ภายในสาขาที่จะสอนวิชานี้
                     </DialogDescription>
                 </DialogHeader>
 
@@ -125,7 +125,7 @@ export function AddTeacherSubjectOutCustom({
                         <Label htmlFor="teacher-select">เลือกอาจารย์</Label>
                         <Select value={selectedTeacherId} onValueChange={setSelectedTeacherId}>
                             <SelectTrigger>
-                                <SelectValue placeholder="เลือกอาจารย์ภายนอกสาขา" />
+                                <SelectValue placeholder="เลือกอาจารย์ภายในสาขา" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="none">ไม่ระบุ</SelectItem>

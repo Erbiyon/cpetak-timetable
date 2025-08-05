@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
-import { AddTeacherSubjectOutCustom } from "../add-teacher-subject-out/add-teacher-subject-out-custom";
+import { AddTeacherSubjectInCustom } from "../add-teacher/add-teacher-subject-in-custom";
 import { Badge } from "@/components/ui/badge";
 
 type Subject = {
@@ -34,7 +34,7 @@ type GroupedSubjects = {
     }
 };
 
-export default function OutdepartmentTeacher() {
+export default function InTeacher() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [termYear, setTermYear] = useState<string>("");
     const [loading, setLoading] = useState(true);
@@ -48,9 +48,9 @@ export default function OutdepartmentTeacher() {
                 const data = await res.json();
                 console.log("API response:", data);
 
-                // กรองเฉพาะวิชานอกสาขาในภาคเรียนปัจจุบัน
+                // กรองเฉพาะวิชาในสาขาในภาคเรียนปัจจุบัน
                 const filteredSubjects = data.filter((s: any) =>
-                    s.dep === "นอกสาขา" &&
+                    s.dep === "วิชาในสาขา" &&
                     s.termYear === `ภาคเรียนที่ ${termYear}`
                 );
                 console.log("Filtered subjects:", filteredSubjects);
@@ -136,7 +136,7 @@ export default function OutdepartmentTeacher() {
         <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-3 mx-5 py-5 shadow-sm">
             <div className="flex justify-between items-center mx-8">
                 <h2 className="text-xl font-bold">
-                    เพิ่มชื่ออาจารย์ให้วิชาภายนอกสาขา
+                    เพิ่มชื่ออาจารย์ให้วิชาภายในสาขา
                     {termYear && (
                         <span className="text-sm font-normal text-muted-foreground ml-2">
                             ({termYear})
@@ -149,7 +149,7 @@ export default function OutdepartmentTeacher() {
                 {loading ? (
                     <div className="flex justify-center items-center p-8">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <span className="ml-2">กำลังโหลดข้อมูลวิชานอกสาขา...</span>
+                        <span className="ml-2">กำลังโหลดข้อมูลวิชาในสาขา...</span>
                     </div>
                 ) : Object.keys(groupedSubjects).length > 0 ? (
                     <div className="space-y-6 p-4">
@@ -206,7 +206,7 @@ export default function OutdepartmentTeacher() {
                                                                 </div>
                                                             </TableCell>
                                                             <TableCell className="text-center">
-                                                                <AddTeacherSubjectOutCustom
+                                                                <AddTeacherSubjectInCustom
                                                                     subjectId={subject.id}
                                                                     teacherName={`${subject.teacher?.tName || ""} ${subject.teacher?.tLastName || ""}`.trim()}
                                                                     onUpdate={handleTeacherUpdated}
@@ -225,7 +225,7 @@ export default function OutdepartmentTeacher() {
                 ) : (
                     <div className="text-center text-muted-foreground py-8">
                         {termYear
-                            ? `ไม่มีวิชานอกสาขาในภาคเรียน ${termYear}`
+                            ? `ไม่มีวิชาในสาขาในภาคเรียน ${termYear}`
                             : "ไม่มีข้อมูลภาคเรียน"
                         }
                     </div>

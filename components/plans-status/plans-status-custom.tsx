@@ -107,11 +107,10 @@ export default function PlansStatusCustom({
                 setLastConflictTimestamp(currentTime);
             }
         } else {
-            // ถ้าไม่มี conflicts แล้ว ให้รีเซ็ต state
-            if (showConflictDialog) {
-                setShowConflictDialog(false);
-            }
+            // ถ้าไม่มี conflicts แล้ว ให้รีเซ็ต state ทันที
+            setShowConflictDialog(false);
             setLastShownConflicts([]);
+            // ไม่ต้องอัปเดต timestamp เมื่อ conflicts หายไป
         }
     }, [conflicts]);
 

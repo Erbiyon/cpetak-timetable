@@ -15,12 +15,18 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export function AddTeacherCustom({ onAdded }: { onAdded?: () => void }) {
-    // เพิ่ม teacherType ในค่าเริ่มต้นโดยกำหนดเป็น "อาจารย์ภายในสาขา"
+export function AddTeacherCustom({
+    onAdded,
+    teacherType = "อาจารย์ภายในสาขา"
+}: {
+    onAdded?: () => void;
+    teacherType?: "อาจารย์ภายในสาขา" | "อาจารย์ภายนอกสาขา";
+}) {
+    // ใช้ teacherType ที่ส่งเข้ามาแทนการกำหนดค่าคงที่
     const initialForm = {
         tName: "",
         tLastName: "",
-        teacherType: "อาจารย์ภายในสาขา" // เพิ่มฟิลด์ teacherType
+        teacherType: teacherType
     }
     const [form, setForm] = useState(initialForm)
     const [loading, setLoading] = useState(false)
@@ -49,7 +55,6 @@ export function AddTeacherCustom({ onAdded }: { onAdded?: () => void }) {
 
         setLoading(true)
         try {
-            // ไม่ต้องสร้าง tId ในฝั่ง client เพราะจะถูกสร้างที่ฝั่ง server
             const res = await fetch("/api/teacher", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -111,11 +116,10 @@ export function AddTeacherCustom({ onAdded }: { onAdded?: () => void }) {
                                 {fieldErrors.tLastName && <span className="text-red-500 text-xs">{fieldErrors.tLastName}</span>}
                             </div>
                         </div>
-                        {/* ไม่แสดง input field สำหรับ teacherType เนื่องจากกำหนดค่าคงที่ในโค้ด */}
                         {fieldErrors.api && <span className="text-red-500 text-xs">{fieldErrors.api}</span>}
 
                         <div className="text-xs text-muted-foreground mt-2 border-t pt-2">
-                            หมายเหตุ: ข้อมูลจะถูกบันทึกเป็นอาจารย์ภายในสาขา
+                            หมายเหตุ: ข้อมูลจะถูกบันทึกเป็น{teacherType}
                         </div>
                     </div>
                     <DialogFooter className="my-4">

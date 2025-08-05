@@ -47,13 +47,15 @@ export default function CalendarCustom({
                     <Button
                         variant="outline"
                         id="date"
-                        className="w-48 justify-between font-normal"
+                        className="w-full sm:w-48 justify-between font-normal text-xs sm:text-sm"
                     >
-                        {date
-                            ? formatThaiDate(date)
-                            : `${selectDate}`
-                        }
-                        <ChevronDownIcon />
+                        <span className="truncate">
+                            {date
+                                ? formatThaiDate(date)
+                                : `${selectDate}`
+                            }
+                        </span>
+                        <ChevronDownIcon className="h-4 w-4 flex-shrink-0" />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto overflow-hidden p-0" align="start">

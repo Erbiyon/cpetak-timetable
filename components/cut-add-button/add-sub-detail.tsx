@@ -47,7 +47,7 @@ type SubjectDetails = {
 
 export default function AddSubDetail({ subject, onUpdate }: {
     subject?: SubjectDetails,
-    onUpdate?: () => void
+    onUpdate?: (isFromAddSubDetail?: boolean) => void  // เพิ่ม parameter
 }) {
     const [rooms, setRooms] = useState<Room[]>([]);
     const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -71,9 +71,6 @@ export default function AddSubDetail({ subject, onUpdate }: {
         room: Room | null;
         teacher: Teacher | null;
     } | null>(null);
-
-    // ลบ useEffect ทั้งหมดที่ mutate subject object
-    // เก็บการอัปเดตไว้เฉพาะตอน submit เท่านั้น
 
     // โหลดข้อมูลห้องเรียน
     const fetchRooms = async () => {
@@ -247,31 +244,11 @@ export default function AddSubDetail({ subject, onUpdate }: {
         }
     };
 
-    // ฟังก์ชันสำหรับยกเลิก - คืนค่าข้อมูลเดิม
+    // ฟังก์ชันสำหรับยกเลิก - ไม่ต้อง mutate subject object
     const handleCancel = () => {
-        if (subject && originalData) {
-            console.log("Cancelling - restoring original data:", originalData);
+        console.log("Cancelling - not mutating subject object");
 
-            // คืนค่าข้อมูลเดิมให้ subject object
-            Object.assign(subject, {
-                roomId: originalData.roomId,
-                teacherId: originalData.teacherId,
-                section: originalData.section,
-                room: originalData.room,
-                teacher: originalData.teacher
-            });
-
-            console.log("Subject restored to:", {
-                id: subject.id,
-                roomId: subject.roomId,
-                teacherId: subject.teacherId,
-                section: subject.section,
-                room: subject.room,
-                teacher: subject.teacher
-            });
-        }
-
-        // รีเซ็ต state
+        // รีเซ็ต state เท่านั้น ไม่ต้อง mutate subject object
         setSelectedRoomId(null);
         setSelectedTeacherId(null);
         setSelectedRoom(null);
@@ -282,13 +259,6 @@ export default function AddSubDetail({ subject, onUpdate }: {
 
         // ปิด dialog
         setOpen(false);
-
-        // เรียก callback เพื่ออัปเดต UI
-        if (onUpdate) {
-            setTimeout(() => {
-                onUpdate();
-            }, 100);
-        }
     };
 
     // แก้ไขเมื่อกดปุ่มบันทึก
@@ -329,37 +299,14 @@ export default function AddSubDetail({ subject, onUpdate }: {
             const updatedData = await updateResponse.json();
             console.log("Update response received:", updatedData);
 
-            // อัปเดต subject object ทันทีด้วยข้อมูลที่ได้รับจาก API
-            Object.assign(subject, {
-                roomId: updatedData.roomId,
-                teacherId: updatedData.teacherId,
-                section: updatedData.section,
-                room: updatedData.room,
-                teacher: updatedData.teacher
-            });
-
-            console.log("Subject object updated:", {
-                id: subject.id,
-                section: subject.section,
-                roomId: subject.roomId,
-                teacherId: subject.teacherId,
-                room: subject.room,
-                teacher: subject.teacher
-            });
-
             // รีเซ็ต state
             setOriginalData(null);
 
             // ปิด dialog
             setOpen(false);
 
-            // เรียก callback เพื่ออัปเดต UI
-            setTimeout(() => {
-                if (onUpdate) {
-                    console.log("Calling onUpdate callback");
-                    onUpdate();
-                }
-            }, 100);
+            // Force refresh หน้าเว็บแบบล้างทั้งหมด (เหมือน Ctrl+F5)
+            window.location.reload();
 
         } catch (error: any) {
             console.error("Submit Error:", error);
@@ -537,7 +484,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
                             {loading ? (
                                 <>กำลังบันทึก...</>
                             ) : (
-                                'ตกลง'
+                                'บันทึก'
                             )}
                         </Button>
                     </DialogFooter>

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import { useDroppable, useDraggable } from "@dnd-kit/core";
 import {
     Tooltip,
@@ -21,6 +21,15 @@ export default function TimeTableCustom({
     dragOverCell?: { day: number; period: number } | null;
 }) {
     const days = ["จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา."];
+
+    // สร้าง stable key สำหรับ assignments เพื่อใช้ใน dependency
+    const assignmentsKey = useMemo(() => {
+        return JSON.stringify(assignments);
+    }, [assignments]);
+
+    const plansKey = useMemo(() => {
+        return JSON.stringify(plans.map(p => ({ id: p.id, subjectCode: p.subjectCode })));
+    }, [plans]);
 
     // ใช้ useMemo เพื่อคำนวณข้อมูลเกี่ยวกับ cell เพียงครั้งเดียวเมื่อ dependencies เปลี่ยนแปลง
     const {
@@ -89,7 +98,16 @@ export default function TimeTableCustom({
         });
 
         return { cellToSubject, cellColspan, cellSkip };
-    }, [assignments, plans]);
+    }, [assignmentsKey, plansKey]); // ใช้ key แทน object โดยตรง
+
+    // สร้าง key สำหรับ dragOverCell และ activeSubject
+    const dragOverCellKey = useMemo(() => {
+        return dragOverCell ? `${dragOverCell.day}-${dragOverCell.period}` : null;
+    }, [dragOverCell]);
+
+    const activeSubjectKey = useMemo(() => {
+        return activeSubject ? `${activeSubject.id}-${activeSubject.lectureHour}-${activeSubject.labHour}` : null;
+    }, [activeSubject]);
 
     // แยกส่วนของ highlight info ออกมา
     const calculatedHighlight = useMemo(() => {
@@ -107,7 +125,6 @@ export default function TimeTableCustom({
         const totalPeriods = totalHours * 2;
 
         // คำนวณจุดเริ่มต้น - ใช้ตำแหน่งเมาส์เป็นตำแหน่งเริ่มต้นเสมอ
-        // ไม่ต้องคำนวณจุดกึ่งกลาง เพราะอาจทำให้เกิดปัญหา
         const startPeriod = period;
 
         // รวบรวมคาบทั้งหมดที่จะแสดง
@@ -130,7 +147,7 @@ export default function TimeTableCustom({
         if (periods.length === 0) {
             return {
                 startCell: null,
-                skipCells: [] as string[],
+                skipCells: [],
                 colspan: 0,
                 invalid: true
             };
@@ -160,7 +177,14 @@ export default function TimeTableCustom({
             period: firstPeriod,
             invalid
         };
-    }, [activeSubject, dragOverCell]);
+    }, [activeSubjectKey, dragOverCellKey]); // ใช้ key แทน object โดยตรง
+
+    // สร้าง memoized callback สำหรับ onRemoveAssignment
+    const memoizedOnRemoveAssignment = useCallback((subjectId: number) => {
+        if (onRemoveAssignment) {
+            onRemoveAssignment(subjectId);
+        }
+    }, [onRemoveAssignment]);
 
     return (
         <div className="w-full overflow-x-auto">
@@ -232,7 +256,7 @@ export default function TimeTableCustom({
                                         period={colIdx}
                                         colspan={isHighlightStart ? highlightColspan : colspan}
                                         subject={subject}
-                                        onRemoveAssignment={onRemoveAssignment}
+                                        onRemoveAssignment={memoizedOnRemoveAssignment}
                                         isHighlighted={isHighlightStart}
                                         isInvalidHighlight={isInvalidHighlight}
                                         activeSubject={isHighlightStart ? activeSubject : null}
@@ -248,7 +272,7 @@ export default function TimeTableCustom({
 }
 
 // แยก SimpleCell ออกมาเพื่อลดความซับซ้อน
-function SimpleCell({
+const SimpleCell = React.memo(function SimpleCell({
     id,
     day,
     period,
@@ -264,7 +288,7 @@ function SimpleCell({
     period: number;
     colspan?: number;
     subject?: any;
-    onRemoveAssignment?: ((subjectId: number) => void) | null;
+    onRemoveAssignment?: (subjectId: number) => void;
     isHighlighted?: boolean;
     isInvalidHighlight?: boolean;
     activeSubject?: any;
@@ -296,12 +320,12 @@ function SimpleCell({
     }
 
     // ฟังก์ชั่นจัดการคลิกขวาเพื่อลบวิชาออกจากตาราง
-    const handleContextMenu = (e: React.MouseEvent) => {
+    const handleContextMenu = useCallback((e: React.MouseEvent) => {
         if (subject && onRemoveAssignment) {
             e.preventDefault();
             onRemoveAssignment(subject.id);
         }
-    };
+    }, [subject, onRemoveAssignment]);
 
     return (
         <td
@@ -322,10 +346,10 @@ function SimpleCell({
             ) : null}
         </td>
     );
-}
+});
 
 // แสดงตัวอย่างขณะลาก (Highlight)
-function HighlightPreview({
+const HighlightPreview = React.memo(function HighlightPreview({
     subject,
     colspan = 1,
     isInvalid = false
@@ -366,10 +390,10 @@ function HighlightPreview({
             </div>
         </div>
     );
-}
+});
 
 // แสดงวิชาในตาราง
-function SubjectInCell({
+const SubjectInCell = React.memo(function SubjectInCell({
     subject,
     colspan = 1
 }: {
@@ -471,4 +495,4 @@ function SubjectInCell({
             </Tooltip>
         </TooltipProvider>
     );
-}
+});

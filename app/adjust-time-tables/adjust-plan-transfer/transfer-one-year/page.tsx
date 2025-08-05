@@ -246,6 +246,8 @@ export default function TransferOneYear() {
             if (activeSubject?.fromTable) {
                 handleRemoveAssignment(activeSubject.id);
             }
+            // เคลียร์ conflicts เมื่อไม่มีการ drop
+            setConflicts([]);
             setActiveSubject(null);
             return;
         }
@@ -284,6 +286,7 @@ export default function TransferOneYear() {
                 if (lastPeriod >= 25) {
                     console.warn("ไม่สามารถวางวิชาได้: เกินขอบตาราง");
                     setDragFailedSubjectId(subjectId);
+                    setConflicts([]); // เคลียร์ conflicts
                     setActiveSubject(null);
                     return;
                 }
@@ -298,6 +301,7 @@ export default function TransferOneYear() {
                 if (wouldOverlapActivity) {
                     console.warn("ไม่สามารถวางวิชาได้: ทับช่วงกิจกรรม");
                     setDragFailedSubjectId(subjectId);
+                    setConflicts([]); // เคลียร์ conflicts
                     setActiveSubject(null);
                     return;
                 }
@@ -331,6 +335,7 @@ export default function TransferOneYear() {
                 if (hasOverlap) {
                     console.warn("ไม่สามารถวางวิชาได้: ทับคาบวิชาอื่น");
                     setDragFailedSubjectId(subjectId);
+                    setConflicts([]); // เคลียร์ conflicts
                     setActiveSubject(null);
                     return;
                 }
@@ -403,6 +408,7 @@ export default function TransferOneYear() {
                         });
 
                         setDragFailedSubjectId(subjectId);
+                        setConflicts([]); // เคลียร์ conflicts เมื่อเกิดข้อผิดพลาดอื่น
                         throw new Error(data.error || 'เกิดข้อผิดพลาดในการบันทึกตาราง');
                     } else {
                         // บันทึกสำเร็จ
@@ -425,8 +431,12 @@ export default function TransferOneYear() {
                     });
 
                     setDragFailedSubjectId(subjectId);
+                    setConflicts([]); // เคลียร์ conflicts เมื่อเกิดข้อผิดพลาด
                 }
             }
+        } else {
+            // ถ้า drop ไม่ใช่ในตาราง ให้เคลียร์ conflicts
+            setConflicts([]);
         }
 
         setActiveSubject(null);
@@ -451,6 +461,10 @@ export default function TransferOneYear() {
             setConflicts(prev => prev.filter(conflict =>
                 !conflict.conflicts?.some((item: any) => item.planId === subjectId)
             ));
+
+            // เคลียร์ dragFailedSubjectId ถ้าเป็นวิชาเดียวกัน
+            setDragFailedSubjectId(prev => prev === subjectId ? null : prev);
+
         } catch (error) {
             console.error("เกิดข้อผิดพลาดในการลบข้อมูลตารางเรียน:", error);
         }
