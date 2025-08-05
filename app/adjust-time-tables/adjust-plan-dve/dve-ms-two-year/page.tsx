@@ -7,6 +7,7 @@ import PlansStatusCustom from "@/components/plans-status/plans-status-custom";
 import TimeTableCustom from "@/components/time-table/time-table-custom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
+import DownloadButtonTimetable from "@/components/download-button/download-button-timetable";
 
 export default function DveMsixTwoYear() {
     const [termYear, setTermYear] = useState<string | undefined>(undefined);
@@ -15,6 +16,7 @@ export default function DveMsixTwoYear() {
     const [isLoading, setIsLoading] = useState(true);
     const [dragOverCell, setDragOverCell] = useState<{ day: number; period: number } | null>(null);
     const [conflicts, setConflicts] = useState<any[]>([]);  // เพิ่ม state เก็บข้อมูลการชนกัน
+    const [dragFailedSubjectId, setDragFailedSubjectId] = useState<number | null>(null); // State สำหรับเก็บ ID วิชาที่ลากไม่สำเร็จ
 
     // สถานะของวิชาในตาราง
     const [tableAssignments, setTableAssignments] = useState<{
@@ -186,9 +188,9 @@ export default function DveMsixTwoYear() {
     useEffect(() => {
         if (plans.length > 0) {
             console.log("ข้อมูลทั้งหมด:", plans.length);
-            const year1Plans = plans.filter(plan => plan.yearLevel && plan.yearLevel.includes("ปี 2"));
-            console.log("วิชาปี 2:", year1Plans.length);
-            console.log("ตัวอย่างวิชาปี 2:", year1Plans.length > 0 ? year1Plans[0] : "ไม่พบ");
+            const year2Plans = plans.filter(plan => plan.yearLevel && plan.yearLevel.includes("ปี 2"));
+            console.log("วิชาปี 2:", year2Plans.length);
+            console.log("ตัวอย่างวิชาปี 2:", year2Plans.length > 0 ? year2Plans[0] : "ไม่พบ");
         }
     }, [plans]);
 
@@ -244,6 +246,8 @@ export default function DveMsixTwoYear() {
             if (activeSubject?.fromTable) {
                 handleRemoveAssignment(activeSubject.id);
             }
+            // เคลียร์ conflicts เมื่อไม่มีการ drop
+            setConflicts([]);
             setActiveSubject(null);
             return;
         }
@@ -281,8 +285,10 @@ export default function DveMsixTwoYear() {
                 const lastPeriod = period + totalPeriods - 1;
                 if (lastPeriod >= 25) {
                     console.warn("ไม่สามารถวางวิชาได้: เกินขอบตาราง");
+                    setDragFailedSubjectId(subjectId);
+                    setConflicts([]); // เคลียร์ conflicts
                     setActiveSubject(null);
-                    return; // ไม่ดำเนินการต่อ
+                    return;
                 }
 
                 // ตรวจสอบว่าไม่ทับช่วงกิจกรรมวันพุธ
@@ -294,8 +300,10 @@ export default function DveMsixTwoYear() {
 
                 if (wouldOverlapActivity) {
                     console.warn("ไม่สามารถวางวิชาได้: ทับช่วงกิจกรรม");
+                    setDragFailedSubjectId(subjectId);
+                    setConflicts([]); // เคลียร์ conflicts
                     setActiveSubject(null);
-                    return; // ไม่ดำเนินการต่อ
+                    return;
                 }
 
                 // สร้างช่วงคาบเรียน - คาบต่อเนื่องกัน
@@ -326,14 +334,17 @@ export default function DveMsixTwoYear() {
 
                 if (hasOverlap) {
                     console.warn("ไม่สามารถวางวิชาได้: ทับคาบวิชาอื่น");
+                    setDragFailedSubjectId(subjectId);
+                    setConflicts([]); // เคลียร์ conflicts
                     setActiveSubject(null);
-                    return; // ไม่ดำเนินการต่อ
+                    return;
                 }
 
-                // กำหนดวิชาลงในตาราง - ใช้ข้อมูลวิชาล่าสุดจาก plans
+                // อัปเดต tableAssignments ก่อนส่งไป API (เพื่อให้ UI เห็นการเปลี่ยนแปลงทันที)
+                const newAssignment = { day, periods };
                 setTableAssignments(prev => ({
                     ...prev,
-                    [subjectId]: { day, periods }
+                    [subjectId]: newAssignment
                 }));
 
                 // บันทึกลง Database
@@ -364,18 +375,68 @@ export default function DveMsixTwoYear() {
 
                     // ถ้ามีการชนกัน (409 Conflict)
                     if (response.status === 409 && data.conflicts) {
+                        console.log("พบการชนกัน - กำลังคืนสถานะ");
+
+                        // คืนสถานะ tableAssignments เป็นค่าเดิม
+                        setTableAssignments(prev => {
+                            const newState = { ...prev };
+                            if (activeSubject?.fromTable && activeSubject.originalAssignment) {
+                                // ถ้าลากจากตาราง ให้คืนค่าเป็นตำแหน่งเดิม
+                                newState[subjectId] = activeSubject.originalAssignment;
+                            } else {
+                                // ถ้าลากจากรายการ ให้ลบออกจากตาราง (คืนไปรายการ)
+                                delete newState[subjectId];
+                            }
+                            return newState;
+                        });
+
+                        // ตั้งค่า conflicts และ dragFailedSubjectId
                         setConflicts(data.conflicts);
+                        setDragFailedSubjectId(subjectId);
                     } else if (!response.ok) {
+                        console.error("เกิดข้อผิดพลาดในการบันทึก");
+
+                        // คืนสถานะเมื่อเกิดข้อผิดพลาด
+                        setTableAssignments(prev => {
+                            const newState = { ...prev };
+                            if (activeSubject?.fromTable && activeSubject.originalAssignment) {
+                                newState[subjectId] = activeSubject.originalAssignment;
+                            } else {
+                                delete newState[subjectId];
+                            }
+                            return newState;
+                        });
+
+                        setDragFailedSubjectId(subjectId);
+                        setConflicts([]); // เคลียร์ conflicts เมื่อเกิดข้อผิดพลาดอื่น
                         throw new Error(data.error || 'เกิดข้อผิดพลาดในการบันทึกตาราง');
                     } else {
                         // บันทึกสำเร็จ
                         console.log("บันทึกตารางเรียนสำเร็จ", data);
                         setConflicts([]); // เคลียร์การชนกัน
+                        setDragFailedSubjectId(null); // เคลียร์ drag failed state
                     }
                 } catch (error) {
                     console.error("เกิดข้อผิดพลาดในการบันทึกตารางเรียน:", error);
+
+                    // คืนสถานะเมื่อเกิดข้อผิดพลาด
+                    setTableAssignments(prev => {
+                        const newState = { ...prev };
+                        if (activeSubject?.fromTable && activeSubject.originalAssignment) {
+                            newState[subjectId] = activeSubject.originalAssignment;
+                        } else {
+                            delete newState[subjectId];
+                        }
+                        return newState;
+                    });
+
+                    setDragFailedSubjectId(subjectId);
+                    setConflicts([]); // เคลียร์ conflicts เมื่อเกิดข้อผิดพลาด
                 }
             }
+        } else {
+            // ถ้า drop ไม่ใช่ในตาราง ให้เคลียร์ conflicts
+            setConflicts([]);
         }
 
         setActiveSubject(null);
@@ -400,6 +461,10 @@ export default function DveMsixTwoYear() {
             setConflicts(prev => prev.filter(conflict =>
                 !conflict.conflicts?.some((item: any) => item.planId === subjectId)
             ));
+
+            // เคลียร์ dragFailedSubjectId ถ้าเป็นวิชาเดียวกัน
+            setDragFailedSubjectId(prev => prev === subjectId ? null : prev);
+
         } catch (error) {
             console.error("เกิดข้อผิดพลาดในการลบข้อมูลตารางเรียน:", error);
         }
@@ -723,8 +788,9 @@ export default function DveMsixTwoYear() {
         >
             <div className="mx-auto px-4">
                 <div className="bg-card text-card-foreground rounded-xl border my-5 py-6 shadow-sm mx-auto max-w-7xl">
-                    <div className="mx-8 pb-2 text-lg font-semibold">
+                    <div className="flex justify-between mx-8 pb-2 text-lg font-semibold">
                         ตารางเรียน ม.6 ขึ้น ปวส. ปี 2 ภาคเรียนที่ {termYear}
+                        <DownloadButtonTimetable />
                     </div>
                     <div className="bg-card text-card-foreground px-8">
                         <TimeTableCustom
@@ -748,6 +814,8 @@ export default function DveMsixTwoYear() {
                     onMergeSubject={handleMergeSubject} // เพิ่มบรรทัดนี้
                     conflicts={conflicts}
                     onSubjectUpdate={handleSubjectUpdate}
+                    dragFailedSubjectId={dragFailedSubjectId} // ส่ง dragFailedSubjectId ไปยัง PlansStatusCustom
+                    onDragFailedReset={() => setDragFailedSubjectId(null)} // ฟังก์ชันรีเซ็ตเมื่อการลากไม่สำเร็จ
                 />
             </div>
 
