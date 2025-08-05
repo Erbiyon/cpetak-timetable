@@ -45,7 +45,7 @@ export default function AddRoomSubjectOutCustom({
         }
 
         // กรณีอื่นๆ -> ห้องเรียนนอกสาขา
-        return "ห้องเรียนนอกสาขา";
+        return "ไม่ได้กำหนดประเภทห้อง";
     }
 
     // เมื่อเปิด Dialog ให้เซ็ตค่าห้องที่เลือกไว้ (ถ้ามี)
@@ -161,8 +161,8 @@ export default function AddRoomSubjectOutCustom({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" className="px-2 h-8">
-                    <CopyPlus color="#00ff00" />
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <CopyPlus className="h-4 w-4" color="#00ff00" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
@@ -196,9 +196,6 @@ export default function AddRoomSubjectOutCustom({
                                 <span className="text-sm font-medium">
                                     {getDisplayRoomType(inputRoomCode)}
                                 </span>
-                                <div className="text-xs text-blue-600 mt-1">
-                                    {getRoomTypeExplanation(inputRoomCode)}
-                                </div>
                             </div>
                         </div>
                     )}

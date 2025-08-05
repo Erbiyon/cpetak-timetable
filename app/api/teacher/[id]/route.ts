@@ -5,10 +5,15 @@ const prisma = new PrismaClient();
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
-        const teacherId = parseInt(params.id);
+        const { id } = await context.params;
+        const teacherId = parseInt(id);
+
+        if (isNaN(teacherId)) {
+            return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+        }
 
         const teacher = await prisma.teacher_tb.findUnique({
             where: { id: teacherId },
@@ -75,6 +80,8 @@ export async function PUT(
             { error: error.message || "เกิดข้อผิดพลาด" },
             { status: 500 }
         );
+    } finally {
+        await prisma.$disconnect();
     }
 }
 
@@ -99,5 +106,7 @@ export async function DELETE(
             { error: error.message || "เกิดข้อผิดพลาด" },
             { status: 500 }
         );
+    } finally {
+        await prisma.$disconnect();
     }
 }

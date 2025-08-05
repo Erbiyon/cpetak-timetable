@@ -1,6 +1,5 @@
 import DelectRoomButtonCustom from "../delect-room-button/delect-room-button-custom";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
+import AddRoomCustom from "../add-room/add-room-custom";
 import {
     Table,
     TableBody,
@@ -12,11 +11,16 @@ import {
 import { Loader2 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
+interface Room {
+    id: number;
+    roomCode: string;
+    roomType: string;
+    roomCath?: string;
+}
+
 export default function IndepartmentRoom() {
-    const [roomCode, setRoomCode] = useState("");
-    const [rooms, setRooms] = useState<{ id: number; roomCode: string; roomType: string }[]>([]);
+    const [rooms, setRooms] = useState<Room[]>([]);
     const [loading, setLoading] = useState(true);
-    const [adding, setAdding] = useState(false);
 
     const fetchRooms = async () => {
         try {
@@ -37,67 +41,23 @@ export default function IndepartmentRoom() {
         fetchRooms();
     }, []);
 
-    const handleAddRoom = async () => {
-        if (roomCode.trim() === "") return;
-
-        try {
-            setAdding(true);
-            const res = await fetch("/api/room", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    roomCode: roomCode.trim(),
-                    roomType: "อาคารสาขาวิศวกรรมคอมพิวเตอร์"
-                })
-            });
-
-            if (res.ok) {
-                await fetchRooms();
-                setRoomCode("");
-            }
-        } catch (error) {
-            console.error("Error adding room:", error);
-        } finally {
-            setAdding(false);
-        }
+    const handleDeleted = () => {
+        fetchRooms();
     };
 
-    const handleDeleted = () => {
+    const handleRoomAdded = () => {
         fetchRooms();
     };
 
     return (
         <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border m-5 shadow-sm mx-auto">
             <div className="mx-4">
-                <h1 className="py-3 text-xl font-bold">อาคารสาขาวิศวกรรมคอมพิวเตอร์</h1>
-                <div className="flex justify-between items-center gap-4 mb-2">
-                    <Input
-                        type="text"
-                        placeholder="กรุณากรองเลขห้อง"
-                        className="w-5/6"
-                        value={roomCode}
-                        onChange={e => setRoomCode(e.target.value)}
-                        onKeyDown={e => {
-                            if (e.key === "Enter") handleAddRoom();
-                        }}
-                        disabled={adding}
+                <div className="flex justify-between items-center py-3">
+                    <h1 className="text-xl font-bold">อาคารสาขาวิศวกรรมคอมพิวเตอร์</h1>
+                    <AddRoomCustom
+                        onRoomAdded={handleRoomAdded}
+                        title="อาคารสาขาวิศวกรรมคอมพิวเตอร์"
                     />
-                    <Button
-                        type="button"
-                        variant="outline"
-                        className="w-1/6"
-                        onClick={handleAddRoom}
-                        disabled={adding || roomCode.trim() === ""}
-                    >
-                        {adding ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                เพิ่ม...
-                            </>
-                        ) : (
-                            "เพิ่มห้อง"
-                        )}
-                    </Button>
                 </div>
 
                 <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-5 shadow-sm max-h-[64vh] overflow-y-auto">
@@ -111,6 +71,7 @@ export default function IndepartmentRoom() {
                             <TableHeader className="sticky top-0 z-10 bg-card">
                                 <TableRow>
                                     <TableHead>เลขห้อง</TableHead>
+                                    <TableHead className="text-center">ประเภทห้อง</TableHead>
                                     <TableHead className="text-center">ปุ่มดำเนินการ</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -122,6 +83,14 @@ export default function IndepartmentRoom() {
                                             <TableRow key={room.id}>
                                                 <TableCell className="font-medium">{room.roomCode}</TableCell>
                                                 <TableCell className="text-center">
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${room.roomCath === "บรรยาย"
+                                                            ? "bg-blue-100 text-blue-800"
+                                                            : "bg-green-100 text-green-800"
+                                                        }`}>
+                                                        {room.roomCath || "ไม่ระบุ"}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="text-center">
                                                     <DelectRoomButtonCustom
                                                         roomId={room.id.toString()}
                                                         roomName={room.roomCode}
@@ -132,7 +101,7 @@ export default function IndepartmentRoom() {
                                         ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
+                                        <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
                                             ไม่มีข้อมูลห้อง
                                         </TableCell>
                                     </TableRow>

@@ -40,6 +40,13 @@ export function NavigationMenuCustom() {
             ]
         },
         {
+            title: "ห้องเรียน",
+            items: [
+                { href: "/rooms", label: "จัดการห้องเรียน" },
+                { href: "/rooms/room-out", label: "เพิ่มห้องเรียนวิชานอกสาขา" }
+            ]
+        },
+        {
             title: "อาจารย์",
             items: [
                 { href: "/teachers", label: "จัดการอาจารย์" },
@@ -76,7 +83,6 @@ export function NavigationMenuCustom() {
     ]
 
     const singleItems = [
-        { href: "/rooms", label: "ห้องเรียน" },
         { href: "/class-schedule", label: "ตารางสอน" },
         { href: "/rooms-use", label: "การใช้ห้อง" },
         { href: "/academic-calendar", label: "ปฏิทินการศึกษา" },

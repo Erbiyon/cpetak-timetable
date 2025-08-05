@@ -24,6 +24,7 @@ type Subject = {
     room?: {
         id: number;
         roomCode: string;
+        roomType: string;
     } | null;
 };
 
@@ -132,7 +133,7 @@ export default function OutdepartmentRoom() {
     };
 
     return (
-        <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-5 py-5 shadow-sm mx-auto">
+        <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-3 mx-5 py-5 shadow-sm">
             <div className="flex justify-between items-center mx-8">
                 <h2 className="text-xl font-bold">
                     เพิ่มห้องเรียนของวิชานอกสาขา
@@ -144,11 +145,11 @@ export default function OutdepartmentRoom() {
                 </h2>
             </div>
 
-            <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-5 shadow-sm mx-8 max-h-[64vh] overflow-y-auto">
+            <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-5 shadow-sm mx-8 max-h-[73vh] overflow-y-auto">
                 {loading ? (
                     <div className="flex justify-center items-center p-8">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <span className="ml-2">กำลังโหลดข้อมูลห้องเรียน...</span>
+                        <span className="ml-2">กำลังโหลดข้อมูลวิชานอกสาขา...</span>
                     </div>
                 ) : Object.keys(groupedSubjects).length > 0 ? (
                     <div className="space-y-6 p-4">
@@ -194,20 +195,15 @@ export default function OutdepartmentRoom() {
                                                                 {subject.room?.roomCode || "-"}
                                                             </TableCell>
                                                             <TableCell className="text-xs">
-                                                                {subject.room?.roomCode ? (
+                                                                {subject.room?.roomType ? (
                                                                     <span className={
-                                                                        subject.room.roomCode.toUpperCase().startsWith("ENG")
+                                                                        subject.room.roomType === "ห้องปฏิบัติการ"
                                                                             ? "text-blue-600"
-                                                                            : /^6\d*$/.test(subject.room.roomCode.trim())
+                                                                            : subject.room.roomType === "ห้องเรียน"
                                                                                 ? "text-green-600"
                                                                                 : "text-gray-600"
                                                                     }>
-                                                                        {subject.room.roomCode.toUpperCase().startsWith("ENG")
-                                                                            ? "ตึกวิศวกรรม"
-                                                                            : /^6\d*$/.test(subject.room.roomCode.trim())
-                                                                                ? "อาคารสาขาฯ"
-                                                                                : "นอกสาขา"
-                                                                        }
+                                                                        {subject.room.roomType}
                                                                     </span>
                                                                 ) : "-"}
                                                             </TableCell>

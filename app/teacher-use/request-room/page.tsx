@@ -21,7 +21,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, AlertCircle, Plus, User, UserCheck, Shield } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, Shield } from "lucide-react";
 
 type Subject = {
     id: number;
@@ -70,8 +70,6 @@ export default function RequestRoomPage() {
     const [rooms, setRooms] = useState<Room[]>([]);
     const [currentTermYear, setCurrentTermYear] = useState<string>("");
     const [updating, setUpdating] = useState<number | null>(null);
-    const [refreshing, setRefreshing] = useState(false);
-    const [scrollPosition, setScrollPosition] = useState(0);
     const [teacherInfo, setTeacherInfo] = useState<any>(null);
     const [accessDenied, setAccessDenied] = useState(false);
 
@@ -118,31 +116,17 @@ export default function RequestRoomPage() {
         }
     };
 
-    // เพิ่ม scroll position tracking
-    useEffect(() => {
-        const handleScroll = () => {
-            setScrollPosition(window.scrollY);
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    // โหลดวิชาในสาขาทั้งหมด (เฉพาะอาจารย์ที่มีสิทธิ์)
-    const fetchSubjects = async (preserveScroll = false) => {
-        if (accessDenied) return;
+    // โหลดวิชาที่อาจารย์คนนี้เป็นเจ้าของเท่านั้น
+    const fetchSubjects = async () => {
+        if (accessDenied || !session?.user?.id) return;
 
         try {
-            setRefreshing(true);
-            const currentScrollY = preserveScroll ? window.scrollY : 0;
-
-            console.log('Fetching subjects with params:', {
-                dep: 'วิชาในสาขา',
-                termYear: currentTermYear
-            });
+            setLoading(true);
+            console.log('Fetching subjects for teacher:', session.user.id);
 
             const params = new URLSearchParams({
-                dep: 'วิชาในสาขา',
+                dep: 'ในสาขา',
+                teacherId: session.user.id,
                 ...(currentTermYear && { termYear: currentTermYear })
             });
 
@@ -150,21 +134,19 @@ export default function RequestRoomPage() {
             if (res.ok) {
                 const data = await res.json();
                 console.log("API response - subjects found:", data.length);
-                setSubjects(data);
 
-                // กลับไปยังตำแหน่ง scroll เดิม
-                if (preserveScroll) {
-                    setTimeout(() => {
-                        window.scrollTo(0, currentScrollY);
-                    }, 50);
-                }
+                // เพิ่มการกรองเพื่อให้แน่ใจว่าเป็นวิชาของอาจารย์คนนี้
+                const mySubjects = data.filter((subject: Subject) =>
+                    subject.teacherId && subject.teacherId.toString() === session?.user?.id
+                );
+
+                setSubjects(mySubjects);
             } else {
                 console.error('Failed to fetch subjects:', res.status, res.statusText);
             }
         } catch (error) {
             console.error("Failed to fetch subjects:", error);
         } finally {
-            setRefreshing(false);
             setLoading(false);
         }
     };
@@ -216,20 +198,13 @@ export default function RequestRoomPage() {
 
     // โหลดข้อมูลวิชาและห้องเมื่อมีการเปลี่ยน term year
     useEffect(() => {
-        if (currentTermYear && !refreshing && !accessDenied) {
+        if (currentTermYear && !accessDenied && session?.user?.id) {
             fetchSubjects();
             fetchRooms();
         }
-    }, [currentTermYear, accessDenied]);
+    }, [currentTermYear, accessDenied, session?.user?.id]);
 
-    // Function สำหรับ refresh ข้อมูลโดยไม่เปลี่ยน scroll
-    const refreshData = async () => {
-        if (currentTermYear && !accessDenied) {
-            await fetchSubjects(true); // ส่ง true เพื่อ preserve scroll
-        }
-    };
-
-    // อัปเดตห้องเรียน
+    // อัปเดตห้องเรียนเท่านั้น
     const handleRoomUpdate = async (subjectId: number, roomId: string) => {
         if (accessDenied) return;
 
@@ -248,7 +223,8 @@ export default function RequestRoomPage() {
             });
 
             if (response.ok) {
-                await refreshData();
+                // รีเฟรชข้อมูล
+                await fetchSubjects();
 
                 const selectedRoom = rooms.find(room => room.id === parseInt(roomId));
                 console.log(
@@ -266,89 +242,6 @@ export default function RequestRoomPage() {
         }
     };
 
-    // รับสอนวิชา
-    const handleTakeSubject = async (subjectId: number) => {
-        if (accessDenied) return;
-
-        try {
-            setUpdating(subjectId);
-            console.log('Taking subject:', subjectId, 'for teacher:', session?.user?.id);
-
-            const response = await fetch(`/api/subject/${subjectId}/teacher`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    teacherId: parseInt(session?.user?.id || "0"),
-                }),
-            });
-
-            if (response.ok) {
-                await refreshData();
-                console.log("รับสอนวิชาเรียบร้อยแล้ว");
-            } else {
-                console.error("เกิดข้อผิดพลาดในการรับสอนวิชา");
-            }
-        } catch (error) {
-            console.error("Error taking subject:", error);
-        } finally {
-            setUpdating(null);
-        }
-    };
-
-    // ยกเลิกการสอนวิชา
-    const handleRemoveSubject = async (subjectId: number) => {
-        if (accessDenied) return;
-
-        try {
-            setUpdating(subjectId);
-            console.log('Removing subject:', subjectId);
-
-            // Step 1: ลบห้องเรียนก่อน (ถ้ามี)
-            const subject = subjects.find(s => s.id === subjectId);
-            if (subject?.roomId) {
-                console.log('Removing room assignment first...');
-                const roomResponse = await fetch(`/api/subject/${subjectId}/room`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        roomId: null,
-                    }),
-                });
-
-                if (!roomResponse.ok) {
-                    console.error("เกิดข้อผิดพลาดในการลบห้องเรียน");
-                    return;
-                }
-            }
-
-            // Step 2: ลบอาจารย์ผู้สอน
-            const response = await fetch(`/api/subject/${subjectId}/teacher`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    teacherId: null,
-                }),
-            });
-
-            if (response.ok) {
-                await refreshData();
-                console.log("ยกเลิกการสอนวิชาเรียบร้อยแล้ว");
-            } else {
-                console.error("เกิดข้อผิดพลาดในการยกเลิกการสอนวิชา");
-            }
-        } catch (error) {
-            console.error("Error removing subject:", error);
-        } finally {
-            setUpdating(null);
-        }
-    };
-
     // แปลง planType เป็นข้อความภาษาไทย
     const getPlanTypeText = (planType: string) => {
         switch (planType) {
@@ -358,11 +251,6 @@ export default function RequestRoomPage() {
             case "DVE-LVC": return "ปวช. ขึ้น ปวส.";
             default: return planType;
         }
-    };
-
-    // ตรวจสอบว่าเป็นวิชาของอาจารย์คนนี้หรือไม่
-    const isMySubject = (subject: Subject) => {
-        return subject.teacherId && subject.teacherId.toString() === session?.user?.id;
     };
 
     // จัดกลุ่มวิชาตาม planType และ yearLevel
@@ -387,16 +275,6 @@ export default function RequestRoomPage() {
             return getYearNumber(a) - getYearNumber(b);
         });
     };
-
-    // Debug info
-    console.log('Current state:', {
-        loading,
-        accessDenied,
-        teacherType: teacherInfo?.teacherType,
-        totalSubjects: subjects.length,
-        currentTermYear,
-        session: session?.user?.id
-    });
 
     if (status === "loading" || (loading && !accessDenied)) {
         return (
@@ -436,16 +314,16 @@ export default function RequestRoomPage() {
         <div className="container mx-auto p-6">
             {/* Header */}
             <div className="mb-6">
-                <h1 className="text-3xl font-bold">การจัดการวิชาและห้องเรียน</h1>
+                <h1 className="text-3xl font-bold">เลือกห้องเรียนสำหรับวิชาที่สอน</h1>
                 <p className="text-gray-600 mt-2">
-                    เลือกวิชาที่สอนและเลือกห้องเรียนสำหรับวิชาในสาขา
+                    จัดการห้องเรียนสำหรับวิชาที่คุณเป็นผู้สอน
                     {currentTermYear && (
                         <span className="ml-2">| ภาคเรียน: {currentTermYear}</span>
                     )}
                 </p>
                 {teacherInfo && (
                     <div className="mt-2 text-sm text-gray-500">
-                        สำหรับ: {teacherInfo.tName} {teacherInfo.tLastName} ({teacherInfo.teacherType})
+                        อาจารย์: {teacherInfo.tName} {teacherInfo.tLastName} ({teacherInfo.teacherType})
                     </div>
                 )}
             </div>
@@ -461,7 +339,12 @@ export default function RequestRoomPage() {
             ) : Object.keys(groupedSubjects).length > 0 ? (
                 <Card>
                     <CardHeader>
-                        <CardTitle>รายการวิชาในสาขา</CardTitle>
+                        <CardTitle>
+                            วิชาที่สอน
+                            <Badge variant="outline" className="ml-2">
+                                {subjects.length} วิชา
+                            </Badge>
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-6">
@@ -498,17 +381,15 @@ export default function RequestRoomPage() {
                                                             <TableHead className="w-[80px] text-center">Section</TableHead>
                                                             <TableHead className="w-[60px] text-center">หน่วยกิต</TableHead>
                                                             <TableHead className="w-[100px] text-center">ชั่วโมง</TableHead>
-                                                            <TableHead className="w-[120px] text-center">อาจารย์ผู้สอน</TableHead>
                                                             <TableHead className="w-[150px] text-center">ห้องเรียน</TableHead>
-                                                            <TableHead className="w-[100px] text-center">การจัดการ</TableHead>
+                                                            <TableHead className="w-[80px] text-center">สถานะ</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
                                                         {subjects.map(subject => (
                                                             <TableRow
                                                                 key={subject.id}
-                                                                className={`hover:bg-muted/50 ${isMySubject(subject) ? 'bg-blue-50 dark:bg-blue-950/30' : ''
-                                                                    }`}
+                                                                className="hover:bg-muted/50 bg-blue-50 dark:bg-blue-950/30"
                                                             >
                                                                 <TableCell className="font-mono text-sm">
                                                                     {subject.subjectCode}
@@ -532,32 +413,11 @@ export default function RequestRoomPage() {
                                                                     <div>บรรยาย: {subject.lectureHour} ชม.</div>
                                                                     <div>ปฏิบัติ: {subject.labHour} ชม.</div>
                                                                 </TableCell>
-                                                                <TableCell className="text-center">
-                                                                    {subject.teacher ? (
-                                                                        <div className="text-xs">
-                                                                            <div className="font-medium">
-                                                                                {subject.teacher.tName} {subject.teacher.tLastName}
-                                                                            </div>
-                                                                            <div className="text-muted-foreground">
-                                                                                {subject.teacher.tId}
-                                                                            </div>
-                                                                            {isMySubject(subject) && (
-                                                                                <Badge variant="secondary" className="text-xs mt-1">
-                                                                                    คุณ
-                                                                                </Badge>
-                                                                            )}
-                                                                        </div>
-                                                                    ) : (
-                                                                        <span className="text-muted-foreground text-xs">
-                                                                            ยังไม่มีผู้สอน
-                                                                        </span>
-                                                                    )}
-                                                                </TableCell>
                                                                 <TableCell>
                                                                     <Select
                                                                         value={subject.roomId?.toString() || "none"}
                                                                         onValueChange={(value) => handleRoomUpdate(subject.id, value)}
-                                                                        disabled={updating === subject.id || !isMySubject(subject)}
+                                                                        disabled={updating === subject.id}
                                                                     >
                                                                         <SelectTrigger className="w-full">
                                                                             <SelectValue placeholder="เลือกห้อง" />
@@ -579,57 +439,17 @@ export default function RequestRoomPage() {
                                                                     {updating === subject.id ? (
                                                                         <Loader2 className="h-4 w-4 animate-spin mx-auto" />
                                                                     ) : (
-                                                                        <div className="flex items-center justify-center gap-1">
-                                                                            {/* ปุ่มรับสอน/ยกเลิกสอน */}
-                                                                            {isMySubject(subject) ? (
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    variant="destructive"
-                                                                                    onClick={() => handleRemoveSubject(subject.id)}
-                                                                                    className="h-6 px-2 text-xs"
-                                                                                >
-                                                                                    ยกเลิก
-                                                                                </Button>
-                                                                            ) : !subject.teacherId ? (
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    variant="outline"
-                                                                                    onClick={() => handleTakeSubject(subject.id)}
-                                                                                    className="h-6 px-2 text-xs"
-                                                                                >
-                                                                                    <Plus className="h-3 w-3 mr-1" />
-                                                                                    สอน
-                                                                                </Button>
+                                                                        <div className="flex items-center justify-center">
+                                                                            {/* ไอคอนสถานะห้อง */}
+                                                                            {subject.roomId ? (
+                                                                                <div title="เลือกห้องแล้ว">
+                                                                                    <CheckCircle className="h-5 w-5 text-green-600" />
+                                                                                </div>
                                                                             ) : (
-                                                                                <span className="text-xs text-muted-foreground">
-                                                                                    มีผู้สอนแล้ว
-                                                                                </span>
+                                                                                <div title="ยังไม่เลือกห้อง">
+                                                                                    <AlertCircle className="h-5 w-5 text-orange-600" />
+                                                                                </div>
                                                                             )}
-
-                                                                            {/* ไอคอนสถานะอาจารย์และห้อง */}
-                                                                            <div className="flex items-center gap-1 ml-2">
-                                                                                {/* ไอคอนสถานะอาจารย์ */}
-                                                                                {subject.teacherId ? (
-                                                                                    <div title="มีอาจารย์ผู้สอน">
-                                                                                        <UserCheck className="h-4 w-4 text-blue-600" />
-                                                                                    </div>
-                                                                                ) : (
-                                                                                    <div title="ยังไม่มีอาจารย์ผู้สอน">
-                                                                                        <User className="h-4 w-4 text-gray-400" />
-                                                                                    </div>
-                                                                                )}
-
-                                                                                {/* ไอคอนสถานะห้อง */}
-                                                                                {subject.roomId ? (
-                                                                                    <div title="เลือกห้องแล้ว">
-                                                                                        <CheckCircle className="h-4 w-4 text-green-600" />
-                                                                                    </div>
-                                                                                ) : (
-                                                                                    <div title="ยังไม่เลือกห้อง">
-                                                                                        <AlertCircle className="h-4 w-4 text-orange-600" />
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
                                                                         </div>
                                                                     )}
                                                                 </TableCell>
@@ -649,10 +469,10 @@ export default function RequestRoomPage() {
                 <Card>
                     <CardContent className="text-center py-8">
                         <p className="text-muted-foreground">
-                            ไม่มีวิชาในสาขาในภาคเรียนนี้
+                            คุณยังไม่ได้รับมอบหมายให้สอนวิชาใดในภาคเรียนนี้
                         </p>
                         <p className="text-sm text-muted-foreground mt-2">
-                            กรุณาติดต่อผู้ดูแลระบบเพื่อเพิ่มวิชาในระบบ
+                            กรุณาติดต่อผู้ดูแลระบบเพื่อขอรับมอบหมายวิชา
                         </p>
                     </CardContent>
                 </Card>
