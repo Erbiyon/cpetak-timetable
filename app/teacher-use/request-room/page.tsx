@@ -41,6 +41,7 @@ type Subject = {
         id: number;
         roomCode: string;
         roomType: string;
+        roomCate?: string; // เพิ่ม roomCate
     } | null;
     teacher?: {
         id: number;
@@ -54,6 +55,7 @@ type Room = {
     id: number;
     roomCode: string;
     roomType: string;
+    roomCate?: string; // เพิ่ม roomCate
 };
 
 type GroupedSubjects = {
@@ -381,7 +383,7 @@ export default function RequestRoomPage() {
                                                             <TableHead className="w-[80px] text-center">Section</TableHead>
                                                             <TableHead className="w-[60px] text-center">หน่วยกิต</TableHead>
                                                             <TableHead className="w-[100px] text-center">ชั่วโมง</TableHead>
-                                                            <TableHead className="w-[150px] text-center">ห้องเรียน</TableHead>
+                                                            <TableHead className="w-[130px] text-center">ห้องเรียน</TableHead>
                                                             <TableHead className="w-[80px] text-center">สถานะ</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
@@ -389,7 +391,7 @@ export default function RequestRoomPage() {
                                                         {subjects.map(subject => (
                                                             <TableRow
                                                                 key={subject.id}
-                                                                className="hover:bg-muted/50 bg-blue-50 dark:bg-blue-950/30"
+                                                                className="hover:bg-muted/50 bg-card"
                                                             >
                                                                 <TableCell className="font-mono text-sm">
                                                                     {subject.subjectCode}
@@ -430,6 +432,11 @@ export default function RequestRoomPage() {
                                                                                     <span className="text-xs text-muted-foreground ml-2">
                                                                                         ({room.roomType})
                                                                                     </span>
+                                                                                    {room.roomCate && (
+                                                                                        <span className="text-xs text-muted-foreground ml-1">
+                                                                                            - {room.roomCate}
+                                                                                        </span>
+                                                                                    )}
                                                                                 </SelectItem>
                                                                             ))}
                                                                         </SelectContent>

@@ -12,18 +12,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2 } from "lucide-react";
+import { Loader2, Edit } from "lucide-react";
 
-interface AddRoomCustomProps {
-    onRoomAdded?: () => void;
-    title?: string;
+interface EditRoomCustomProps {
+    roomId: string;
+    roomCode: string;
+    roomType: string;
+    roomCate?: string;
+    onRoomUpdated?: () => void;
 }
 
-export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps) {
+export default function EditRoomCustom({
+    roomId,
+    roomCode,
+    roomType,
+    roomCate,
+    onRoomUpdated
+}: EditRoomCustomProps) {
     const [open, setOpen] = useState(false);
-    const [roomNumber, setRoomNumber] = useState("");
-    const [roomCategory, setRoomCategory] = useState("บรรยาย"); // ประเภทห้อง (บรรยาย/ปฏิบัติ)
-    const [adding, setAdding] = useState(false);
+    const [roomNumber, setRoomNumber] = useState(roomCode);
+    const [roomCategory, setRoomCategory] = useState(roomCate || "บรรยาย");
+    const [updating, setUpdating] = useState(false);
 
     const handleSubmit = async () => {
         if (!roomNumber.trim()) {
@@ -32,47 +41,55 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
         }
 
         try {
-            setAdding(true);
-            const res = await fetch("/api/room", {
-                method: "POST",
+            setUpdating(true);
+            const res = await fetch(`/api/room/${roomId}`, {
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     roomCode: roomNumber.trim(),
-                    roomType: title || "ทั่วไป", // ชื่อตึก/อาคาร
-                    roomCate: roomCategory, // แก้จาก roomCath เป็น roomCate
+                    roomType: roomType,
+                    roomCate: roomCategory,
                 }),
             });
 
             if (res.ok) {
-                // รีเซ็ตค่าและปิด dialog
-                setRoomNumber("");
-                setRoomCategory("บรรยาย");
                 setOpen(false);
 
                 // เรียก callback เพื่อ refresh ข้อมูล
-                if (onRoomAdded) {
-                    onRoomAdded();
+                if (onRoomUpdated) {
+                    onRoomUpdated();
                 }
             } else {
-                alert("เกิดข้อผิดพลาดในการเพิ่มห้อง");
+                alert("เกิดข้อผิดพลาดในการแก้ไขห้อง");
             }
         } catch (error) {
-            console.error("Error adding room:", error);
-            alert("เกิดข้อผิดพลาดในการเพิ่มห้อง");
+            console.error("Error updating room:", error);
+            alert("เกิดข้อผิดพลาดในการแก้ไขห้อง");
         } finally {
-            setAdding(false);
+            setUpdating(false);
+        }
+    };
+
+    const handleOpenChange = (newOpen: boolean) => {
+        setOpen(newOpen);
+        if (newOpen) {
+            // รีเซ็ตค่าเมื่อเปิด dialog
+            setRoomNumber(roomCode);
+            setRoomCategory(roomCate || "บรรยาย");
         }
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="outline">เพิ่มห้องใหม่</Button>
+                <Button variant="ghost" size="sm">
+                    <Edit color="#ff8000" className="w-4 h-4 mr-1" />
+                </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>
-                        เพิ่มห้องใหม่
+                        แก้ไขข้อมูลห้อง
                     </DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -86,18 +103,16 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
                             onChange={(e) => setRoomNumber(e.target.value)}
                             className="col-span-3"
                             placeholder="กรอกเลขห้อง"
-                            disabled={adding}
+                            disabled={updating}
                         />
                     </div>
 
-                    {title && (
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">อาคาร</Label>
-                            <div className="col-span-3 text-sm text-muted-foreground">
-                                {title}
-                            </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="text-right">อาคาร</Label>
+                        <div className="col-span-3 text-sm text-muted-foreground">
+                            {roomType}
                         </div>
-                    )}
+                    </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label className="text-right">ประเภทห้อง</Label>
@@ -105,15 +120,15 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
                             value={roomCategory}
                             onValueChange={setRoomCategory}
                             className="col-span-3"
-                            disabled={adding}
+                            disabled={updating}
                         >
                             <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="บรรยาย" id="lecture" />
-                                <Label htmlFor="lecture">บรรยาย</Label>
+                                <RadioGroupItem value="บรรยาย" id="edit-lecture" />
+                                <Label htmlFor="edit-lecture">บรรยาย</Label>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="ปฏิบัติ" id="practical" />
-                                <Label htmlFor="practical">ปฏิบัติ</Label>
+                                <RadioGroupItem value="ปฏิบัติ" id="edit-practical" />
+                                <Label htmlFor="edit-practical">ปฏิบัติ</Label>
                             </div>
                         </RadioGroup>
                     </div>
@@ -122,21 +137,21 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
                     <Button
                         variant="outline"
                         onClick={() => setOpen(false)}
-                        disabled={adding}
+                        disabled={updating}
                     >
                         ยกเลิก
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={adding || !roomNumber.trim()}
+                        disabled={updating || !roomNumber.trim()}
                     >
-                        {adding ? (
+                        {updating ? (
                             <>
                                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                กำลังเพิ่ม...
+                                กำลังแก้ไข...
                             </>
                         ) : (
-                            "เพิ่มห้อง"
+                            "บันทึก"
                         )}
                     </Button>
                 </div>

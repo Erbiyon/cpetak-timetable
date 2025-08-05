@@ -1,5 +1,6 @@
 import DelectRoomButtonCustom from "../delect-room-button/delect-room-button-custom";
 import AddRoomCustom from "../add-room/add-room-custom";
+import EditRoomCustom from "../edit-room/edit-room-custom";
 import {
     Table,
     TableBody,
@@ -15,7 +16,7 @@ interface Room {
     id: number;
     roomCode: string;
     roomType: string;
-    roomCath?: string;
+    roomCate?: string;
 }
 
 export default function IndepartmentRoom() {
@@ -46,6 +47,10 @@ export default function IndepartmentRoom() {
     };
 
     const handleRoomAdded = () => {
+        fetchRooms();
+    };
+
+    const handleRoomUpdated = () => {
         fetchRooms();
     };
 
@@ -83,19 +88,28 @@ export default function IndepartmentRoom() {
                                             <TableRow key={room.id}>
                                                 <TableCell className="font-medium">{room.roomCode}</TableCell>
                                                 <TableCell className="text-center">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${room.roomCath === "บรรยาย"
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${room.roomCate === "บรรยาย"
                                                             ? "bg-blue-100 text-blue-800"
                                                             : "bg-green-100 text-green-800"
                                                         }`}>
-                                                        {room.roomCath || "ไม่ระบุ"}
+                                                        {room.roomCate || "ไม่ระบุ"}
                                                     </span>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <DelectRoomButtonCustom
-                                                        roomId={room.id.toString()}
-                                                        roomName={room.roomCode}
-                                                        onDeleted={handleDeleted}
-                                                    />
+                                                    <div className="flex justify-center gap-2">
+                                                        <EditRoomCustom
+                                                            roomId={room.id.toString()}
+                                                            roomCode={room.roomCode}
+                                                            roomType={room.roomType}
+                                                            roomCate={room.roomCate}
+                                                            onRoomUpdated={handleRoomUpdated}
+                                                        />
+                                                        <DelectRoomButtonCustom
+                                                            roomId={room.id.toString()}
+                                                            roomName={room.roomCode}
+                                                            onDeleted={handleDeleted}
+                                                        />
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         ))
