@@ -26,13 +26,13 @@ export function DarkModeToggle() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setTheme("light")}>
-                    Light
+                    สว่าง
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme("dark")}>
-                    Dark
+                    มืด
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme("system")}>
-                    System
+                    ระบบ
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
