@@ -715,66 +715,50 @@ export default function TransferOneYear() {
 
     // ฟังก์ชันนี้จะถูกเรียกเมื่อมีการอัปเดตข้อมูลวิชา
     const handleSubjectUpdate = async () => {
-        console.log("Refreshing subjects data...", { termYear });
+        console.log("Refreshing subjects and timetable data...");
 
         try {
-            setIsLoading(true); // เพิ่มการแสดง loading
+            setIsLoading(true);
 
-            // ใช้ข้อมูล termYear ปัจจุบัน
-            const currentTermYear = termYear || "";
+            // First, refresh the timetable assignments
+            const timetableRes = await fetch(`/api/timetable?termYear=${encodeURIComponent(termYear || "")}&yearLevel=${encodeURIComponent('ปี 1')}&planType=TRANSFER`);
+            if (timetableRes.ok) {
+                const timetableData = await timetableRes.json();
 
-            // ลองหลายวิธีในการโหลดข้อมูล
-            let freshPlans = [];
+                // Convert to tableAssignments format
+                const assignments: { [subjectId: number]: { day: number, periods: number[] } } = {};
 
-            // วิธีที่ 1: ลองเรียก API พร้อม filters
-            const response1 = await fetch(`/api/subject?termYear=${encodeURIComponent(currentTermYear)}&yearLevel=${encodeURIComponent('ปี 1')}&planType=TRANSFER`);
-            if (response1.ok) {
-                const data1 = await response1.json();
-                if (data1.length > 0) {
-                    freshPlans = data1;
-                    console.log("Method 1 success: loaded", freshPlans.length, "plans");
-                }
+                timetableData.forEach((item: any) => {
+                    const periods: number[] = [];
+                    for (let p = item.startPeriod; p <= item.endPeriod; p++) {
+                        if (item.day === 2 && p >= 14 && p <= 17) continue;
+                        periods.push(p);
+                    }
+
+                    assignments[item.planId] = {
+                        day: item.day,
+                        periods: periods
+                    };
+                });
+
+                setTableAssignments(assignments);
+                console.log("Updated tableAssignments after refresh:", assignments);
             }
 
-            // วิธีที่ 2: ถ้าไม่ได้ผล ลองโหลดทั้งหมดแล้วกรอง
-            if (freshPlans.length === 0) {
-                console.log("Method 1 failed, trying method 2...");
-                const response2 = await fetch("/api/subject");
-                if (response2.ok) {
-                    const allData = await response2.json();
-                    freshPlans = allData.filter((record: any) => {
-                        const matchTermYear = !currentTermYear || record.termYear === currentTermYear;
-                        const matchYearLevel = record.yearLevel === 'ปี 1';
-                        const matchPlanType = record.planType === 'TRANSFER';
-                        return matchTermYear && matchYearLevel && matchPlanType;
-                    });
-                    console.log("Method 2 success: filtered", freshPlans.length, "plans from", allData.length, "total");
+            // Optionally refresh the subject data if needed
+            const planRes = await fetch(`/api/subject?termYear=${encodeURIComponent(termYear || "")}&yearLevel=${encodeURIComponent('ปี 1')}&planType=TRANSFER`);
+            if (planRes.ok) {
+                const planData = await planRes.json();
+                if (Array.isArray(planData) && planData.length > 0) {
+                    setPlans(planData);
+                    console.log("Updated plans after refresh:", planData.length);
                 }
-            }
-
-            // อัปเดต plans state ด้วยข้อมูลใหม่
-            if (freshPlans.length > 0) {
-                setPlans(freshPlans);
-                console.log("Updated plans state with fresh data:", freshPlans.length, "records");
-
-                // Debug: แสดงข้อมูลตัวอย่าง
-                if (freshPlans[0]) {
-                    console.log("Sample fresh plan:", {
-                        id: freshPlans[0].id,
-                        subjectCode: freshPlans[0].subjectCode,
-                        section: freshPlans[0].section,
-                        room: freshPlans[0].room,
-                        teacher: freshPlans[0].teacher
-                    });
-                }
-            } else {
-                console.warn("No fresh plans found, keeping existing data");
             }
 
         } catch (error) {
-            console.error("Error refreshing plans:", error);
+            console.error("Error refreshing data:", error);
         } finally {
-            setIsLoading(false); // ปิด loading
+            setIsLoading(false);
         }
     };
 

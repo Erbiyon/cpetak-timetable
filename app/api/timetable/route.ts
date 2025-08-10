@@ -308,9 +308,6 @@ async function checkSectionDuplicate({
     section: string;
 }) {
     try {
-        console.log("=== checkSectionDuplicate Function ===");
-        console.log("Input parameters:", { planId, termYear, yearLevel, planType, teacherId, section });
-
         // ดึงข้อมูลวิชาที่กำลังจะจัดตาราง
         const currentPlan = await prisma.plans_tb.findUnique({
             where: { id: planId },
@@ -320,22 +317,15 @@ async function checkSectionDuplicate({
         });
 
         if (!currentPlan) {
-            console.log("Current plan not found for planId:", planId);
             return [];
         }
 
-        console.log("Current plan found:", {
-            id: currentPlan.id,
-            subjectCode: currentPlan.subjectCode,
-            subjectName: currentPlan.subjectName
-        });
-
-        // ค้นหาวิชาที่มีเงื่อนไขเดียวกันในทุกแผนการเรียน
+        // ค้นหาวิชาที่มีเงื่อนไขเดียวกันในทุกแผนการเรียนและทุกชั้นปี
         const duplicateSections = await prisma.timetable_tb.findMany({
             where: {
                 AND: [
                     { termYear }, // ภาคเรียนเดียวกัน
-                    { yearLevel }, // ชั้นปีเดียวกัน
+                    // ลบเงื่อนไข yearLevel ออกเพื่อตรวจสอบทุกชั้นปี
                     { teacherId }, // อาจารย์คนเดียวกัน
                     { section }, // Section เดียวกัน
                     { planId: { not: planId } }, // ไม่รวมวิชาตัวเอง
@@ -353,29 +343,10 @@ async function checkSectionDuplicate({
             }
         });
 
-        console.log("Database query for duplicates:");
-        console.log("Query conditions:", {
-            termYear,
-            yearLevel,
-            teacherId,
-            section,
-            subjectCode: currentPlan.subjectCode,
-            excludePlanId: planId
-        });
-        console.log("Found duplicate sections:", duplicateSections.length);
-
         if (duplicateSections.length > 0) {
-            console.log("Duplicate sections details:", duplicateSections.map(item => ({
-                planId: item.planId,
-                planType: item.planType,
-                subjectCode: item.plan?.subjectCode,
-                section: item.section,
-                teacherId: item.teacherId
-            })));
-
-            // จัดกลุ่ม conflicts ตาม planType
-            const conflictsByPlan = duplicateSections.reduce((acc: any, item) => {
-                const key = item.planType;
+            // จัดกลุ่ม conflicts ตาม planType และ yearLevel
+            const conflictsByPlanAndYear = duplicateSections.reduce((acc: any, item) => {
+                const key = `${item.planType}-${item.yearLevel}`;
                 if (!acc[key]) {
                     acc[key] = [];
                 }
@@ -383,20 +354,25 @@ async function checkSectionDuplicate({
                 return acc;
             }, {});
 
-            // สร้าง message ที่แสดงแผนที่มีการซ้ำกัน
-            const conflictPlans = Object.keys(conflictsByPlan).map(planType => {
-                switch (planType) {
-                    case "TRANSFER": return "เทียบโอน";
-                    case "FOUR_YEAR": return "4 ปี";
-                    case "DVE-MSIX": return "ม.6 ขึ้น ปวส.";
-                    case "DVE-LVC": return "ปวช. ขึ้น ปวส.";
-                    default: return planType;
+            // สร้าง message ที่แสดงแผนและชั้นปีที่มีการซ้ำกัน
+            const conflictDetails = Object.entries(conflictsByPlanAndYear).map(([key, items]) => {
+                const [planTypeCode, yearLevel] = key.split('-');
+                let planTypeText;
+
+                switch (planTypeCode) {
+                    case "TRANSFER": planTypeText = "เทียบโอน"; break;
+                    case "FOUR_YEAR": planTypeText = "4 ปี"; break;
+                    case "DVE-MSIX": planTypeText = "ม.6 ขึ้น ปวส."; break;
+                    case "DVE-LVC": planTypeText = "ปวช. ขึ้น ปวส."; break;
+                    default: planTypeText = planTypeCode;
                 }
+
+                return `${planTypeText} ${yearLevel}`;
             }).join(", ");
 
             const conflictResult = [{
                 type: "SECTION_DUPLICATE_CONFLICT",
-                message: `ไม่สามารถจัดตารางได้: อาจารย์ ${currentPlan.teacher?.tName} ${currentPlan.teacher?.tLastName} สอนวิชา ${currentPlan.subjectCode} Section ${section} ใน${yearLevel} อยู่แล้วในแผน ${conflictPlans} - กรุณาเปลี่ยน Section หรือมอบหมายอาจารย์คนอื่น`,
+                message: `ไม่สามารถจัดตารางได้: อาจารย์ ${currentPlan.teacher?.tName} ${currentPlan.teacher?.tLastName} สอนวิชา ${currentPlan.subjectCode} Section ${section} อยู่แล้วในแผน ${conflictDetails} - กรุณาเปลี่ยน Section`,
                 conflicts: duplicateSections,
                 mainSubject: {
                     subjectCode: currentPlan.subjectCode,
@@ -406,14 +382,16 @@ async function checkSectionDuplicate({
                     section: section,
                     teacher: currentPlan.teacher
                 },
-                conflictPlans: Object.keys(conflictsByPlan)
+                // เก็บข้อมูลความขัดแย้งในรูปแบบที่เข้าถึงง่าย
+                conflictDetails: Object.keys(conflictsByPlanAndYear).map(key => {
+                    const [planType, yearLevel] = key.split('-');
+                    return { planType, yearLevel };
+                })
             }];
 
-            console.log("Returning conflict:", conflictResult);
             return conflictResult;
         }
 
-        console.log("No section duplicates found");
         return [];
     } catch (error) {
         console.error("Error checking section duplicate:", error);

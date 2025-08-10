@@ -12,6 +12,8 @@ import { useState, useEffect } from "react";
 import { ConflictDetails } from "../conflict-details/conflict-details";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
+import AutoTimetableButton from "../auto-timetable-button/page";
+import ClearButtonSubject from "../clear-button-subject/page";
 
 type SplitData = {
     part1: { lectureHour: number; labHour: number; partNumber: number };
@@ -185,7 +187,34 @@ export default function PlansStatusCustom({
                         </div>
                         <div className="text-sm text-muted-foreground">
                             จำนวนวิชาทั้งหมด: {filteredPlans.length} วิชา | จัดตารางแล้ว: {assignedCount} วิชา
-                            <span className="ml-2"><Button variant="secondary"><Wand /> จัดตาราง</Button></span>
+                            <span className="ml-2">
+                                <AutoTimetableButton
+                                    plans={filteredPlans}
+                                    termYear={termYear}
+                                    yearLevel={yearLevel}
+                                    planType={planType}
+                                    currentAssignments={assignments}
+                                    onScheduleComplete={(newAssignments) => {
+                                        // Update the parent component with the new assignments
+                                        if (onSubjectUpdate) {
+                                            onSubjectUpdate();
+                                        }
+                                    }}
+                                />
+                                <span className="ml-2">
+                                    <ClearButtonSubject
+                                        termYear={termYear}
+                                        yearLevel={yearLevel}
+                                        planType={planType}
+                                        onClearComplete={() => {
+                                            // This will refresh the timetable data after clearing
+                                            if (onSubjectUpdate) {
+                                                onSubjectUpdate();
+                                            }
+                                        }}
+                                    />
+                                </span>
+                            </span>
                         </div>
                     </div>
                     <div className="rounded-xl border shadow-sm py-4 px-4 overflow-visible">
@@ -285,156 +314,183 @@ function ConflictDialog({
                     <div className="space-y-6">
                         {conflicts.map((conflict, index) => (
                             <div key={index} className="border rounded-lg p-4 bg-card">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                    <h3 className="font-medium text-red-700 dark:text-red-500">
-                                        {conflict.message}
-                                    </h3>
-                                </div>
-
-                                {/* วิชาที่กำลังจัดตาราง */}
-                                {conflict.mainSubject && (
-                                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border-l-4 border-blue-400 mb-4">
-                                        <p className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-1">วิชาที่กำลังจัดตาราง</p>
-                                        <div className="flex items-center gap-2 text-sm flex-wrap">
-                                            <span className="font-mono font-medium">{conflict.mainSubject.subjectCode}</span>
-                                            <span>{conflict.mainSubject.subjectName}</span>
-
-                                            {conflict.mainSubject.yearLevel && (
-                                                <Badge
-                                                    variant={getBadgeVariant(conflict, "yearLevel")}
-                                                    className="text-xs"
-                                                >
-                                                    {conflict.mainSubject.yearLevel}
-                                                </Badge>
-                                            )}
-
-                                            {conflict.mainSubject.planType && (
-                                                <Badge variant="outline" className="text-xs">
-                                                    {getPlanTypeText(conflict.mainSubject.planType)}
-                                                </Badge>
-                                            )}
-
-                                            {conflict.mainSubject.section && (
-                                                <Badge
-                                                    variant={getBadgeVariant(conflict, "section")}
-                                                    className="text-xs"
-                                                >
-                                                    Sec {conflict.mainSubject.section}
-                                                </Badge>
-                                            )}
-
-                                            {conflict.mainSubject.teacher && (
-                                                <Badge
-                                                    variant={getBadgeVariant(conflict, "teacher")}
-                                                    className="text-xs"
-                                                >
-                                                    อ.{conflict.mainSubject.teacher.tName} {conflict.mainSubject.teacher.tLastName}
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* รายการวิชาที่ชนกัน */}
-                                {conflict.conflicts && conflict.conflicts.length > 0 && (
-                                    <div>
+                                {/* กรณีการชนกันของ Section แสดงเฉพาะข้อความเตือนโดยไม่แสดงรายการวิชาที่ชนกัน */}
+                                {conflict.type === "SECTION_DUPLICATE_CONFLICT" ? (
+                                    <>
                                         <div className="flex items-center gap-2 mb-3">
-                                            <h4 className="font-medium">รายการวิชาที่ชนกัน</h4>
-                                            <Badge variant="destructive" className="text-xs">
-                                                {conflict.conflicts.length} รายการ
-                                            </Badge>
+                                            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                            <h3 className="font-medium text-red-700 dark:text-red-500">
+                                                {conflict.message}
+                                            </h3>
                                         </div>
 
-                                        <div className="space-y-3">
-                                            {conflict.conflicts.map((item, itemIndex) => (
-                                                <div key={itemIndex} className="p-3 border rounded-lg bg-card">
-                                                    <div className="flex justify-between items-start gap-4">
-                                                        {/* ข้อมูลวิชา */}
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className="font-mono font-medium text-blue-600 text-sm">
-                                                                    {item.plan?.subjectCode}
-                                                                </span>
-                                                                <span className="text-sm font-medium">{item.plan?.subjectName}</span>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 flex-wrap">
-                                                                {item.plan?.yearLevel && (
-                                                                    <Badge
-                                                                        variant={getBadgeVariant(conflict, "yearLevel")}
-                                                                        className="text-xs"
-                                                                    >
-                                                                        {item.plan.yearLevel}
-                                                                    </Badge>
-                                                                )}
-
-                                                                {item.plan?.planType && (
-                                                                    <Badge variant="outline" className="text-xs">
-                                                                        {getPlanTypeText(item.plan.planType)}
-                                                                    </Badge>
-                                                                )}
-
-                                                                {item.section && (
-                                                                    <Badge
-                                                                        variant={getBadgeVariant(conflict, "section")}
-                                                                        className="text-xs"
-                                                                    >
-                                                                        Sec {item.section}
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
-                                                        </div>
-
-                                                        {/* ข้อมูลเวลาและทรัพยากร */}
-                                                        <div className="text-right text-sm">
-                                                            {/* แสดงเวลาเฉพาะกรณีที่มีการชนกันเรื่องเวลา */}
-                                                            {(conflict.type === "TIME_CONFLICT" || conflict.type === "ROOM_CONFLICT" || conflict.type === "TEACHER_CONFLICT") && (
-                                                                <div className="font-medium">
-                                                                    {['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'][item.day]}
-                                                                    คาบ {item.startPeriod === item.endPeriod
-                                                                        ? item.startPeriod + 1
-                                                                        : `${item.startPeriod + 1}-${item.endPeriod + 1}`}
-                                                                </div>
-                                                            )}
-
-                                                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 space-y-1">
-                                                                {item.room?.roomCode && (
-                                                                    <div className={
-                                                                        getBadgeVariant(conflict, "room") === "destructive"
-                                                                            ? "text-red-600 font-medium"
-                                                                            : ""
-                                                                    }>
-                                                                        ห้อง: {item.room.roomCode}
-                                                                    </div>
-                                                                )}
-                                                                {item.teacher && (
-                                                                    <div className={
-                                                                        getBadgeVariant(conflict, "teacher") === "destructive"
-                                                                            ? "text-red-600 font-medium"
-                                                                            : ""
-                                                                    }>
-                                                                        อ.{item.teacher.tName} {item.teacher.tLastName}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
+                                        {/* แสดงวิชาที่กำลังจัดตาราง (หากมี) */}
+                                        {conflict.mainSubject && (
+                                            <div className="p-3 border bg-card rounded">
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="flex items-center gap-2 text-sm flex-wrap">
+                                                        <span className="font-mono font-medium text-blue-600 text-sm">
+                                                            {conflict.mainSubject.subjectCode}
+                                                        </span>
+                                                        <span className="text-sm font-medium">
+                                                            {conflict.mainSubject.subjectName}
+                                                        </span>
                                                     </div>
 
-                                                    {/* แสดงข้อความเตือนเพิ่มเติมสำหรับ Section Duplicate */}
-                                                    {conflict.type === "SECTION_DUPLICATE_CONFLICT" && (
-                                                        <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 text-red-700 dark:text-red-400 text-xs">
-                                                            <div className="font-medium">⚠️ การซ้ำกันของ Section:</div>
-                                                            <div>
-                                                                อาจารย์ {item.teacher?.tName} {item.teacher?.tLastName} สอนวิชา {item.plan?.subjectCode} Section {item.section}
-                                                                ในแผน{getPlanTypeText(item.plan?.planType)} {item.plan?.yearLevel} อยู่แล้ว
-                                                            </div>
-                                                        </div>
+                                                    <div className="flex items-center gap-2 text-xs flex-wrap">
+                                                        {conflict.mainSubject.section && (
+                                                            <Badge
+                                                                variant="destructive"
+                                                                className="text-xs"
+                                                            >
+                                                                Section {conflict.mainSubject.section}
+                                                            </Badge>
+                                                        )}
+
+                                                        {conflict.mainSubject.teacher && (
+                                                            <Badge
+                                                                variant={getBadgeVariant(conflict, "teacher")}
+                                                                className="text-xs"
+                                                            >
+                                                                อ.{conflict.mainSubject.teacher.tName} {conflict.mainSubject.teacher.tLastName}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* สำหรับการชนกันประเภทอื่นๆ ให้แสดงแบบเดิม */}
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                            <h3 className="font-medium text-red-700 dark:text-red-500">
+                                                {conflict.message}
+                                            </h3>
+                                        </div>
+
+                                        {/* วิชาที่กำลังจัดตาราง */}
+                                        {conflict.mainSubject && (
+                                            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border-l-4 border-blue-400 mb-4">
+                                                <div className="flex items-center gap-2 text-sm flex-wrap">
+                                                    {conflict.mainSubject.yearLevel && (
+                                                        <Badge
+                                                            variant={getBadgeVariant(conflict, "yearLevel")}
+                                                            className="text-xs"
+                                                        >
+                                                            {conflict.mainSubject.yearLevel}
+                                                        </Badge>
+                                                    )}
+
+                                                    {conflict.mainSubject.planType && (
+                                                        <Badge variant="outline" className="text-xs">
+                                                            {getPlanTypeText(conflict.mainSubject.planType)}
+                                                        </Badge>
+                                                    )}
+
+                                                    {conflict.mainSubject.teacher && (
+                                                        <Badge
+                                                            variant={getBadgeVariant(conflict, "teacher")}
+                                                            className="text-xs"
+                                                        >
+                                                            อ.{conflict.mainSubject.teacher.tName} {conflict.mainSubject.teacher.tLastName}
+                                                        </Badge>
                                                     )}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                            </div>
+                                        )}
+
+                                        {/* รายการวิชาที่ชนกัน */}
+                                        {conflict.conflicts && conflict.conflicts.length > 0 && (
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <h4 className="font-medium">รายการวิชาที่ชนกัน</h4>
+                                                    <Badge variant="destructive" className="text-xs">
+                                                        {conflict.conflicts.length} รายการ
+                                                    </Badge>
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    {conflict.conflicts.map((item, itemIndex) => (
+                                                        <div key={itemIndex} className="p-3 border rounded-lg bg-card">
+                                                            <div className="flex justify-between items-start gap-4">
+                                                                {/* ข้อมูลวิชา */}
+                                                                <div className="flex-1">
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <span className="font-mono font-medium text-blue-600 text-sm">
+                                                                            {item.plan?.subjectCode}
+                                                                        </span>
+                                                                        <span className="text-sm font-medium">{item.plan?.subjectName}</span>
+                                                                    </div>
+
+                                                                    <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 flex-wrap">
+                                                                        {item.plan?.yearLevel && (
+                                                                            <Badge
+                                                                                variant={getBadgeVariant(conflict, "yearLevel")}
+                                                                                className="text-xs"
+                                                                            >
+                                                                                {item.plan.yearLevel}
+                                                                            </Badge>
+                                                                        )}
+
+                                                                        {item.plan?.planType && (
+                                                                            <Badge variant="outline" className="text-xs">
+                                                                                {getPlanTypeText(item.plan.planType)}
+                                                                            </Badge>
+                                                                        )}
+
+                                                                        {item.section && (
+                                                                            <Badge
+                                                                                variant={getBadgeVariant(conflict, "section")}
+                                                                                className="text-xs"
+                                                                            >
+                                                                                Sec {item.section}
+                                                                            </Badge>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* ข้อมูลเวลาและทรัพยากร */}
+                                                                <div className="text-right text-sm">
+                                                                    {/* แสดงเวลาเฉพาะกรณีที่มีการชนกันเรื่องเวลา */}
+                                                                    {(conflict.type === "TIME_CONFLICT" || conflict.type === "ROOM_CONFLICT" || conflict.type === "TEACHER_CONFLICT") && (
+                                                                        <div className="font-medium">
+                                                                            {['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'][item.day]}
+                                                                            คาบ {item.startPeriod === item.endPeriod
+                                                                                ? item.startPeriod + 1
+                                                                                : `${item.startPeriod + 1}-${item.endPeriod + 1}`}
+                                                                        </div>
+                                                                    )}
+
+                                                                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 space-y-1">
+                                                                        {item.room?.roomCode && (
+                                                                            <div className={
+                                                                                getBadgeVariant(conflict, "room") === "destructive"
+                                                                                    ? "text-red-600 font-medium"
+                                                                                    : ""
+                                                                            }>
+                                                                                ห้อง: {item.room.roomCode}
+                                                                            </div>
+                                                                        )}
+                                                                        {item.teacher && (
+                                                                            <div className={
+                                                                                getBadgeVariant(conflict, "teacher") === "destructive"
+                                                                                    ? "text-red-600 font-medium"
+                                                                                    : ""
+                                                                            }>
+                                                                                อ.{item.teacher.tName} {item.teacher.tLastName}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         ))}
