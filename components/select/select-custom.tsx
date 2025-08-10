@@ -10,17 +10,63 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-export function SelectCustom() {
+interface SelectCustomProps {
+    currentYear: string
+    onYearChange: (year: string) => void
+    planType?: "TRANSFER" | "FOUR_YEAR" | "DVE-MSIX" | "DVE-LVC"
+}
+
+export function SelectCustom({ currentYear, onYearChange, planType = "TRANSFER" }: SelectCustomProps) {
+    // สร้างรายการปีการศึกษา ตาม planType
+    const generateYearOptions = () => {
+        const currentBuddhistYear = new Date().getFullYear() + 543
+        const years = []
+
+        // กำหนดจำนวนปีตาม planType
+        let yearsToShow = 3 // default สำหรับ TRANSFER
+
+        switch (planType) {
+            case "FOUR_YEAR":
+                yearsToShow = 4
+                break
+            case "DVE-MSIX":
+            case "DVE-LVC":
+                yearsToShow = 2
+                break
+            default:
+                yearsToShow = 3 // TRANSFER
+        }
+
+        for (let i = 0; i < yearsToShow; i++) {
+            const year = currentBuddhistYear - i
+            years.push({
+                value: year.toString(),
+                label: `${year}`
+            })
+        }
+
+        return years
+    }
+
+    const yearOptions = generateYearOptions()
+
     return (
-        <div className="py-5 mx-48">
-            <Select>
+        <div className="py-4 sm:mx-4 md:mx-8 lg:mx-16 xl:px-32">
+            <h2 className="font-semibold mb-4">
+                เลือกปีการศึกษา
+            </h2>
+            <Select value={currentYear} onValueChange={onYearChange}>
                 <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="เลือกแผนการเรียน" />
+                    <SelectValue placeholder="เลือกปีการศึกษา" />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectGroup>
-                        <SelectLabel>เลือกแผนการเรียน</SelectLabel>
-                        <SelectItem value="apple">1/xxxx</SelectItem>
+                        <SelectLabel>เลือกปีการศึกษา</SelectLabel>
+                        {yearOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectItem>
+                        ))}
                     </SelectGroup>
                 </SelectContent>
             </Select>

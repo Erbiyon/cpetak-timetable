@@ -19,7 +19,6 @@ import { DarkModeToggle } from "../theme-provider/dark-mode"
 import { Button } from "../ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { title } from "process"
 
 export function NavigationMenuCustom() {
     const { data: session } = useSession()
@@ -91,7 +90,7 @@ export function NavigationMenuCustom() {
     return (
         <>
             {/* Desktop Navigation */}
-            <div className="hidden lg:block">
+            <div className="hidden lg:block sticky top-0 left-0 w-full z-50">
                 <NavigationMenu viewport={false} className="sticky mx-auto py-4 top-0 left-0 w-screen z-50 shadow-background bg-card border p-2 rounded-b-xl">
                     <NavigationMenuList className="flex-wrap">
                         {/* แผนการเรียน */}

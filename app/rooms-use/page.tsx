@@ -214,14 +214,23 @@ export default function RoomsUse() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <Tabs value={activeTab} onValueChange={setActiveTab}>
-                                <TabsList className="w-full">
-                                    <TabsTrigger value="in-department" className="flex-1">
+                                <TabsList className="w-full grid grid-cols-1 sm:grid-cols-3 h-auto gap-1 p-1">
+                                    <TabsTrigger
+                                        value="in-department"
+                                        className="text-xs sm:text-sm px-2 py-2 h-auto whitespace-normal text-center"
+                                    >
                                         อาคารสาขาวิศวกรรมคอมพิวเตอร์
                                     </TabsTrigger>
-                                    <TabsTrigger value="engineering" className="flex-1">
+                                    <TabsTrigger
+                                        value="engineering"
+                                        className="text-xs sm:text-sm px-2 py-2 h-auto whitespace-normal text-center"
+                                    >
                                         ตึกวิศวกรรมศาสตร์
                                     </TabsTrigger>
-                                    <TabsTrigger value="out-department" className="flex-1">
+                                    <TabsTrigger
+                                        value="out-department"
+                                        className="text-xs sm:text-sm px-2 py-2 h-auto whitespace-normal text-center"
+                                    >
                                         ห้องเรียนนอกสาขา
                                     </TabsTrigger>
                                 </TabsList>

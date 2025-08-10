@@ -40,43 +40,63 @@ export function TableCustom({ planType, termYear, yearLevel, refreshKey }: {
     }, [planType, termYear, yearLevel, refreshKey, localRefreshKey]);
 
     return (
-        <Table>
-            <TableHeader className="sticky top-0 z-10 bg-card">
-                <TableRow>
-                    <TableHead>รหัสวิชา</TableHead>
-                    <TableHead>ชื่อวิชา</TableHead>
-                    <TableHead>หน่วยกิต</TableHead>
-                    <TableHead>ชั่วโมงบรรยาย</TableHead>
-                    <TableHead>ชั่วโมงปฎิบัติ</TableHead>
-                    <TableHead>ปุ่มดำเนินการ</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {plans.length > 0 ? plans.map((plan, idx) => (
-                    <TableRow key={plan.id || idx}>
-                        <TableCell>{plan.subjectCode}</TableCell>
-                        <TableCell>{plan.subjectName}</TableCell>
-                        <TableCell>{plan.credit}</TableCell>
-                        <TableCell>{plan.lectureHour}</TableCell>
-                        <TableCell>{plan.labHour}</TableCell>
-                        <TableCell>
-                            <EditSubjectButtonCustom
-                                plan={plan}
-                                onUpdated={() => setLocalRefreshKey(k => k + 1)}
-                            />
-                            <DelectSubjectButtonCustom
-                                planId={plan.id}
-                                subjectName={plan.subjectName}
-                                onDeleted={() => setLocalRefreshKey(k => k + 1)}
-                            />
-                        </TableCell>
-                    </TableRow>
-                )) : (
+        <div className="w-full overflow-x-auto">
+            <Table>
+                <TableHeader className="sticky top-0 z-10 bg-card">
                     <TableRow>
-                        <TableCell colSpan={6} className="text-center">ไม่มีข้อมูล</TableCell>
+                        <TableHead className="text-xs lg:text-sm">รหัสวิชา</TableHead>
+                        <TableHead className="text-xs lg:text-sm">ชื่อวิชา</TableHead>
+                        <TableHead className="text-xs lg:text-sm text-center">หน่วยกิต</TableHead>
+                        <TableHead className="text-xs lg:text-sm text-center">ชั่วโมงบรรยาย</TableHead>
+                        <TableHead className="text-xs lg:text-sm text-center">ชั่วโมงปฎิบัติ</TableHead>
+                        <TableHead className="text-xs lg:text-sm text-center">สาขา</TableHead>
+                        <TableHead className="text-xs lg:text-sm text-center">ดำเนินการ</TableHead>
                     </TableRow>
-                )}
-            </TableBody>
-        </Table>
+                </TableHeader>
+                <TableBody>
+                    {plans.length > 0 ? plans.map((plan, idx) => (
+                        <TableRow key={plan.id || idx}>
+                            <TableCell className="text-xs lg:text-sm font-mono">
+                                {plan.subjectCode}
+                            </TableCell>
+                            <TableCell className="text-xs lg:text-sm">
+                                {plan.subjectName}
+                            </TableCell>
+                            <TableCell className="text-xs lg:text-sm text-center">
+                                {plan.credit}
+                            </TableCell>
+                            <TableCell className="text-xs lg:text-sm text-center">
+                                {plan.lectureHour}
+                            </TableCell>
+                            <TableCell className="text-xs lg:text-sm text-center">
+                                {plan.labHour}
+                            </TableCell>
+                            <TableCell className="text-xs lg:text-sm text-center">
+                                {plan.dep}
+                            </TableCell>
+                            <TableCell className="text-center">
+                                <div className="flex flex-col lg:flex-row gap-1 lg:gap-2 justify-center">
+                                    <EditSubjectButtonCustom
+                                        plan={plan}
+                                        onUpdated={() => setLocalRefreshKey(k => k + 1)}
+                                    />
+                                    <DelectSubjectButtonCustom
+                                        planId={plan.id}
+                                        subjectName={plan.subjectName}
+                                        onDeleted={() => setLocalRefreshKey(k => k + 1)}
+                                    />
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    )) : (
+                        <TableRow>
+                            <TableCell colSpan={7} className="text-center text-sm text-gray-500 py-8">
+                                ไม่มีข้อมูล
+                            </TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table>
+        </div>
     )
 }

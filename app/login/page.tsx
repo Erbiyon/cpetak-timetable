@@ -129,7 +129,7 @@ export default function LoginPage() {
     // แสดง loading หรือ blank จนกว่าจะโหลด client-side เสร็จ
     if (!isClient) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center px-4">
                 <div className="text-center">
                     <div><LoaderCircle className="animate-spin mx-auto" /></div>
                     <p className="mt-2 text-gray-600">กำลังโหลด...</p>
@@ -139,47 +139,48 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center">
-            <div className="w-full max-w-md">
+        <div className="min-h-screen flex items-center justify-center px-4 py-8">
+            <div className="w-full max-w-md mx-auto">
                 {/* Logo หรือชื่อระบบ */}
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold mb-2">
+                <div className="text-center mb-6 sm:mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-white">
                         ระบบจัดตารางเรียน
                     </h1>
-                    <p className="text-gray-500">
+                    <p className="text-sm sm:text-base text-white">
                         สาขาวิศวกรรมคอมพิวเตอร์
                     </p>
                 </div>
 
                 <Tabs defaultValue="teacher-login" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="teacher-login">อาจารย์</TabsTrigger>
-                        <TabsTrigger value="admin-login">ผู้ดูแลระบบ</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                        <TabsTrigger value="teacher-login" className="text-xs sm:text-sm">อาจารย์</TabsTrigger>
+                        <TabsTrigger value="admin-login" className="text-xs sm:text-sm">ผู้ดูแลระบบ</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="teacher-login">
-                        <Card>
+                        <Card className="shadow-lg border-0">
                             <form onSubmit={handleTeacherLogin}>
-                                <CardHeader>
-                                    <CardTitle>เข้าสู่ระบบสำหรับอาจารย์</CardTitle>
-                                    <CardDescription>
+                                <CardHeader className="space-y-1 pb-4">
+                                    <CardTitle className="text-lg sm:text-xl">เข้าสู่ระบบสำหรับอาจารย์</CardTitle>
+                                    <CardDescription className="text-xs sm:text-sm">
                                         ใช้รหัสประจำตัวอาจารย์เป็นทั้ง username และ password
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent className="grid gap-4 my-2">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="teacher-id">รหัสประจำตัวอาจารย์</Label>
+                                <CardContent className="space-y-4 px-4 sm:px-6">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="teacher-id" className="text-sm font-medium">รหัสประจำตัวอาจารย์</Label>
                                         <Input
                                             id="teacher-id"
                                             type="text"
                                             placeholder="กรอกรหัสประจำตัวอาจารย์"
                                             value={teacherId}
                                             onChange={(e) => setTeacherId(e.target.value)}
+                                            className="h-10 sm:h-11"
                                             required
                                         />
                                     </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="teacher-password">รหัสผ่าน</Label>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="teacher-password" className="text-sm font-medium">รหัสผ่าน</Label>
                                         <div className="relative">
                                             <Input
                                                 id="teacher-password"
@@ -187,14 +188,14 @@ export default function LoginPage() {
                                                 placeholder="กรอกรหัสประจำตัวอาจารย์"
                                                 value={teacherPassword}
                                                 onChange={(e) => setTeacherPassword(e.target.value)}
-                                                className="pr-10"
+                                                className="h-10 sm:h-11 pr-10"
                                                 required
                                             />
                                             <Button
                                                 type="button"
                                                 variant="ghost"
                                                 size="sm"
-                                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                                className="absolute right-0 top-0 h-10 sm:h-11 px-3 hover:bg-transparent"
                                                 onClick={() => setShowTeacherPassword(!showTeacherPassword)}
                                             >
                                                 {showTeacherPassword ? (
@@ -204,11 +205,11 @@ export default function LoginPage() {
                                                 )}
                                             </Button>
                                         </div>
-                                        <div className="text-sm text-gray-500">
+                                        <div className="text-xs sm:text-sm text-gray-500">
                                             <span className="text-red-500">*</span> รหัสผ่านคือรหัสประจำตัวอาจารย์เดียวกัน
                                         </div>
                                     </div>
-                                    <div className="flex items-center space-x-2 my-2">
+                                    <div className="flex items-center space-x-2 py-2">
                                         <Checkbox
                                             id="remember-teacher"
                                             checked={rememberTeacher}
@@ -216,22 +217,31 @@ export default function LoginPage() {
                                         />
                                         <Label
                                             htmlFor="remember-teacher"
-                                            className="text-sm cursor-pointer"
+                                            className="text-xs sm:text-sm cursor-pointer select-none"
                                         >
                                             จดจำรหัสประจำตัว
                                         </Label>
                                     </div>
                                     {error && (
-                                        <div className="text-red-500 text-sm">{error}</div>
+                                        <div className="text-red-500 text-xs sm:text-sm bg-red-50 p-3 rounded-md border border-red-200">
+                                            {error}
+                                        </div>
                                     )}
                                 </CardContent>
-                                <CardFooter>
+                                <CardFooter className="px-4 sm:px-6 pt-4">
                                     <Button
                                         type="submit"
-                                        className="w-full"
+                                        className="w-full h-10 sm:h-11"
                                         disabled={isLoading}
                                     >
-                                        {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+                                        {isLoading ? (
+                                            <>
+                                                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                                กำลังเข้าสู่ระบบ...
+                                            </>
+                                        ) : (
+                                            "เข้าสู่ระบบ"
+                                        )}
                                     </Button>
                                 </CardFooter>
                             </form>
@@ -239,27 +249,28 @@ export default function LoginPage() {
                     </TabsContent>
 
                     <TabsContent value="admin-login">
-                        <Card>
+                        <Card className="shadow-lg border-0">
                             <form onSubmit={handleAdminLogin}>
-                                <CardHeader>
-                                    <CardTitle>เข้าสู่ระบบสำหรับผู้ดูแลระบบ</CardTitle>
-                                    <CardDescription>
+                                <CardHeader className="space-y-1 pb-4">
+                                    <CardTitle className="text-lg sm:text-xl">เข้าสู่ระบบสำหรับผู้ดูแลระบบ</CardTitle>
+                                    <CardDescription className="text-xs sm:text-sm">
                                         เข้าสู่ระบบเพื่อจัดการระบบ
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent className="grid gap-4 my-3">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="admin-id">รหัสผู้ดูแล</Label>
+                                <CardContent className="space-y-4 px-4 sm:px-6">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="admin-id" className="text-sm font-medium">รหัสผู้ดูแล</Label>
                                         <Input
                                             id="admin-id"
                                             placeholder="กรอกรหัสผู้ดูแล"
                                             value={adminId}
                                             onChange={(e) => setAdminId(e.target.value)}
+                                            className="h-10 sm:h-11"
                                             required
                                         />
                                     </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="admin-password">รหัสผ่าน</Label>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="admin-password" className="text-sm font-medium">รหัสผ่าน</Label>
                                         <div className="relative">
                                             <Input
                                                 id="admin-password"
@@ -267,14 +278,14 @@ export default function LoginPage() {
                                                 placeholder="กรอกรหัสผ่าน"
                                                 value={adminPassword}
                                                 onChange={(e) => setAdminPassword(e.target.value)}
-                                                className="pr-10"
+                                                className="h-10 sm:h-11 pr-10"
                                                 required
                                             />
                                             <Button
                                                 type="button"
                                                 variant="ghost"
                                                 size="sm"
-                                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                                className="absolute right-0 top-0 h-10 sm:h-11 px-3 hover:bg-transparent"
                                                 onClick={() => setShowAdminPassword(!showAdminPassword)}
                                             >
                                                 {showAdminPassword ? (
@@ -285,7 +296,7 @@ export default function LoginPage() {
                                             </Button>
                                         </div>
                                     </div>
-                                    <div className="flex items-center space-x-2 my-2">
+                                    <div className="flex items-center space-x-2 py-2">
                                         <Checkbox
                                             id="remember-admin"
                                             checked={rememberAdmin}
@@ -293,22 +304,31 @@ export default function LoginPage() {
                                         />
                                         <Label
                                             htmlFor="remember-admin"
-                                            className="text-sm cursor-pointer"
+                                            className="text-xs sm:text-sm cursor-pointer select-none"
                                         >
                                             จดจำรหัสผู้ดูแล
                                         </Label>
                                     </div>
                                     {error && (
-                                        <div className="text-red-500 text-sm">{error}</div>
+                                        <div className="text-red-500 text-xs sm:text-sm bg-red-50 p-3 rounded-md border border-red-200">
+                                            {error}
+                                        </div>
                                     )}
                                 </CardContent>
-                                <CardFooter>
+                                <CardFooter className="px-4 sm:px-6 pt-4">
                                     <Button
                                         type="submit"
-                                        className="w-full my-2"
+                                        className="w-full h-10 sm:h-11"
                                         disabled={isLoading}
                                     >
-                                        {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+                                        {isLoading ? (
+                                            <>
+                                                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                                กำลังเข้าสู่ระบบ...
+                                            </>
+                                        ) : (
+                                            "เข้าสู่ระบบ"
+                                        )}
                                     </Button>
                                 </CardFooter>
                             </form>
@@ -317,8 +337,10 @@ export default function LoginPage() {
                 </Tabs>
 
                 {/* Footer */}
-                <div className="text-center mt-8 text-sm text-gray-500">
-                    <p>© 2025 ระบบจัดตารางเรียน สาขาวิศวกรรมคอมพิวเตอร์</p>
+                <div className="text-center mt-6 sm:mt-8">
+                    <p className="text-xs sm:text-sm text-gray-500">
+                        © 2025 ระบบจัดตารางเรียน สาขาวิศวกรรมคอมพิวเตอร์
+                    </p>
                 </div>
             </div>
         </div>
