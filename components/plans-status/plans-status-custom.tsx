@@ -224,7 +224,7 @@ export default function PlansStatusCustom({
     );
 }
 
-// เพิ่ม ConflictDialog component
+// เพิ่ม ConflictDialog component ที่รองรับ Section Duplicate
 function ConflictDialog({
     conflicts,
     onClose
@@ -249,12 +249,31 @@ function ConflictDialog({
         }
     };
 
+    // ฟังก์ชันกำหนดสีของ Badge ตาม conflict type
+    const getBadgeVariant = (conflict: any, field: string) => {
+        switch (conflict.type) {
+            case "YEAR_LEVEL_CONFLICT":
+                return field === "yearLevel" ? "destructive" : "secondary";
+            case "SECTION_DUPLICATE_CONFLICT":
+                return field === "section" ? "destructive" : "secondary";
+            case "TEACHER_CONFLICT":
+                return field === "teacher" ? "destructive" : "secondary";
+            case "ROOM_CONFLICT":
+                return field === "room" ? "destructive" : "secondary";
+            default:
+                return "secondary";
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-card rounded-lg shadow-xl max-w-4xl max-h-[80vh] overflow-y-auto m-4">
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold text-red-600 flex items-center"><TriangleAlert className="mr-2" color="#ffff00" /> <span>พบการชนกันในตาราง</span></h2>
+                        <h2 className="text-xl font-semibold text-red-600 flex items-center">
+                            <TriangleAlert className="mr-2" color="#ffff00" />
+                            <span>พบการชนกันในตาราง</span>
+                        </h2>
                         <button
                             onClick={onClose}
                             className="text-gray-500 hover:text-gray-700 text-xl font-bold"
@@ -275,20 +294,43 @@ function ConflictDialog({
 
                                 {/* วิชาที่กำลังจัดตาราง */}
                                 {conflict.mainSubject && (
-                                    <div className="p-3 bg-card rounded border-l-4 mb-4">
+                                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border-l-4 border-blue-400 mb-4">
                                         <p className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-1">วิชาที่กำลังจัดตาราง</p>
-                                        <div className="flex items-center gap-2 text-sm">
+                                        <div className="flex items-center gap-2 text-sm flex-wrap">
                                             <span className="font-mono font-medium">{conflict.mainSubject.subjectCode}</span>
                                             <span>{conflict.mainSubject.subjectName}</span>
+
                                             {conflict.mainSubject.yearLevel && (
-                                                <span className="px-2 py-1 bg-card rounded text-xs">
+                                                <Badge
+                                                    variant={getBadgeVariant(conflict, "yearLevel")}
+                                                    className="text-xs"
+                                                >
                                                     {conflict.mainSubject.yearLevel}
-                                                </span>
+                                                </Badge>
                                             )}
+
                                             {conflict.mainSubject.planType && (
-                                                <span className="px-2 py-1 bg-card rounded text-xs">
+                                                <Badge variant="outline" className="text-xs">
                                                     {getPlanTypeText(conflict.mainSubject.planType)}
-                                                </span>
+                                                </Badge>
+                                            )}
+
+                                            {conflict.mainSubject.section && (
+                                                <Badge
+                                                    variant={getBadgeVariant(conflict, "section")}
+                                                    className="text-xs"
+                                                >
+                                                    Sec {conflict.mainSubject.section}
+                                                </Badge>
+                                            )}
+
+                                            {conflict.mainSubject.teacher && (
+                                                <Badge
+                                                    variant={getBadgeVariant(conflict, "teacher")}
+                                                    className="text-xs"
+                                                >
+                                                    อ.{conflict.mainSubject.teacher.tName} {conflict.mainSubject.teacher.tLastName}
+                                                </Badge>
                                             )}
                                         </div>
                                     </div>
@@ -299,9 +341,9 @@ function ConflictDialog({
                                     <div>
                                         <div className="flex items-center gap-2 mb-3">
                                             <h4 className="font-medium">รายการวิชาที่ชนกัน</h4>
-                                            <span className="px-2 py-1 bg-red-500 dark:bg-red-500 rounded text-xs">
+                                            <Badge variant="destructive" className="text-xs">
                                                 {conflict.conflicts.length} รายการ
-                                            </span>
+                                            </Badge>
                                         </div>
 
                                         <div className="space-y-3">
@@ -311,28 +353,33 @@ function ConflictDialog({
                                                         {/* ข้อมูลวิชา */}
                                                         <div className="flex-1">
                                                             <div className="flex items-center gap-2 mb-1">
-                                                                <span className="font-mono font-medium bg-card text-sm">
+                                                                <span className="font-mono font-medium text-blue-600 text-sm">
                                                                     {item.plan?.subjectCode}
                                                                 </span>
                                                                 <span className="text-sm font-medium">{item.plan?.subjectName}</span>
                                                             </div>
 
-                                                            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                                            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 flex-wrap">
                                                                 {item.plan?.yearLevel && (
-                                                                    <Badge variant="secondary" className={`px-2 py-1 rounded text-xs ${conflict.type === "YEAR_LEVEL_CONFLICT"
-                                                                        ? "bg-gray-200 text-red-500 dark:text-red-500"
-                                                                        : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
-                                                                        }`}>
+                                                                    <Badge
+                                                                        variant={getBadgeVariant(conflict, "yearLevel")}
+                                                                        className="text-xs"
+                                                                    >
                                                                         {item.plan.yearLevel}
                                                                     </Badge>
                                                                 )}
+
                                                                 {item.plan?.planType && (
-                                                                    <Badge variant="outline" className="bg-blue-500 rounded text-white text-xs">
+                                                                    <Badge variant="outline" className="text-xs">
                                                                         {getPlanTypeText(item.plan.planType)}
                                                                     </Badge>
                                                                 )}
+
                                                                 {item.section && (
-                                                                    <Badge variant="secondary" className="bg-gray-500 text-white rounded text-xs">
+                                                                    <Badge
+                                                                        variant={getBadgeVariant(conflict, "section")}
+                                                                        className="text-xs"
+                                                                    >
                                                                         Sec {item.section}
                                                                     </Badge>
                                                                 )}
@@ -341,18 +388,21 @@ function ConflictDialog({
 
                                                         {/* ข้อมูลเวลาและทรัพยากร */}
                                                         <div className="text-right text-sm">
-                                                            <div className="font-medium">
-                                                                {['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'][item.day]}
-                                                                คาบ {item.startPeriod === item.endPeriod
-                                                                    ? item.startPeriod + 1
-                                                                    : `${item.startPeriod + 1}-${item.endPeriod + 1}`}
-                                                            </div>
+                                                            {/* แสดงเวลาเฉพาะกรณีที่มีการชนกันเรื่องเวลา */}
+                                                            {(conflict.type === "TIME_CONFLICT" || conflict.type === "ROOM_CONFLICT" || conflict.type === "TEACHER_CONFLICT") && (
+                                                                <div className="font-medium">
+                                                                    {['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'][item.day]}
+                                                                    คาบ {item.startPeriod === item.endPeriod
+                                                                        ? item.startPeriod + 1
+                                                                        : `${item.startPeriod + 1}-${item.endPeriod + 1}`}
+                                                                </div>
+                                                            )}
 
                                                             <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 space-y-1">
                                                                 {item.room?.roomCode && (
                                                                     <div className={
-                                                                        conflict.type === "ROOM_CONFLICT"
-                                                                            ? "text-red-500 dark:text-red-500 font-medium"
+                                                                        getBadgeVariant(conflict, "room") === "destructive"
+                                                                            ? "text-red-600 font-medium"
                                                                             : ""
                                                                     }>
                                                                         ห้อง: {item.room.roomCode}
@@ -360,8 +410,8 @@ function ConflictDialog({
                                                                 )}
                                                                 {item.teacher && (
                                                                     <div className={
-                                                                        conflict.type === "TEACHER_CONFLICT"
-                                                                            ? "text-red-500 dark:text-red-500 font-medium"
+                                                                        getBadgeVariant(conflict, "teacher") === "destructive"
+                                                                            ? "text-red-600 font-medium"
                                                                             : ""
                                                                     }>
                                                                         อ.{item.teacher.tName} {item.teacher.tLastName}
@@ -370,6 +420,17 @@ function ConflictDialog({
                                                             </div>
                                                         </div>
                                                     </div>
+
+                                                    {/* แสดงข้อความเตือนเพิ่มเติมสำหรับ Section Duplicate */}
+                                                    {conflict.type === "SECTION_DUPLICATE_CONFLICT" && (
+                                                        <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 text-red-700 dark:text-red-400 text-xs">
+                                                            <div className="font-medium">⚠️ การซ้ำกันของ Section:</div>
+                                                            <div>
+                                                                อาจารย์ {item.teacher?.tName} {item.teacher?.tLastName} สอนวิชา {item.plan?.subjectCode} Section {item.section}
+                                                                ในแผน{getPlanTypeText(item.plan?.planType)} {item.plan?.yearLevel} อยู่แล้ว
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>

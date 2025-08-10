@@ -17,6 +17,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
+import DownloadTeacherButton from "@/components/teacher-download/page";
 
 export default function ClassSchedule() {
     const [teachers, setTeachers] = useState<any[]>([]);
@@ -311,15 +312,18 @@ export default function ClassSchedule() {
             ) : selectedTeacherId && currentTermYear ? (
                 <Card>
                     <CardHeader>
-                        <CardTitle>
-                            ตารางสอน{" "}
-                            {(() => {
-                                const teacher = teachers.find(t => t.id === Number(selectedTeacherId));
-                                return teacher ? `${teacher.tName} ${teacher.tLastName}` : "";
-                            })()}{" "}
-                            <span className="text-base font-normal text-muted-foreground">
-                                ({currentTermYear})
-                            </span>
+                        <CardTitle className="flex justify-between">
+                            <div>
+                                ตารางสอน{" "}
+                                {(() => {
+                                    const teacher = teachers.find(t => t.id === Number(selectedTeacherId));
+                                    return teacher ? `${teacher.tName} ${teacher.tLastName}` : "";
+                                })()}{" "}
+                                <span className="text-base font-normal text-muted-foreground">
+                                    ({currentTermYear})
+                                </span>
+                            </div>
+                            <DownloadTeacherButton />
                         </CardTitle>
                     </CardHeader>
                     <CardContent>

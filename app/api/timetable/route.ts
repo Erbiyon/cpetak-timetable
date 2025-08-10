@@ -146,6 +146,41 @@ async function checkTimeConflicts({
 }) {
     const conflicts = [];
 
+    console.log("=== Checking Time Conflicts ===");
+    console.log("Input data:", {
+        planId,
+        termYear,
+        yearLevel,
+        planType,
+        teacherId,
+        section,
+        teacherIdType: typeof teacherId,
+        sectionType: typeof section,
+        sectionTrimmed: section?.trim()
+    });
+
+    // ตรวจสอบเงื่อนไขให้ชัดเจน
+    const hasTeacherId = teacherId && teacherId !== null && teacherId !== undefined;
+    const hasSection = section !== null && section !== undefined &&
+        typeof section === 'string' && section.trim() !== "";
+
+    console.log("Validation checks:", { hasTeacherId, hasSection });
+
+    if (hasTeacherId && hasSection) {
+        console.log("Checking section duplicate...");
+        const sectionConflicts = await checkSectionDuplicate({
+            planId, termYear, yearLevel, planType, teacherId, section: section.trim()
+        });
+        console.log("Section conflicts found:", sectionConflicts.length);
+        conflicts.push(...sectionConflicts);
+    } else {
+        console.log("Skipping section duplicate check:", {
+            teacherId,
+            section,
+            reason: !hasTeacherId ? "No teacherId" : "No section"
+        });
+    }
+
     // 1. ตรวจสอบการชนกันของห้องเรียน
     if (roomId) {
         const roomConflicts = await prisma.timetable_tb.findMany({
@@ -259,4 +294,129 @@ async function checkTimeConflicts({
     }
 
     return conflicts;
+}
+
+// แก้ไขฟังก์ชันตรวจสอบ Section Duplicate
+async function checkSectionDuplicate({
+    planId, termYear, yearLevel, planType, teacherId, section
+}: {
+    planId: number;
+    termYear: string;
+    yearLevel: string;
+    planType: string;
+    teacherId: number;
+    section: string;
+}) {
+    try {
+        console.log("=== checkSectionDuplicate Function ===");
+        console.log("Input parameters:", { planId, termYear, yearLevel, planType, teacherId, section });
+
+        // ดึงข้อมูลวิชาที่กำลังจะจัดตาราง
+        const currentPlan = await prisma.plans_tb.findUnique({
+            where: { id: planId },
+            include: {
+                teacher: true
+            }
+        });
+
+        if (!currentPlan) {
+            console.log("Current plan not found for planId:", planId);
+            return [];
+        }
+
+        console.log("Current plan found:", {
+            id: currentPlan.id,
+            subjectCode: currentPlan.subjectCode,
+            subjectName: currentPlan.subjectName
+        });
+
+        // ค้นหาวิชาที่มีเงื่อนไขเดียวกันในทุกแผนการเรียน
+        const duplicateSections = await prisma.timetable_tb.findMany({
+            where: {
+                AND: [
+                    { termYear }, // ภาคเรียนเดียวกัน
+                    { yearLevel }, // ชั้นปีเดียวกัน
+                    { teacherId }, // อาจารย์คนเดียวกัน
+                    { section }, // Section เดียวกัน
+                    { planId: { not: planId } }, // ไม่รวมวิชาตัวเอง
+                    {
+                        plan: {
+                            subjectCode: currentPlan.subjectCode // รหัสวิชาเดียวกัน
+                        }
+                    }
+                ]
+            },
+            include: {
+                plan: true,
+                teacher: true,
+                room: true
+            }
+        });
+
+        console.log("Database query for duplicates:");
+        console.log("Query conditions:", {
+            termYear,
+            yearLevel,
+            teacherId,
+            section,
+            subjectCode: currentPlan.subjectCode,
+            excludePlanId: planId
+        });
+        console.log("Found duplicate sections:", duplicateSections.length);
+
+        if (duplicateSections.length > 0) {
+            console.log("Duplicate sections details:", duplicateSections.map(item => ({
+                planId: item.planId,
+                planType: item.planType,
+                subjectCode: item.plan?.subjectCode,
+                section: item.section,
+                teacherId: item.teacherId
+            })));
+
+            // จัดกลุ่ม conflicts ตาม planType
+            const conflictsByPlan = duplicateSections.reduce((acc: any, item) => {
+                const key = item.planType;
+                if (!acc[key]) {
+                    acc[key] = [];
+                }
+                acc[key].push(item);
+                return acc;
+            }, {});
+
+            // สร้าง message ที่แสดงแผนที่มีการซ้ำกัน
+            const conflictPlans = Object.keys(conflictsByPlan).map(planType => {
+                switch (planType) {
+                    case "TRANSFER": return "เทียบโอน";
+                    case "FOUR_YEAR": return "4 ปี";
+                    case "DVE-MSIX": return "ม.6 ขึ้น ปวส.";
+                    case "DVE-LVC": return "ปวช. ขึ้น ปวส.";
+                    default: return planType;
+                }
+            }).join(", ");
+
+            const conflictResult = [{
+                type: "SECTION_DUPLICATE_CONFLICT",
+                message: `ไม่สามารถจัดตารางได้: อาจารย์ ${currentPlan.teacher?.tName} ${currentPlan.teacher?.tLastName} สอนวิชา ${currentPlan.subjectCode} Section ${section} ใน${yearLevel} อยู่แล้วในแผน ${conflictPlans} - กรุณาเปลี่ยน Section หรือมอบหมายอาจารย์คนอื่น`,
+                conflicts: duplicateSections,
+                mainSubject: {
+                    subjectCode: currentPlan.subjectCode,
+                    subjectName: currentPlan.subjectName,
+                    yearLevel: yearLevel,
+                    planType: planType,
+                    section: section,
+                    teacher: currentPlan.teacher
+                },
+                conflictPlans: Object.keys(conflictsByPlan)
+            }];
+
+            console.log("Returning conflict:", conflictResult);
+            return conflictResult;
+        }
+
+        console.log("No section duplicates found");
+        return [];
+    } catch (error) {
+        console.error("Error checking section duplicate:", error);
+        return [];
+    }
 }

@@ -21,6 +21,11 @@ interface ConflictDetailsProps {
             subjectName?: string;
             yearLevel?: string;
             planType?: string;
+            section?: string;
+            teacher?: {
+                tName?: string;
+                tLastName?: string;
+            };
         };
     };
 }
@@ -34,6 +39,22 @@ export function ConflictDetails({ conflict }: ConflictDetailsProps) {
             case "DVE-MSIX": return "ม.6 ขึ้น ปวส.";
             case "DVE-LVC": return "ปวช. ขึ้น ปวส.";
             default: return planType;
+        }
+    };
+
+    // ฟังก์ชันกำหนดสีของ Badge ตาม conflict type
+    const getBadgeVariant = (field: string) => {
+        switch (conflict.type) {
+            case "YEAR_LEVEL_CONFLICT":
+                return field === "yearLevel" ? "destructive" : "outline";
+            case "SECTION_DUPLICATE_CONFLICT":
+                return field === "section" ? "destructive" : "outline";
+            case "TEACHER_CONFLICT":
+                return field === "teacher" ? "destructive" : "outline";
+            case "ROOM_CONFLICT":
+                return field === "room" ? "destructive" : "outline";
+            default:
+                return "outline";
         }
     };
 
@@ -60,14 +81,28 @@ export function ConflictDetails({ conflict }: ConflictDetailsProps) {
                 {conflict.mainSubject && (
                     <div className="p-3 bg-blue-50 rounded border-l-4 border-blue-400">
                         <p className="text-sm font-medium text-blue-700 mb-1">วิชาที่กำลังจัดตาราง</p>
-                        <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-2 text-sm flex-wrap">
                             <span className="font-mono font-medium">{conflict.mainSubject.subjectCode}</span>
                             <span>{conflict.mainSubject.subjectName}</span>
                             {conflict.mainSubject.yearLevel && (
-                                <Badge variant="outline" className="text-xs">{conflict.mainSubject.yearLevel}</Badge>
+                                <Badge variant={getBadgeVariant("yearLevel")} className="text-xs">
+                                    {conflict.mainSubject.yearLevel}
+                                </Badge>
                             )}
                             {conflict.mainSubject.planType && (
-                                <Badge variant="secondary" className="text-xs">{getPlanTypeText(conflict.mainSubject.planType)}</Badge>
+                                <Badge variant="secondary" className="text-xs">
+                                    {getPlanTypeText(conflict.mainSubject.planType)}
+                                </Badge>
+                            )}
+                            {conflict.mainSubject.section && (
+                                <Badge variant={getBadgeVariant("section")} className="text-xs">
+                                    Sec {conflict.mainSubject.section}
+                                </Badge>
+                            )}
+                            {conflict.mainSubject.teacher && (
+                                <Badge variant={getBadgeVariant("teacher")} className="text-xs">
+                                    อ.{conflict.mainSubject.teacher.tName} {conflict.mainSubject.teacher.tLastName}
+                                </Badge>
                             )}
                         </div>
                     </div>
@@ -94,10 +129,10 @@ export function ConflictDetails({ conflict }: ConflictDetailsProps) {
                                                 <span className="text-sm font-medium">{item.plan?.subjectName}</span>
                                             </div>
 
-                                            <div className="flex items-center gap-2 text-xs text-gray-600">
+                                            <div className="flex items-center gap-2 text-xs text-gray-600 flex-wrap">
                                                 {item.plan?.yearLevel && (
                                                     <Badge
-                                                        variant={conflict.type === "YEAR_LEVEL_CONFLICT" ? "destructive" : "outline"}
+                                                        variant={getBadgeVariant("yearLevel")}
                                                         className="text-xs"
                                                     >
                                                         {item.plan.yearLevel}
@@ -109,39 +144,90 @@ export function ConflictDetails({ conflict }: ConflictDetailsProps) {
                                                     </Badge>
                                                 )}
                                                 {item.section && (
-                                                    <Badge variant="outline" className="text-xs">Sec {item.section}</Badge>
+                                                    <Badge
+                                                        variant={getBadgeVariant("section")}
+                                                        className="text-xs"
+                                                    >
+                                                        Sec {item.section}
+                                                    </Badge>
                                                 )}
                                             </div>
                                         </div>
 
                                         {/* ข้อมูลเวลาและทรัพยากร */}
                                         <div className="text-right text-sm">
-                                            <div className="font-medium">
-                                                {['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'][item.day]}
-                                                คาบ {item.startPeriod === item.endPeriod
-                                                    ? item.startPeriod + 1
-                                                    : `${item.startPeriod + 1}-${item.endPeriod + 1}`}
-                                            </div>
+                                            {/* แสดงเวลาถ้ามีการชนกันเรื่องเวลา */}
+                                            {(conflict.type === "TIME_CONFLICT" || conflict.type === "ROOM_CONFLICT" || conflict.type === "TEACHER_CONFLICT") && (
+                                                <div className="font-medium">
+                                                    {['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'][item.day]}
+                                                    คาบ {item.startPeriod === item.endPeriod
+                                                        ? item.startPeriod + 1
+                                                        : `${item.startPeriod + 1}-${item.endPeriod + 1}`}
+                                                </div>
+                                            )}
 
                                             <div className="text-xs text-gray-600 mt-1 space-y-1">
                                                 {item.room?.roomCode && (
-                                                    <div className={conflict.type === "ROOM_CONFLICT" ? "text-red-600 font-medium" : ""}>
+                                                    <div className={getBadgeVariant("room") === "destructive" ? "text-red-600 font-medium" : ""}>
                                                         ห้อง: {item.room.roomCode}
                                                     </div>
                                                 )}
                                                 {item.teacher && (
-                                                    <div className={conflict.type === "TEACHER_CONFLICT" ? "text-red-600 font-medium" : ""}>
+                                                    <div className={getBadgeVariant("teacher") === "destructive" ? "text-red-600 font-medium" : ""}>
                                                         อ.{item.teacher.tName} {item.teacher.tLastName}
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* แสดงข้อความเตือนเพิ่มเติมสำหรับ Section Duplicate */}
+                                    {conflict.type === "SECTION_DUPLICATE_CONFLICT" && (
+                                        <div className="mt-2 p-2 bg-red-50 border-l-4 border-red-400 text-red-700 text-xs">
+                                            <div className="font-medium">⚠️ การซ้ำกันของ Section:</div>
+                                            <div>อาจารย์ {item.teacher?.tName} {item.teacher?.tLastName} สอนวิชา {item.plan?.subjectCode} Section {item.section} ในแผน{getPlanTypeText(item.plan?.planType)} {item.plan?.yearLevel} อยู่แล้ว</div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
                     </div>
                 )}
+
+                {/* แสดงคำแนะนำแก้ไข */}
+                <div className="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400">
+                    <h4 className="text-sm font-medium text-yellow-800 mb-1">คำแนะนำในการแก้ไข:</h4>
+                    <div className="text-xs text-yellow-700">
+                        {conflict.type === "SECTION_DUPLICATE_CONFLICT" && (
+                            <ul className="list-disc list-inside space-y-1">
+                                <li>เปลี่ยน Section ของวิชาที่กำลังจัดตาราง</li>
+                                <li>มอบหมายอาจารย์คนอื่นสอนวิชานี้</li>
+                                <li>ตรวจสอบความจำเป็นในการเปิด Section ซ้ำ</li>
+                            </ul>
+                        )}
+                        {conflict.type === "TEACHER_CONFLICT" && (
+                            <ul className="list-disc list-inside space-y-1">
+                                <li>เปลี่ยนเวลาสอนให้ไม่ซ้อนกัน</li>
+                                <li>มอบหมายอาจารย์คนอื่น</li>
+                                <li>ปรับตารางวิชาที่ชนกัน</li>
+                            </ul>
+                        )}
+                        {conflict.type === "ROOM_CONFLICT" && (
+                            <ul className="list-disc list-inside space-y-1">
+                                <li>เปลี่ยนห้องเรียน</li>
+                                <li>เปลี่ยนเวลาสอน</li>
+                                <li>ใช้ห้องเรียนอื่นที่ว่าง</li>
+                            </ul>
+                        )}
+                        {conflict.type === "YEAR_LEVEL_CONFLICT" && (
+                            <ul className="list-disc list-inside space-y-1">
+                                <li>ตรวจสอบความถูกต้องของชั้นปี</li>
+                                <li>แยกเวลาสอนตามชั้นปี</li>
+                                <li>พิจารณาการรวมกลุ่มเรียน</li>
+                            </ul>
+                        )}
+                    </div>
+                </div>
             </DialogContent>
         </Dialog>
     );

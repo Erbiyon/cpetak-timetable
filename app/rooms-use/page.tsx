@@ -17,6 +17,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
+import DownloadRoomButton from "@/components/room-download/download-room-button";
 
 export default function RoomsUse() {
     const [rooms, setRooms] = useState<any[]>([]);
@@ -352,12 +353,16 @@ export default function RoomsUse() {
             ) : selectedRoomId && currentTermYear ? (
                 <Card>
                     <CardHeader>
-                        <CardTitle>
-                            ตารางการใช้ห้อง{" "}
-                            {rooms.find(r => r.id === Number(selectedRoomId))?.roomCode || ""}{" "}
-                            <span className="text-base font-normal text-muted-foreground">
-                                ({currentTermYear})
-                            </span>
+                        <CardTitle className="flex items-center justify-between">
+                            <div className="text-lg font-semibold">
+                                ตารางการใช้ห้อง{" "}
+                                {rooms.find(r => r.id === Number(selectedRoomId))?.roomCode || ""}{" "}
+                                <span className="text-base font-normal text-muted-foreground">
+                                    ({currentTermYear})
+                                </span>
+                            </div>
+
+                            <DownloadRoomButton />
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
