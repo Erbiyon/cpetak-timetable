@@ -362,7 +362,14 @@ export default function RoomsUse() {
                                 </span>
                             </div>
 
-                            <DownloadRoomButton />
+                            <DownloadRoomButton
+                                roomCode={rooms.find(r => r.id === Number(selectedRoomId))?.roomCode || ""}
+                                roomName={rooms.find(r => r.id === Number(selectedRoomId))?.roomName}
+                                termYear={currentTermYear}
+                                cellToSubject={cellToSubject}
+                                cellColspan={cellColspan}
+                                cellSkip={cellSkip}
+                            />
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
