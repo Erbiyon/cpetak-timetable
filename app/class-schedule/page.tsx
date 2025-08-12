@@ -323,7 +323,11 @@ export default function ClassSchedule() {
                                     ({currentTermYear})
                                 </span>
                             </div>
-                            <DownloadTeacherButton />
+                            <DownloadTeacherButton
+                                selectedTeacher={teachers.find(t => t.id === Number(selectedTeacherId))}
+                                currentTermYear={currentTermYear}
+                                timetables={timetables}
+                            />
                         </CardTitle>
                     </CardHeader>
                     <CardContent>

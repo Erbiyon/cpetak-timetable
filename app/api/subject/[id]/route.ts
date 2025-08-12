@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
-// PATCH method - อัปเดตข้อมูลวิชา
+// PUT method - อัปเดตข้อมูลวิชา
 export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> } // เปลี่ยนเป็น Promise
@@ -164,5 +164,64 @@ export async function DELETE(
         );
     } finally {
         await prisma.$disconnect();
+    }
+}
+
+export async function PUT(
+    req: NextRequest,
+    { params }: { params: { id: string } }
+) {
+    try {
+        const body = await req.json();
+        const {
+            subjectCode,
+            subjectName,
+            credit,
+            lectureHour,
+            labHour,
+            termYear,
+            yearLevel,
+            planType,
+            dep
+        } = body;
+
+        if (
+            !subjectCode ||
+            !subjectName ||
+            !credit ||
+            // !lectureHour ||
+            // !labHour ||
+            !termYear ||
+            !yearLevel ||
+            !planType ||
+            !dep
+        ) {
+            return NextResponse.json(
+                { error: "กรุณากรอกข้อมูลให้ครบถ้วน" },
+                { status: 400 }
+            );
+        }
+
+        const newSubject = await prisma.plans_tb.update({
+            where: { id: parseInt(params.id) },
+            data: {
+                subjectCode,
+                subjectName,
+                credit: Number(credit),
+                lectureHour: Number(lectureHour),
+                labHour: Number(labHour),
+                yearLevel,
+                planType,
+                termYear,
+                dep
+            },
+        });
+
+        return NextResponse.json(newSubject, { status: 201 });
+    } catch (error: any) {
+        return NextResponse.json(
+            { error: error.message || "เกิดข้อผิดพลาด" },
+            { status: 500 }
+        );
     }
 }

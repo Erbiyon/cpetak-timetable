@@ -26,7 +26,8 @@ export async function POST(req: NextRequest) {
             !labHour ||
             !termYear ||
             !yearLevel ||
-            !planType
+            !planType ||
+            !dep
         ) {
             return NextResponse.json(
                 { error: "กรุณากรอกข้อมูลให้ครบถ้วน" },
