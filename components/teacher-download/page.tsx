@@ -82,6 +82,17 @@ export default function DownloadTeacherButton({
         ]
     }
 
+    // Helper function to convert column number to Excel column letter
+    const getColumnLetter = (colNumber: number): string => {
+        let result = '';
+        while (colNumber > 0) {
+            colNumber--;
+            result = String.fromCharCode(65 + (colNumber % 26)) + result;
+            colNumber = Math.floor(colNumber / 26);
+        }
+        return result;
+    };
+
     // Helper function to create and style cells
     const createStyledCell = (
         worksheet: ExcelJS.Worksheet,
@@ -111,10 +122,15 @@ export default function DownloadTeacherButton({
         };
 
         if (options?.merge) {
-            worksheet.mergeCells(options.merge);
+            try {
+                worksheet.mergeCells(options.merge);
+            } catch (error) {
+                // Handle already merged cells error
+                console.warn(`Cells ${options.merge} are already merged or overlapping`);
+            }
         }
 
-        return cell; // เพิ่ม return cell
+        return cell;
     };
 
     // Initialize worksheet with basic settings
@@ -625,15 +641,27 @@ export default function DownloadTeacherButton({
         }
     }
 
+    // ตรวจสอบว่ามีข้อมูลครบถ้วนหรือไม่
+    const hasTeacher = selectedTeacher && currentTermYear;
+    const hasData = timetables && timetables.length > 0;
+    const canDownload = hasTeacher && hasData;
+
+    // กำหนดข้อความตามสถานะ
+    const getButtonText = () => {
+        if (!hasTeacher) return "เลือกอาจารย์และภาคเรียนก่อน";
+        if (!hasData) return "ไม่มีข้อมูลตารางเรียน";
+        return "ดาวน์โหลดตารางสอน";
+    };
+
     return (
         <Button
             variant="secondary"
             onClick={generateExcelDownload}
             className="flex items-center gap-2"
-            disabled={!selectedTeacher || !currentTermYear || timetables.length === 0}
+            disabled={!canDownload}
         >
             <Download className="h-4 w-4" />
-            ดาวน์โหลดตารางสอน
+            {getButtonText()}
         </Button>
     );
 }

@@ -17,6 +17,7 @@ export default function TransferOneYear() {
     const [dragOverCell, setDragOverCell] = useState<{ day: number; period: number } | null>(null);
     const [conflicts, setConflicts] = useState<any[]>([]);  // เพิ่ม state เก็บข้อมูลการชนกัน
     const [dragFailedSubjectId, setDragFailedSubjectId] = useState<number | null>(null); // State สำหรับเก็บ ID วิชาที่ลากไม่สำเร็จ
+    const [timetableData, setTimetableData] = useState<any[]>([]); // เพิ่ม state สำหรับเก็บข้อมูลตารางเรียน
 
     // สถานะของวิชาในตาราง
     const [tableAssignments, setTableAssignments] = useState<{
@@ -72,6 +73,9 @@ export default function TransferOneYear() {
                     if (timetableRes.ok) {
                         const timetableData = await timetableRes.json();
                         console.log("Loaded timetable data:", timetableData);
+
+                        // เก็บข้อมูลตารางเรียนใน state เพื่อใช้ในการดาวน์โหลด
+                        setTimetableData(timetableData);
 
                         // แปลงข้อมูลเป็นรูปแบบ tableAssignments
                         const assignments: { [subjectId: number]: { day: number, periods: number[] } } = {};
@@ -725,6 +729,9 @@ export default function TransferOneYear() {
             if (timetableRes.ok) {
                 const timetableData = await timetableRes.json();
 
+                // อัปเดต timetableData state สำหรับการดาวน์โหลด
+                setTimetableData(timetableData);
+
                 // Convert to tableAssignments format
                 const assignments: { [subjectId: number]: { day: number, periods: number[] } } = {};
 
@@ -774,7 +781,10 @@ export default function TransferOneYear() {
                 <div className="bg-card text-card-foreground rounded-xl border my-5 py-6 shadow-sm mx-auto max-w-7xl">
                     <div className="flex justify-between mx-8 pb-2 text-lg font-semibold">
                         ตารางเรียน เทียบโอน ปี 1 ภาคเรียนที่ {termYear}
-                        <DownloadButtonTimetable />
+                        <DownloadButtonTimetable
+                            currentTermYear={termYear}
+                            timetables={timetableData}
+                        />
                     </div>
                     <div className="bg-card text-card-foreground px-8">
                         <TimeTableCustom

@@ -285,6 +285,15 @@ export default function DownloadRoomButton({
         }
     };
 
+    // ตรวจสอบว่ามีข้อมูลในตารางเรียนหรือไม่
+    const hasData = cellToSubject && Object.keys(cellToSubject).length > 0;
+
+    // กำหนดข้อความตามสถานะ
+    const getButtonText = () => {
+        if (!hasData) return "ไม่มีข้อมูลตารางเรียน";
+        return "ดาวน์โหลดตารางห้อง";
+    };
+
     return (
         <Button
             onClick={generateExcelDownload}
@@ -292,9 +301,10 @@ export default function DownloadRoomButton({
             className="flex items-center space-x-2"
             type="button"
             aria-label="Download Excel file"
+            disabled={!hasData}
         >
             <FileSpreadsheet className="h-4 w-4" />
-            <span>ดาวน์โหลดตารางห้อง</span>
+            <span>{getButtonText()}</span>
         </Button>
     );
 }
