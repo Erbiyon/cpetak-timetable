@@ -43,6 +43,17 @@ export async function POST(
         const currentPartMatch = originalSubject.subjectName.match(/\(ส่วนที่ (\d+)\)$/)
         const currentPartNumber = currentPartMatch ? parseInt(currentPartMatch[1], 10) : 1
 
+        // คำนวณ section ใหม่
+        const originalSection = originalSubject.section || "1"; // ถ้าไม่มี section ให้เป็น "1"
+        const newSection1 = `${originalSection}-1`;
+        const newSection2 = `${originalSection}-2`;
+
+        console.log("Section calculation:", {
+            originalSection,
+            newSection1,
+            newSection2
+        });
+
         const { part1, part2 } = splitData
 
         // ลบข้อมูลตารางเรียนเดิมก่อน (ถ้ามี)
@@ -50,17 +61,17 @@ export async function POST(
             where: { planId: subjectId }
         })
 
-        // อัปเดตวิชาส่วนแรก - คงข้อมูล room, teacher, section เดิม
+        // อัปเดตวิชาส่วนแรก - ใช้ section ใหม่
         const updatedSubject = await prisma.plans_tb.update({
             where: { id: subjectId },
             data: {
                 subjectName: `${baseSubjectName} (ส่วนที่ ${part1.partNumber})`,
                 lectureHour: part1.lectureHour,
                 labHour: part1.labHour,
-                // *** คงข้อมูลเดิม ***
+                // *** คงข้อมูลเดิม แต่เปลี่ยน section ***
                 roomId: originalSubject.roomId,
                 teacherId: originalSubject.teacherId,
-                section: originalSubject.section
+                section: newSection1
             },
             include: {
                 room: true,
@@ -68,7 +79,7 @@ export async function POST(
             }
         })
 
-        // สร้างวิชาส่วนที่สอง - คัดลอกข้อมูล room, teacher, section จากวิชาเดิม
+        // สร้างวิชาส่วนที่สอง - ใช้ section ใหม่
         const newSubject = await prisma.plans_tb.create({
             data: {
                 subjectCode: originalSubject.subjectCode,
@@ -80,10 +91,10 @@ export async function POST(
                 yearLevel: originalSubject.yearLevel,
                 planType: originalSubject.planType,
                 dep: originalSubject.dep,
-                // *** คัดลอกข้อมูลจากวิชาเดิม ***
+                // *** คัดลอกข้อมูลจากวิชาเดิม แต่ใช้ section ใหม่ ***
                 roomId: originalSubject.roomId,
                 teacherId: originalSubject.teacherId,
-                section: originalSubject.section
+                section: newSection2
             },
             include: {
                 room: true,

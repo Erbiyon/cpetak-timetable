@@ -761,6 +761,17 @@ async function handleSplitSubject(
     // ดึงชื่อวิชาเดิมออกมา (ตัด "(ส่วนที่ X)" ออก ถ้ามี)
     const baseSubjectName = subjectToSplit.subjectName.replace(/\s*\(ส่วนที่ \d+\)\s*$/, '');
 
+    // คำนวณ section ใหม่
+    const originalSection = subjectToSplit.section || "1"; // ถ้าไม่มี section ให้เป็น "1"
+    const newSection1 = `${originalSection}-1`;
+    const newSection2 = `${originalSection}-2`;
+
+    console.log("Section calculation:", {
+        originalSection,
+        newSection1,
+        newSection2
+    });
+
     // กรณีส่วนที่ 1 เป็น 0 ชั่วโมง - ไม่ต้องสร้างส่วนที่ 1 ใช้แค่ส่วนที่ 2
     if (part1TotalHours === 0) {
         // ปรับปรุงวิชาเดิมเป็นข้อมูลของส่วนที่ 2
@@ -771,6 +782,7 @@ async function handleSplitSubject(
                     lectureHour: splitData.part2.lectureHour,
                     labHour: splitData.part2.labHour,
                     subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part2.partNumber})`,
+                    section: newSection2,
                 };
             }
             return plan;
@@ -791,6 +803,7 @@ async function handleSplitSubject(
                     lectureHour: splitData.part2.lectureHour,
                     labHour: splitData.part2.labHour,
                     subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part2.partNumber})`,
+                    section: newSection2,
                 }),
             });
         } catch (error) {
@@ -810,6 +823,7 @@ async function handleSplitSubject(
                     lectureHour: splitData.part1.lectureHour,
                     labHour: splitData.part1.labHour,
                     subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part1.partNumber})`,
+                    section: newSection1,
                 };
             }
             return plan;
@@ -830,6 +844,7 @@ async function handleSplitSubject(
                     lectureHour: splitData.part1.lectureHour,
                     labHour: splitData.part1.labHour,
                     subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part1.partNumber})`,
+                    section: newSection1,
                 }),
             });
         } catch (error) {
@@ -847,6 +862,7 @@ async function handleSplitSubject(
                 lectureHour: splitData.part1.lectureHour,
                 labHour: splitData.part1.labHour,
                 subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part1.partNumber})`,
+                section: newSection1,
             };
         }
         return plan;
@@ -865,6 +881,7 @@ async function handleSplitSubject(
                 lectureHour: splitData.part1.lectureHour,
                 labHour: splitData.part1.labHour,
                 subjectName: `${baseSubjectName} (ส่วนที่ ${splitData.part1.partNumber})`,
+                section: newSection1,
             }),
         });
 
@@ -886,7 +903,7 @@ async function handleSplitSubject(
                 dep: subjectToSplit.dep,
                 roomId: subjectToSplit.roomId,
                 teacherId: subjectToSplit.teacherId,
-                section: subjectToSplit.section,
+                section: newSection2,
             }),
         });
 

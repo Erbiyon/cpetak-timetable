@@ -70,21 +70,42 @@ export async function POST(
         const totalLectureHours = splitParts.reduce((sum, part) => sum + (part.lectureHour || 0), 0)
         const totalLabHours = splitParts.reduce((sum, part) => sum + (part.labHour || 0), 0)
 
-        // เลือกข้อมูล room, teacher, section จากส่วนแรกที่มีข้อมูล
+        // คำนวณ section เดิมจากส่วนที่แบ่ง
+        // หาส่วนที่มี section แบบ "x-1" หรือ "x-2" แล้วดึง x กลับมา
+        let originalSection = null;
+        for (const part of splitParts) {
+            if (part.section) {
+                // ตรวจสอบว่าเป็นรูปแบบ "x-1", "x-2" หรือไม่
+                const sectionMatch = part.section.match(/^(.+)-\d+$/);
+                if (sectionMatch) {
+                    originalSection = sectionMatch[1]; // ได้ "x"
+                    break;
+                } else {
+                    // ถ้าไม่ใช่รูปแบบ "x-y" ให้ใช้ section เดิม
+                    originalSection = part.section;
+                    break;
+                }
+            }
+        }
+
+        console.log("Original section calculation:", {
+            splitParts: splitParts.map(p => ({ id: p.id, section: p.section })),
+            originalSection
+        });
+
+        // เลือกข้อมูล room, teacher จากส่วนแรกที่มีข้อมูล
         let mergedRoomId = null;
         let mergedTeacherId = null;
-        let mergedSection = null;
 
         for (const part of splitParts) {
             if (!mergedRoomId && part.roomId) mergedRoomId = part.roomId;
             if (!mergedTeacherId && part.teacherId) mergedTeacherId = part.teacherId;
-            if (!mergedSection && part.section) mergedSection = part.section;
         }
 
         console.log("Merged data will be:", {
             roomId: mergedRoomId,
             teacherId: mergedTeacherId,
-            section: mergedSection,
+            section: originalSection,
             lectureHour: totalLectureHours,
             labHour: totalLabHours
         });
@@ -107,7 +128,7 @@ export async function POST(
                 labHour: totalLabHours,
                 roomId: mergedRoomId,
                 teacherId: mergedTeacherId,
-                section: mergedSection
+                section: originalSection
             },
             include: {
                 room: true,

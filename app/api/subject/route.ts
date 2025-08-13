@@ -15,7 +15,10 @@ export async function POST(req: NextRequest) {
             termYear,
             yearLevel,
             planType,
-            dep
+            dep,
+            roomId,
+            teacherId,
+            section
         } = body;
 
         if (
@@ -45,8 +48,27 @@ export async function POST(req: NextRequest) {
                 yearLevel,
                 planType,
                 termYear,
-                dep
+                dep,
+                roomId: roomId || null,
+                teacherId: teacherId || null,
+                section: section || null
             },
+            include: {
+                room: {
+                    select: {
+                        id: true,
+                        roomCode: true
+                    }
+                },
+                teacher: {
+                    select: {
+                        id: true,
+                        tName: true,
+                        tLastName: true,
+                        tId: true
+                    }
+                }
+            }
         });
 
         return NextResponse.json(newSubject, { status: 201 });
@@ -120,6 +142,81 @@ export async function GET(req: NextRequest) {
     } catch (error) {
         console.error("Error fetching plans:", error);
         return NextResponse.json({ error: "Failed to fetch plans" }, { status: 500 });
+    } finally {
+        await prisma.$disconnect();
+    }
+}
+
+// เพิ่ม PUT method สำหรับการอัปเดตวิชา
+export async function PUT(req: NextRequest) {
+    try {
+        const body = await req.json();
+        const {
+            id,
+            subjectCode,
+            subjectName,
+            credit,
+            lectureHour,
+            labHour,
+            termYear,
+            yearLevel,
+            planType,
+            dep,
+            roomId,
+            teacherId,
+            section
+        } = body;
+
+        if (!id) {
+            return NextResponse.json(
+                { error: "กรุณาระบุ ID ของวิชาที่ต้องการอัปเดต" },
+                { status: 400 }
+            );
+        }
+
+        // สร้าง object สำหรับข้อมูลที่จะอัปเดต
+        const updateData: any = {};
+
+        if (subjectCode !== undefined) updateData.subjectCode = subjectCode;
+        if (subjectName !== undefined) updateData.subjectName = subjectName;
+        if (credit !== undefined) updateData.credit = Number(credit);
+        if (lectureHour !== undefined) updateData.lectureHour = Number(lectureHour);
+        if (labHour !== undefined) updateData.labHour = Number(labHour);
+        if (termYear !== undefined) updateData.termYear = termYear;
+        if (yearLevel !== undefined) updateData.yearLevel = yearLevel;
+        if (planType !== undefined) updateData.planType = planType;
+        if (dep !== undefined) updateData.dep = dep;
+        if (roomId !== undefined) updateData.roomId = roomId;
+        if (teacherId !== undefined) updateData.teacherId = teacherId;
+        if (section !== undefined) updateData.section = section;
+
+        const updatedSubject = await prisma.plans_tb.update({
+            where: { id: Number(id) },
+            data: updateData,
+            include: {
+                room: {
+                    select: {
+                        id: true,
+                        roomCode: true
+                    }
+                },
+                teacher: {
+                    select: {
+                        id: true,
+                        tName: true,
+                        tLastName: true,
+                        tId: true
+                    }
+                }
+            }
+        });
+
+        console.log(`Subject API - Updated subject ${id}`);
+
+        return NextResponse.json(updatedSubject);
+    } catch (error) {
+        console.error("Error updating subject:", error);
+        return NextResponse.json({ error: "Failed to update subject" }, { status: 500 });
     } finally {
         await prisma.$disconnect();
     }

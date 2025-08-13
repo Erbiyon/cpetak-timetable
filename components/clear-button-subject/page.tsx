@@ -55,6 +55,11 @@ export default function ClearButtonSubject({
                 onClearComplete();
             }
 
+            // Force refresh หน้าเว็บหลังจาก clear สำเร็จ
+            setTimeout(() => {
+                window.location.reload();
+            }, 500); // หน่วงเวลา 500ms เพื่อให้ UI อัปเดตก่อน
+
         } catch (error) {
             console.error("Error clearing timetable:", error);
         } finally {
