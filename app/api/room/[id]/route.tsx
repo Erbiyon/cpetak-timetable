@@ -30,12 +30,13 @@ export async function DELETE(
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await context.params;
     try {
         const body = await request.json();
         const { roomCode, roomType, roomCate } = body;
-        const roomId = parseInt(params.id);
+        const roomId = parseInt(id);
 
         if (!roomCode || !roomType) {
             return NextResponse.json(

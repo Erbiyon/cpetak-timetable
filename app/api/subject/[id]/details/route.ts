@@ -5,11 +5,12 @@ const prisma = new PrismaClient();
 
 export async function PUT(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         // ตรวจสอบ params
-        const id = parseInt(params.id, 10);
+        const { id: paramId } = await context.params;
+        const id = parseInt(paramId, 10);
         if (isNaN(id)) {
             return NextResponse.json(
                 { error: "รหัสวิชาไม่ถูกต้อง" },

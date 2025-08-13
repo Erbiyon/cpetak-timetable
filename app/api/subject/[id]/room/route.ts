@@ -5,10 +5,11 @@ const prisma = new PrismaClient();
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
-        const subjectId = parseInt(params.id);
+        const { id } = await context.params;
+        const subjectId = parseInt(id);
         const { roomId } = await request.json();
 
         console.log('Updating subject room:', { subjectId, roomId });

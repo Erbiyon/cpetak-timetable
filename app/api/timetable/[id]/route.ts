@@ -5,13 +5,11 @@ const prisma = new PrismaClient();
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
-        // Use Promise.resolve to "await" the params even though it's not a Promise
-        // This is just to satisfy Next.js static analyzer
-        const resolvedParams = await Promise.resolve(params);
-        const planId = parseInt(resolvedParams.id);
+        const { id } = await context.params;
+        const planId = parseInt(id);
 
         if (isNaN(planId)) {
             return NextResponse.json(

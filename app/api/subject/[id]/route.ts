@@ -169,9 +169,10 @@ export async function DELETE(
 
 export async function PUT(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await context.params;
         const body = await req.json();
         const {
             subjectCode,
@@ -203,7 +204,7 @@ export async function PUT(
         }
 
         const newSubject = await prisma.plans_tb.update({
-            where: { id: parseInt(params.id) },
+            where: { id: parseInt(id) },
             data: {
                 subjectCode,
                 subjectName,
