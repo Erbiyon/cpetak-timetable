@@ -11,7 +11,8 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Loader2, Download } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import DownloadTeacherButton from "@/components/teacher-download/page";
 
 export default function TimeTablePage() {
     const { data: session, status } = useSession();
@@ -131,6 +132,15 @@ export default function TimeTablePage() {
         console.log("Download timetable - will be implemented later");
     };
 
+    // สร้างข้อมูลอาจารย์สำหรับส่งไปยัง DownloadTeacherButton
+    const selectedTeacher = session?.user ? {
+        id: parseInt(session.user.id),
+        tName: session.user.name?.split(' ')[0] || '',
+        tLastName: session.user.name?.split(' ')[1] || '',
+        tId: session.user.teacherId || '',
+        teacherType: session.user.teacherType || ''
+    } : undefined;
+
     if (status === "loading") {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -164,15 +174,11 @@ export default function TimeTablePage() {
                         )}
                     </p>
                 </div>
-                <Button
-                    variant="outline"
-                    onClick={handleDownload}
-                    disabled={timetables.length === 0}
-                    className="flex items-center gap-2"
-                >
-                    <Download className="h-4 w-4" />
-                    ดาวน์โหลด
-                </Button>
+                <DownloadTeacherButton
+                    selectedTeacher={selectedTeacher}
+                    currentTermYear={currentTermYear}
+                    timetables={timetables}
+                />
             </div>
 
             {/* ตารางสอน */}
@@ -380,6 +386,32 @@ function SubjectInCell({
                             <div className="text-right">{labHours} ชม.</div>
                             <div className="font-medium">รวม:</div>
                             <div className="text-right font-medium">{totalHours} ชม.</div>
+
+                            {/* แสดงข้อมูลหลักสูตรและชั้นปี */}
+                            {(subject.planType || subject.yearLevel) && (
+                                <>
+                                    <div className="col-span-2 border-t border-gray-600 mt-2 pt-2">
+                                        {subject.planType && (
+                                            <div className="flex justify-between mb-1">
+                                                <span>หลักสูตร:</span>
+                                                <span className="font-medium text-purple-300">
+                                                    {subject.planType === 'TRANSFER' && 'เทียบโอน'}
+                                                    {subject.planType === 'FOUR_YEAR' && '4 ปี'}
+                                                    {subject.planType === 'DVE_LVC' && 'ทค.'}
+                                                    {subject.planType === 'DVE_MSIX' && 'ทค.ม.6'}
+                                                    {!['TRANSFER', 'FOUR_YEAR', 'DVE_LVC', 'DVE_MSIX'].includes(subject.planType) && subject.planType}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {subject.yearLevel && (
+                                            <div className="flex justify-between">
+                                                <span>ชั้นปี:</span>
+                                                <span className="font-medium text-orange-300">{subject.yearLevel}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
 
                             {/* แสดงข้อมูลห้องเรียน */}
                             {subject.room && (

@@ -28,15 +28,17 @@ export default function AutoTimetableButton({
 
         setIsScheduling(true);
         try {
+            console.log('🚀 เริ่มการจัดตารางอัตโนมัติ');
+
             // Find unassigned subjects
             const unassignedPlans = plans.filter(plan => !currentAssignments[plan.id]);
 
             if (unassignedPlans.length === 0) {
-                console.log("No unassigned subjects to schedule");
+                console.log("❌ ไม่มีวิชาที่ต้องจัดตาราง");
                 return;
             }
 
-            console.log(`Starting auto-scheduling for ${unassignedPlans.length} subjects`);
+            console.log(`📝 จำนวนวิชาที่ต้องจัด: ${unassignedPlans.length}`);
 
             // Sort subjects by total hours (descending) to schedule larger subjects first
             const sortedPlans = [...unassignedPlans].sort((a, b) => {
@@ -52,134 +54,171 @@ export default function AutoTimetableButton({
             const activityPeriods = [14, 15, 16, 17];
 
             // Define day and period limits
-            const MAX_DAYS = 7;  // Monday to Sunday
+            const MAX_DAYS = 7;  // Monday to Sunday (0-6)
             const MAX_PERIODS = 25;  // Maximum periods per day
 
             // Required gap between subjects (in periods)
             const REQUIRED_GAP = 2;
+
+            // Day names for debugging
+            const dayNames = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
+
+            let successCount = 0;
+            let failCount = 0;
 
             // For each subject, find an available slot
             for (const subject of sortedPlans) {
                 const totalHours = (subject.lectureHour || 0) + (subject.labHour || 0);
                 const totalPeriods = totalHours * 2;
 
-                if (totalPeriods === 0) continue;
+                if (totalPeriods === 0) {
+                    console.log(`⚠️ ข้ามวิชา ${subject.subjectCode} (ไม่มีชั่วโมงเรียน)`);
+                    continue;
+                }
+
+                console.log(`\n📚 กำลังจัดวิชา ${subject.subjectCode} (${totalPeriods} คาบ)`);
+                console.log(`   อาจารย์: ${subject.teacher ? `${subject.teacher.tName} ${subject.teacher.tLastName}` : 'ไม่ระบุ'}`);
+                console.log(`   ห้อง: ${subject.room ? subject.room.roomCode : 'ไม่ระบุ'}`);
 
                 let scheduled = false;
 
                 // Try each day
                 for (let day = 0; day < MAX_DAYS && !scheduled; day++) {
+                    console.log(`   ลองวัน ${dayNames[day]}`);
+
                     // Start from period 0 and try each possible starting period
-                    for (let startPeriod = 0; startPeriod < MAX_PERIODS - totalPeriods && !scheduled; startPeriod++) {
-                        // Check if this slot is available
+                    for (let startPeriod = 0; startPeriod < MAX_PERIODS - totalPeriods + 1 && !scheduled; startPeriod++) {
                         const isWednesday = day === 2;
 
                         // Calculate periods needed for this subject
                         const neededPeriods: number[] = [];
+                        let canScheduleHere = true;
+
                         for (let i = 0; i < totalPeriods; i++) {
                             const currentPeriod = startPeriod + i;
 
                             // Skip if this would overlap with Wednesday activities
                             if (isWednesday && activityPeriods.includes(currentPeriod)) {
-                                break; // Can't schedule here, try next position
+                                canScheduleHere = false;
+                                break;
                             }
 
                             neededPeriods.push(currentPeriod);
                         }
 
-                        // If we couldn't get all needed periods (due to activity periods), skip this slot
-                        if (neededPeriods.length < totalPeriods) continue;
+                        // Skip if can't schedule due to activity periods
+                        if (!canScheduleHere) {
+                            continue;
+                        }
 
-                        // Check for conflicts with existing assignments
-                        let hasConflict = false;
-                        Object.entries(newAssignments).forEach(([existingSubjectId, assignment]) => {
-                            if (assignment && assignment.day === day) {
-                                // Check if any period overlaps
-                                if (neededPeriods.some(p => assignment.periods.includes(p))) {
-                                    hasConflict = true;
-                                    return;
+                        // Simple conflict check - check period overlap and required gap
+                        let hasSimpleConflict = false;
+                        let conflictReason = "";
+
+                        // Check against current assignments (this session)
+                        for (const [existingId, assignment] of Object.entries(newAssignments)) {
+                            if (assignment && assignment.day === day && Number(existingId) !== subject.id) {
+                                // Check direct period overlap
+                                const overlap = neededPeriods.some(p => assignment.periods.includes(p));
+                                if (overlap) {
+                                    hasSimpleConflict = true;
+                                    conflictReason = `ชนกับวิชา ID ${existingId}`;
+                                    break;
                                 }
 
-                                // Check if there's less than REQUIRED_GAP (2) periods gap between subjects
-                                const minPeriod = Math.min(...neededPeriods);
-                                const maxPeriod = Math.max(...neededPeriods);
+                                // Check 1-hour gap (2 periods) requirement
+                                const minNew = Math.min(...neededPeriods);
+                                const maxNew = Math.max(...neededPeriods);
                                 const minExisting = Math.min(...assignment.periods);
                                 const maxExisting = Math.max(...assignment.periods);
 
-                                // If this subject would end less than REQUIRED_GAP periods before another subject starts
-                                // Fixed: Use >= instead of > to ensure exactly REQUIRED_GAP periods gap
-                                if (maxPeriod + REQUIRED_GAP >= minExisting && maxPeriod < minExisting) {
-                                    hasConflict = true;
-                                    return;
+                                // If new subject ends less than 2 periods before existing subject starts
+                                if (maxNew + 2 >= minExisting && maxNew < minExisting) {
+                                    hasSimpleConflict = true;
+                                    conflictReason = `ต้องเว้นระยะห่าง 2 คาบกับวิชา ID ${existingId}`;
+                                    break;
                                 }
 
-                                // If this subject would start less than REQUIRED_GAP periods after another subject ends
-                                // Fixed: Use >= instead of > to ensure exactly REQUIRED_GAP periods gap
-                                if (minPeriod <= maxExisting + REQUIRED_GAP && minPeriod > maxExisting) {
-                                    hasConflict = true;
-                                    return;
+                                // If new subject starts less than 2 periods after existing subject ends
+                                if (minNew <= maxExisting + 2 && minNew > maxExisting) {
+                                    hasSimpleConflict = true;
+                                    conflictReason = `ต้องเว้นระยะห่าง 2 คาบกับวิชา ID ${existingId}`;
+                                    break;
                                 }
                             }
-                        });
+                        }
 
-                        if (!hasConflict) {
-                            // We found a suitable slot
-                            newAssignments[subject.id] = {
+                        if (!hasSimpleConflict) {
+                            // We found a suitable slot - try to save it
+                            const tentativeAssignment = {
                                 day,
                                 periods: neededPeriods
                             };
 
-                            scheduled = true;
-                            console.log(`Scheduled ${subject.subjectCode} on day ${day}, periods ${neededPeriods.join(',')}`);
+                            // Add to assignments
+                            newAssignments[subject.id] = tentativeAssignment;
+
+                            // Try to save to database immediately
+                            try {
+                                const startPeriodSave = Math.min(...neededPeriods);
+                                const endPeriodSave = Math.max(...neededPeriods);
+
+                                console.log(`     💾 พยายามบันทึก: วัน ${day} คาบ ${startPeriodSave}-${endPeriodSave}`);
+
+                                const response = await fetch('/api/timetable', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        planId: subject.id,
+                                        termYear: termYear,
+                                        yearLevel: yearLevel,
+                                        planType: planType,
+                                        day: day,
+                                        startPeriod: startPeriodSave,
+                                        endPeriod: endPeriodSave,
+                                        roomId: subject.roomId || null,
+                                        teacherId: subject.teacherId || null,
+                                        section: subject.section || null
+                                    }),
+                                });
+
+                                if (response.ok) {
+                                    console.log(`     ✅ บันทึกสำเร็จ: ${subject.subjectCode} ในวัน${dayNames[day]} คาบ ${neededPeriods.join(',')}`);
+                                    scheduled = true;
+                                    successCount++;
+                                } else {
+                                    // Remove from assignments if save failed
+                                    delete newAssignments[subject.id];
+                                    const errorText = await response.text();
+                                    console.log(`     ❌ บันทึกไม่สำเร็จ: ${response.status} - ${errorText}`);
+
+                                    // Try next position
+                                    continue;
+                                }
+                            } catch (error) {
+                                // Remove from assignments if error occurred
+                                delete newAssignments[subject.id];
+                                console.log(`     ❌ เกิดข้อผิดพลาด: ${error}`);
+                                continue;
+                            }
+                        } else {
+                            console.log(`     ⚠️ ข้ามคาบ ${startPeriod}-${startPeriod + totalPeriods - 1}: ${conflictReason}`);
                         }
                     }
                 }
 
                 if (!scheduled) {
-                    console.log(`Could not schedule ${subject.subjectCode}`);
+                    console.log(`   ❌ ไม่สามารถจัดวิชา ${subject.subjectCode} ได้`);
+                    failCount++;
                 }
             }
 
-            // Save the new assignments to the database
-            for (const [subjectId, assignment] of Object.entries(newAssignments)) {
-                // Skip subjects that were already scheduled
-                if (currentAssignments[Number(subjectId)]) continue;
-
-                if (assignment) {
-                    const subject = plans.find(plan => plan.id === Number(subjectId));
-                    if (!subject) continue;
-
-                    try {
-                        const startPeriod = Math.min(...assignment.periods);
-                        const endPeriod = Math.max(...assignment.periods);
-
-                        await fetch('/api/timetable', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                planId: Number(subjectId),
-                                termYear: termYear,
-                                yearLevel: yearLevel,
-                                planType: planType,
-                                day: assignment.day,
-                                startPeriod,
-                                endPeriod,
-                                roomId: subject.roomId || null,
-                                teacherId: subject.teacherId || null,
-                                section: subject.section || null
-                            }),
-                        });
-                    } catch (error) {
-                        console.error(`Error saving assignment for subject ${subjectId}:`, error);
-                    }
-                }
-            }
+            console.log(`\n📊 สรุปผล: สำเร็จ ${successCount} วิชา, ไม่สำเร็จ ${failCount} วิชา`);
 
             // Call the callback with the new assignments
             if (onScheduleComplete) {
-                // Filter out null assignments to match the expected type
                 const validAssignments = Object.fromEntries(
                     Object.entries(newAssignments).filter(([_, assignment]) => assignment !== null)
                 ) as { [subjectId: number]: { day: number; periods: number[] } };
@@ -187,7 +226,7 @@ export default function AutoTimetableButton({
             }
 
         } catch (error) {
-            console.error("Error during auto-scheduling:", error);
+            console.error("❌ เกิดข้อผิดพลาดในการจัดตาราง:", error);
         } finally {
             setIsScheduling(false);
         }
