@@ -91,7 +91,12 @@ const handler = NextAuth({
     pages: {
         signIn: "/login",
     },
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET || (() => {
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error('NEXTAUTH_SECRET environment variable is required in production')
+        }
+        return 'development-secret-key-not-for-production'
+    })(),
 })
 
 export { handler as GET, handler as POST }
