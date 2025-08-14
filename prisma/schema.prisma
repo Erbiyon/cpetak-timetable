@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -35,8 +35,8 @@ model Plans_tb {
   timetables  Timetable_tb[]
 
   @@index([section])
-  @@index([roomId], map: "Plans_tb_roomId_fkey")
-  @@index([teacherId], map: "Plans_tb_teacherId_fkey")
+  @@index([roomId])
+  @@index([teacherId])
   @@map("Plans_tb")
 }
 
@@ -98,6 +98,6 @@ model Timetable_tb {
   @@index([day, startPeriod, endPeriod])
   @@index([roomId])
   @@index([teacherId])
-  @@index([planId], map: "Timetable_tb_planId_fkey")
+  @@index([planId])
   @@map("Timetable_tb")
 }
