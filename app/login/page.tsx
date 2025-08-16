@@ -306,7 +306,7 @@ export default function LoginPage() {
                                             htmlFor="remember-admin"
                                             className="text-xs sm:text-sm cursor-pointer select-none"
                                         >
-                                            จดจำรหัสผู้ดูแล
+                                            จดจำผู้ดูแล
                                         </Label>
                                     </div>
                                     {error && (

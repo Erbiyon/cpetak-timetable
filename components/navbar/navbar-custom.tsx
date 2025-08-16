@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { signOut, useSession } from "next-auth/react"
-import { CircleUser, LogOut, Menu, X } from "lucide-react"
+import { Calendar, CircleUser, Grid2x2Check, House, LogOut, Menu, NotebookPen, School, SquareUser, Table } from "lucide-react"
 import { useState } from "react"
 
 import {
@@ -31,6 +31,7 @@ export function NavigationMenuCustom() {
     const menuItems = [
         {
             title: "แผนการเรียน",
+            icon: <NotebookPen size={16} className="mr-2" />,
             items: [
                 { href: "/study-plans/transfer-plan", label: "แผนการเรียน เทียบโอน" },
                 { href: "/study-plans/four-year-plan", label: "แผนการเรียน 4 ปี" },
@@ -40,6 +41,7 @@ export function NavigationMenuCustom() {
         },
         {
             title: "ห้องเรียน",
+            icon: <School size={16} className="mr-2" />,
             items: [
                 { href: "/rooms", label: "จัดการห้องเรียน" },
                 { href: "/rooms/room-out", label: "เพิ่มห้องเรียนวิชานอกสาขา" }
@@ -47,6 +49,7 @@ export function NavigationMenuCustom() {
         },
         {
             title: "อาจารย์",
+            icon: <SquareUser size={16} className="mr-2" />,
             items: [
                 { href: "/teachers", label: "จัดการอาจารย์" },
                 { href: "/teachers/in-teacher", label: "เพิ่มอาจารย์วิชาภายในสาขา" },
@@ -55,6 +58,7 @@ export function NavigationMenuCustom() {
         },
         {
             title: "จัดตารางเรียน เทียบโอน",
+            icon: <Table size={16} color="#0000ff" className="mr-2" />,
             items: [
                 { href: "/adjust-time-tables/adjust-plan-transfer/transfer-one-year", label: "จัดตารางเรียน ปี 1" },
                 { href: "/adjust-time-tables/adjust-plan-transfer/transfer-two-year", label: "จัดตารางเรียน ปี 2" },
@@ -63,6 +67,7 @@ export function NavigationMenuCustom() {
         },
         {
             title: "จัดตารางเรียน 4 ปี",
+            icon: <Table size={16} color="#00ff40" className="mr-2" />,
             items: [
                 { href: "/adjust-time-tables/adjust-plan-four-year/four-one-year", label: "จัดตารางเรียน ปี 1" },
                 { href: "/adjust-time-tables/adjust-plan-four-year/four-two-year", label: "จัดตารางเรียน ปี 2" },
@@ -72,6 +77,7 @@ export function NavigationMenuCustom() {
         },
         {
             title: "จัดตารางเรียน ปวส.",
+            icon: <Table size={16} color="#ff8000" className="mr-2" />,
             items: [
                 { href: "/adjust-time-tables/adjust-plan-dve/dve-one-year", label: "ปวช. ขึ้น ปวส. ปี 1" },
                 { href: "/adjust-time-tables/adjust-plan-dve/dve-two-year", label: "ปวช. ขึ้น ปวส. ปี 2" },
@@ -82,9 +88,9 @@ export function NavigationMenuCustom() {
     ]
 
     const singleItems = [
-        { href: "/class-schedule", label: "ตารางสอน" },
-        { href: "/rooms-use", label: "การใช้ห้อง" },
-        { href: "/academic-calendar", label: "ปฏิทินการศึกษา" },
+        { href: "/class-schedule", label: "ตารางสอน", icon: Grid2x2Check },
+        { href: "/rooms-use", label: "การใช้ห้อง", icon: House },
+        { href: "/academic-calendar", label: "ปฏิทินการศึกษา", icon: Calendar },
     ]
 
     return (
@@ -95,7 +101,7 @@ export function NavigationMenuCustom() {
                     <NavigationMenuList className="flex-wrap">
                         {/* แผนการเรียน */}
                         <NavigationMenuItem>
-                            <NavigationMenuTrigger className="bg-card text-xs xl:text-sm">แผนการเรียน</NavigationMenuTrigger>
+                            <NavigationMenuTrigger className="bg-card text-xs xl:text-sm"><NotebookPen size={16} className="mr-2" /> แผนการเรียน</NavigationMenuTrigger>
                             <NavigationMenuContent className="z-50">
                                 <ul className="grid w-[200px] xl:w-[250px] gap-2 p-2">
                                     {menuItems[0].items.map((item) => (
@@ -111,19 +117,10 @@ export function NavigationMenuCustom() {
                             </NavigationMenuContent>
                         </NavigationMenuItem>
 
-                        {/* Single Items */}
-                        {singleItems.slice(0, 2).map((item) => (
-                            <NavigationMenuItem key={item.href}>
-                                <NavigationMenuLink asChild className={`${navigationMenuTriggerStyle()} bg-card text-xs xl:text-sm`}>
-                                    <Link href={item.href}>{item.label}</Link>
-                                </NavigationMenuLink>
-                            </NavigationMenuItem>
-                        ))}
-
                         {/* จัดตารางเรียน menus */}
                         {menuItems.slice(1).map((menu) => (
                             <NavigationMenuItem key={menu.title}>
-                                <NavigationMenuTrigger className="bg-card text-xs xl:text-sm">{menu.title}</NavigationMenuTrigger>
+                                <NavigationMenuTrigger className="bg-card text-xs xl:text-sm">{menu.icon} {menu.title}</NavigationMenuTrigger>
                                 <NavigationMenuContent className="z-50">
                                     <ul className="grid w-[200px] xl:w-[250px] gap-2 p-2">
                                         {menu.items.map((item) => (
@@ -137,6 +134,15 @@ export function NavigationMenuCustom() {
                                         ))}
                                     </ul>
                                 </NavigationMenuContent>
+                            </NavigationMenuItem>
+                        ))}
+
+                        {/* Single Items */}
+                        {singleItems.slice(0, 2).map((item) => (
+                            <NavigationMenuItem key={item.href}>
+                                <NavigationMenuLink asChild className={`${navigationMenuTriggerStyle()} bg-card text-xs xl:text-sm`}>
+                                    <Link href={item.href}>{item.label}</Link>
+                                </NavigationMenuLink>
                             </NavigationMenuItem>
                         ))}
 
@@ -156,7 +162,7 @@ export function NavigationMenuCustom() {
                                 <span className="hidden xl:inline">{session?.user?.name || "ผู้ดูแลระบบ"}</span>
                             </NavigationMenuTrigger>
                             <NavigationMenuContent className="z-50">
-                                <ul className="grid w-[200px] xl:w-[250px] gap-2 p-2">
+                                <ul className="grid w-[180px] xl:w-[180px] gap-2 p-2">
                                     <li>
                                         <div className="px-3 py-2 text-xs xl:text-sm border-b border-border">
                                             <div className="font-medium text-foreground">
@@ -222,7 +228,7 @@ export function NavigationMenuCustom() {
                                     {menuItems.map((menu) => (
                                         <Collapsible key={menu.title}>
                                             <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-accent rounded-md">
-                                                <span className="text-sm font-medium">{menu.title}</span>
+                                                <span className="text-sm font-medium flex"><span>{menu.icon}</span> {menu.title}</span>
                                                 <span className="text-xs">▼</span>
                                             </CollapsibleTrigger>
                                             <CollapsibleContent className="ml-4 mt-2 space-y-1">
@@ -246,9 +252,9 @@ export function NavigationMenuCustom() {
                                             key={item.href}
                                             href={item.href}
                                             onClick={() => setIsOpen(false)}
-                                            className="block px-3 py-2 text-sm font-medium hover:bg-accent rounded-md"
+                                            className="flex px-3 py-2 text-sm font-medium hover:bg-accent rounded-md"
                                         >
-                                            {item.label}
+                                            <item.icon size={16} className="mr-2" /> {item.label}
                                         </Link>
                                     ))}
 
