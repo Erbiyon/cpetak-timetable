@@ -63,12 +63,14 @@ interface DownloadTeacherButtonProps {
     selectedTeacher?: TeacherData;
     currentTermYear?: string;
     timetables?: TimetableData[];
+    onRefreshData?: () => Promise<void> | void;
 }
 
 export default function DownloadButtonTimetable({
     selectedTeacher,
     currentTermYear,
-    timetables = []
+    timetables = [],
+    onRefreshData
 }: DownloadTeacherButtonProps) {
 
     // ฟังก์ชันกำหนดข้อมูลหลักสูตรจาก timetables
@@ -135,6 +137,15 @@ export default function DownloadButtonTimetable({
         return result;
     };
 
+    // Helper function to safely merge cells
+    const safeMergeCells = (worksheet: ExcelJS.Worksheet, range: string, description?: string) => {
+        try {
+            worksheet.mergeCells(range);
+        } catch (error) {
+            console.warn(`Failed to merge cells ${range}${description ? ` (${description})` : ''}:`, error instanceof Error ? error.message : 'Unknown error');
+        }
+    };
+
     // Helper function to create and style cells
     const createStyledCell = (
         worksheet: ExcelJS.Worksheet,
@@ -167,8 +178,9 @@ export default function DownloadButtonTimetable({
             try {
                 worksheet.mergeCells(options.merge);
             } catch (error) {
-                // Handle already merged cells error
-                console.warn(`Cells ${options.merge} are already merged or overlapping`);
+                // Handle already merged cells error or invalid merge range
+                console.warn(`Failed to merge cells ${options.merge}:`, error instanceof Error ? error.message : 'Unknown error');
+                // Continue without merging - the cell content will still be set
             }
         }
 
@@ -315,7 +327,7 @@ export default function DownloadButtonTimetable({
                 });
 
                 // ชื่อวิชา (Columns H:Q) - ไม่จัดกึ่งกลาง
-                worksheet.mergeCells(`H${row}:Q${row}`);
+                safeMergeCells(worksheet, `H${row}:Q${row}`, 'subject name');
                 createStyledCell(worksheet, row, 8, subject.subjectName, {
                     alignment: { horizontal: 'left', vertical: 'middle' }
                 });
@@ -338,7 +350,7 @@ export default function DownloadButtonTimetable({
                 createStyledCell(worksheet, row, 24, "");                    // X = น (ว่าง)
 
                 // อาจารย์ผู้สอน (Columns Y:AA - merge) - ใช้ข้อมูลจากตารางเรียน
-                worksheet.mergeCells(`Y${row}:AA${row}`);
+                safeMergeCells(worksheet, `Y${row}:AA${row}`, 'teacher name');
                 const teacherName = subject.teacher ?
                     `${subject.teacher.tName} ${subject.teacher.tLastName}` : '';
                 createStyledCell(worksheet, row, 25, teacherName, {
@@ -346,7 +358,7 @@ export default function DownloadButtonTimetable({
                 });
 
                 // ห้องเรียน (Columns AB:AD - merge) - ใช้ข้อมูลจากตารางเรียน
-                worksheet.mergeCells(`AB${row}:AD${row}`);
+                safeMergeCells(worksheet, `AB${row}:AD${row}`, 'room code');
                 const roomCode = subject.room?.roomCode || "";
                 createStyledCell(worksheet, row, 28, roomCode, {
                     alignment: { horizontal: 'left', vertical: 'middle' }
@@ -363,7 +375,7 @@ export default function DownloadButtonTimetable({
                 createStyledCell(worksheet, row, 7, "");
 
                 // ชื่อวิชา (Columns H:Q)
-                worksheet.mergeCells(`H${row}:Q${row}`);
+                safeMergeCells(worksheet, `H${row}:Q${row}`, 'empty row subject name');
                 createStyledCell(worksheet, row, 8, "");
 
                 // Column R
@@ -380,11 +392,11 @@ export default function DownloadButtonTimetable({
                 createStyledCell(worksheet, row, 24, "");  // X
 
                 // อาจารย์ผู้สอน (Columns Y:AA - merge)
-                worksheet.mergeCells(`Y${row}:AA${row}`);
+                safeMergeCells(worksheet, `Y${row}:AA${row}`, 'empty row teacher');
                 createStyledCell(worksheet, row, 25, "");
 
                 // ห้องเรียน (Columns AB:AD - merge)
-                worksheet.mergeCells(`AB${row}:AD${row}`);
+                safeMergeCells(worksheet, `AB${row}:AD${row}`, 'empty row room');
                 createStyledCell(worksheet, row, 28, "");
 
                 // Column AE (31) - ไม่มีขอบ
@@ -396,26 +408,26 @@ export default function DownloadButtonTimetable({
 
         // เพิ่มข้อมูลแถว 3: ตารางเรียนประจำคณะวิศวกรรมศาสตร์
         // Merge BCDE แถว 3 ใส่ ตารางเรียนประจำคณะวิศวกรรมศาสตร์
-        worksheet.mergeCells('B3:E3');
+        safeMergeCells(worksheet, 'B3:E3', 'faculty title');
         createStyledCell(worksheet, 3, 2, 'ตารางเรียนประจำคณะวิศวกรรมศาสตร์', {
             alignment: { horizontal: 'left', vertical: 'middle' }
         });
 
         // แถว 4: ภาคเรียนและปีการศึกษา (merge B-E)
-        worksheet.mergeCells('B4:E4');
+        safeMergeCells(worksheet, 'B4:E4', 'term year');
         const termInfo = currentTermYear ? `ภาคเรียนที่ ${currentTermYear.split('/')[0]} ปีการศึกษา ${currentTermYear.split('/')[1]}` : 'ภาคเรียนที่ x ปีการศึกษา xxxx';
         createStyledCell(worksheet, 4, 2, termInfo, {
             alignment: { horizontal: 'left', vertical: 'middle' }
         });
 
         // แถว 5: สาขาวิศวกรรมไฟฟ้า (merge B-E)
-        worksheet.mergeCells('B5:E5');
+        safeMergeCells(worksheet, 'B5:E5', 'department');
         createStyledCell(worksheet, 5, 2, 'สาขาวิศวกรรมไฟฟ้า', {
             alignment: { horizontal: 'left', vertical: 'middle' }
         });
 
         // แถว 6: หลักสูตร (merge B-E) ขนาดตัวอักษร 12
-        worksheet.mergeCells('B6:E6');
+        safeMergeCells(worksheet, 'B6:E6', 'curriculum');
         createStyledCell(worksheet, 6, 2, curriculumInfo.curriculum, {
             alignment: { horizontal: 'left', vertical: 'middle' },
             font: { size: 12, bold: false }
@@ -464,7 +476,7 @@ export default function DownloadButtonTimetable({
         createStyledCell(worksheet, 15, 24, "");                                  // X = น (ว่าง)
 
         // Merge Y-AD (คอลัมน์ 25-30) - อาจารย์และห้องเรียนรวมกัน
-        worksheet.mergeCells(`Y15:AD15`);
+        safeMergeCells(worksheet, `Y15:AD15`, 'summary row teacher and room');
         createStyledCell(worksheet, 15, 25, "", {
             alignment: { horizontal: 'center', vertical: 'middle' }
         });
@@ -496,7 +508,7 @@ export default function DownloadButtonTimetable({
     const createTimeTableHeaders = (worksheet: ExcelJS.Worksheet) => {
         // Day column
         createStyledCell(worksheet, 16, 1, 'วัน');
-        worksheet.mergeCells('A16:A18');
+        safeMergeCells(worksheet, 'A16:A18', 'day column header');
 
         // Time headers
         createStyledCell(worksheet, 16, 2, 'เวลา');
@@ -505,43 +517,59 @@ export default function DownloadButtonTimetable({
 
         // Time slots and period numbers
         const timeSlots = scheduleData.timeSlot;
-        const mergeRangesRow16 = [
-            'C16:D16', 'E16:F16', 'G16:H16', 'I16:J16', 'K16:L16', 'M16:N16',
-            'O16:P16', 'Q16:R16', 'S16:T16', 'U16:V16', 'W16:X16', 'Y16:Z16',
-            'AA16:AB16', 'AC16:AD16'
-        ];
-        const mergeRangesRow17 = [
-            'C17:D17', 'E17:F17', 'G17:H17', 'I17:J17', 'K17:L17', 'M17:N17',
-            'O17:P17', 'Q17:R17', 'S17:T17', 'U17:V17', 'W17:X17', 'Y17:Z17',
-            'AA17:AB17', 'AC17:AD17'
-        ];
+        // จำกัดจำนวน time slots ไม่ให้เกิน 14 ช่วง (เพื่อไม่ให้เกินคอลัมน์ AD)
+        const maxTimeSlots = Math.min(timeSlots.length, 14);
 
-        // Create time slots (row 16)
-        timeSlots.forEach((timeSlot, index) => {
+        // Create time slots (row 16) with dynamic merging
+        for (let index = 0; index < maxTimeSlots; index++) {
             const colStart = 3 + (index * 2); // Starting from column C (3)
-            createStyledCell(worksheet, 16, colStart, timeSlot, { merge: mergeRangesRow16[index] });
-        });
+            const colEnd = colStart + 1; // Next column for merging
 
-        // Create period numbers (row 17)
-        timeSlots.forEach((_, index) => {
+            const startCol = getColumnLetter(colStart);
+            const endCol = getColumnLetter(colEnd);
+            const mergeRange = `${startCol}16:${endCol}16`;
+
+            // ตรวจสอบไม่ให้เกินคอลัมน์ AD (30)
+            if (colEnd <= 30) {
+                safeMergeCells(worksheet, mergeRange, `time slot ${index + 1}`);
+                createStyledCell(worksheet, 16, colStart, timeSlots[index]);
+            }
+        }
+
+        // Create period numbers (row 17) with dynamic merging
+        for (let index = 0; index < maxTimeSlots; index++) {
             const colStart = 3 + (index * 2); // Starting from column C (3)
-            createStyledCell(worksheet, 17, colStart, (index + 1).toString(), { merge: mergeRangesRow17[index] });
-        });
+            const colEnd = colStart + 1; // Next column for merging
 
-        // Create numbers 1-25 in row 18 starting from column C
-        for (let i = 1; i <= 25; i++) {
+            const startCol = getColumnLetter(colStart);
+            const endCol = getColumnLetter(colEnd);
+            const mergeRange = `${startCol}17:${endCol}17`;
+
+            // ตรวจสอบไม่ให้เกินคอลัมน์ AD (30)
+            if (colEnd <= 30) {
+                safeMergeCells(worksheet, mergeRange, `period number ${index + 1}`);
+                createStyledCell(worksheet, 17, colStart, (index + 1).toString());
+            }
+        }
+
+        // Create numbers 1-28 in row 18 starting from column C (จำกัดไม่ให้เกิน AD)
+        for (let i = 1; i <= 28; i++) {
             const col = 2 + i; // Starting from column C (3)
-            createStyledCell(worksheet, 18, col, i.toString());
+            if (col <= 30) { // ไม่เกินคอลัมน์ AD (30)
+                createStyledCell(worksheet, 18, col, i.toString());
+            }
         }
 
         // Create days of week in column A starting from row 19 (each day has 2 rows)
         scheduleData.day.forEach((day, index) => {
             const startRow = 19 + (index * 2); // Each day takes 2 rows
             const endRow = startRow + 1;
-            createStyledCell(worksheet, startRow, 1, day, { merge: `A${startRow}:A${endRow}` });
-        });
+            const mergeRange = `A${startRow}:A${endRow}`;
 
-        // Create education levels in column B for each day
+            // First merge the cells, then create the styled cell
+            safeMergeCells(worksheet, mergeRange, `day ${day}`);
+            createStyledCell(worksheet, startRow, 1, day);
+        });        // Create education levels in column B for each day
         scheduleData.day.forEach((_, index) => {
             const startRow = 19 + (index * 2); // Starting from row 19, each day takes 2 rows
             createStyledCell(worksheet, startRow, 2, "ปวส."); // First row of each day
@@ -575,9 +603,18 @@ export default function DownloadButtonTimetable({
             // กรองข้อมูลตารางเรียนสำหรับวันนี้
             const dayTimetables = timetables.filter(item => item.day === dayIndex);
 
-            // วนลูปสำหรับแต่ละคาบในวัน
-            for (let period = 0; period < 25; period++) {
+            // Debug: แสดงข้อมูลตารางเรียนของวันนี้
+            if (dayTimetables.length > 0) {
+                console.log(`Day ${dayIndex} (${day}) has ${dayTimetables.length} subjects:`,
+                    dayTimetables.map(t => `${t.plan?.subjectCode} (${t.startPeriod}-${t.endPeriod})`));
+            }
+
+            // วนลูปสำหรับแต่ละคาบในวัน (จำกัดไม่ให้เกิน 28 คาบ ตามจำนวนคอลัมน์ที่มี)
+            for (let period = 0; period < 28; period++) {
                 const col = 3 + period; // Column starts from C (3)
+
+                // ตรวจสอบไม่ให้เกินคอลัมน์ AD (30)
+                if (col > 30) break;
 
                 // ปวส. row
                 const pvsRow = startRow;
@@ -586,12 +623,19 @@ export default function DownloadButtonTimetable({
 
                 // เฉพาะวันพุธ (dayIndex === 2) คาบ 15-18 (period 14-17) แสดง "กิจกรรม"
                 if (dayIndex === 2 && period === 14) {
-                    // Merge คาบ 15-18 (4 คาบ) และ merge 2 แถว
-                    const startCol = String.fromCharCode(67 + period); // คาบ 15 = column P
-                    const endCol = String.fromCharCode(67 + 17); // คาบ 18 = column S
-                    worksheet.mergeCells(`${startCol}${pvsRow}:${endCol}${btechRow}`);
+                    // Merge คาบ 15-18 (period 14-17 ใน database) = 4 คาบ
+                    // period 14 (คาบ 15) = column index 17 = column R
+                    // period 17 (คาบ 18) = column index 20 = column U  
+                    const startColIndex = 3 + 14; // period 14 -> column R
+                    const endColIndex = 3 + 17;   // period 17 -> column U
 
-                    const activityCell = createStyledCell(worksheet, pvsRow, col, "กิจกรรม", {
+                    const startCol = getColumnLetter(startColIndex); // R
+                    const endCol = getColumnLetter(endColIndex);     // U
+                    const mergeRange = `${startCol}${pvsRow}:${endCol}${btechRow}`;
+
+                    safeMergeCells(worksheet, mergeRange, 'activity period');
+
+                    const activityCell = createStyledCell(worksheet, pvsRow, startColIndex, "กิจกรรม", {
                         font: { size: 14, bold: true },
                         alignment: { horizontal: 'center', vertical: 'middle' }
                     });
@@ -615,8 +659,14 @@ export default function DownloadButtonTimetable({
                     period >= item.startPeriod && period <= item.endPeriod
                 );
 
+                // Debug: แสดงการตรวจสอบคาบ
+                if (period >= 15 && period <= 17 && dayIndex === 0) { // Debug เฉพาะวันจันทร์ คาบ 16-18
+                    console.log(`Period ${period} (display: ${period + 1}):`,
+                        subjectInPeriod ? `Found ${subjectInPeriod.plan?.subjectCode}` : 'No subject');
+                }
+
                 if (subjectInPeriod && subjectInPeriod.plan) {
-                    // ถ้าเป็นคาบแรกของวิชานี้ ให้แสดงชื่อวิชา
+                    // ถ้าเป็นคาบแรกของวิชานี้ ให้แสดงชื่อวิชาและ merge
                     if (period === subjectInPeriod.startPeriod) {
                         const colspan = subjectInPeriod.endPeriod - subjectInPeriod.startPeriod + 1;
 
@@ -626,26 +676,48 @@ export default function DownloadButtonTimetable({
                         const hourInfo = `ท.${lectureHour} ป.${labHour}`;
                         const subjectText = `${subjectInPeriod.plan.subjectCode} ${subjectInPeriod.plan.subjectName} ${hourInfo}`;
 
+                        // คำนวณ column letters สำหรับ merge range โดยใช้ฟังก์ชัน getColumnLetter
+                        // Database เก็บ period เป็น 0-24, Excel column เริ่มจาก C (คอลัมน์ที่ 3)
+                        // period 0 = column C (index 3), period 1 = column D (index 4), etc.
+                        const startColIndex = 3 + subjectInPeriod.startPeriod; // Column index for startPeriod  
+                        const endColIndex = 3 + subjectInPeriod.endPeriod;     // Column index for endPeriod
+
+                        const startColLetter = getColumnLetter(startColIndex);
+                        const endColLetter = getColumnLetter(endColIndex);
+
                         // Merge 2 rows เฉพาะเมื่อมีข้อมูล
                         if (colspan > 1) {
                             // Merge across columns and merge 2 rows vertically
-                            const endCol = String.fromCharCode(67 + subjectInPeriod.endPeriod);
-                            const startCol = String.fromCharCode(67 + period);
-                            worksheet.mergeCells(`${startCol}${pvsRow}:${endCol}${btechRow}`);
+                            const mergeRange = `${startColLetter}${pvsRow}:${endColLetter}${btechRow}`;
+                            safeMergeCells(worksheet, mergeRange, `subject multiple periods: ${subjectInPeriod.plan.subjectCode} (periods ${subjectInPeriod.startPeriod + 1}-${subjectInPeriod.endPeriod + 1})`);
                         } else {
                             // Merge 2 rows vertically for single period
-                            worksheet.mergeCells(`${String.fromCharCode(67 + period)}${pvsRow}:${String.fromCharCode(67 + period)}${btechRow}`);
+                            const mergeRange = `${startColLetter}${pvsRow}:${startColLetter}${btechRow}`;
+                            safeMergeCells(worksheet, mergeRange, `subject single period: ${subjectInPeriod.plan.subjectCode} (period ${subjectInPeriod.startPeriod + 1})`);
                         }
 
-                        createStyledCell(worksheet, pvsRow, col, subjectText, {
+                        // ใส่ข้อความในเซลล์แรกของ range ที่ merge
+                        createStyledCell(worksheet, pvsRow, startColIndex, subjectText, {
                             font: { size: 14, bold: false },
                             alignment: { horizontal: 'center', vertical: 'middle' }
                         });
+
+                        // Debug: แสดงข้อมูลการ merge
+                        console.log(`Merged subject: ${subjectInPeriod.plan.subjectCode}, DB periods: ${subjectInPeriod.startPeriod}-${subjectInPeriod.endPeriod}, Excel columns: ${startColLetter}-${endColLetter} (${startColIndex}-${endColIndex})`);
+                        console.log(`Subject text: "${subjectText}"`);
+                        console.log(`Placed in row ${pvsRow}, column ${startColIndex} (${startColLetter})`);
+                    } else {
+                        // คาบอื่นๆ ของวิชาเดียวกัน - ไม่ต้องทำอะไร (เพราะถูก merge แล้ว)
+                        console.log(`Skipping period ${period} (display: ${period + 1}) for subject ${subjectInPeriod.plan.subjectCode} - already merged`);
                     }
                 } else {
                     // เซลล์ว่าง - เพิ่มเฉพาะ border (ไม่ merge)
-                    createStyledCell(worksheet, pvsRow, col, "");
-                    createStyledCell(worksheet, btechRow, col, "");
+                    // ตรวจสอบว่าเซลล์นี้ไม่ได้เป็นส่วนหนึ่งของการ merge แล้ว
+                    const cell = worksheet.getCell(pvsRow, col);
+                    if (!cell.isMerged) {
+                        createStyledCell(worksheet, pvsRow, col, "");
+                        createStyledCell(worksheet, btechRow, col, "");
+                    }
                 }
             }
         });
@@ -680,7 +752,7 @@ export default function DownloadButtonTimetable({
             cellAE.value = "";
             cellAE.border = {}; // ลบ borders ทั้งหมด
         }
-    };
+    }; // ปิดฟังก์ชัน addTimetableData
 
     // Download Excel file
     const downloadExcel = async (buffer: ArrayBuffer) => {
@@ -704,6 +776,17 @@ export default function DownloadButtonTimetable({
 
     const generateExcelDownload = async () => {
         try {
+            // Refresh ข้อมูลก่อนที่จะสร้าง Excel
+            if (onRefreshData) {
+                await onRefreshData();
+            }
+
+            // ตรวจสอบข้อมูลอีกครั้งหลังจาก refresh
+            if (!timetables || timetables.length === 0) {
+                alert("ไม่มีข้อมูลตารางเรียน กรุณาเพิ่มข้อมูลก่อนดาวน์โหลด");
+                return;
+            }
+
             const workbook = new ExcelJS.Workbook();
             const worksheet = initializeWorksheet(workbook);
 
@@ -722,7 +805,7 @@ export default function DownloadButtonTimetable({
             console.error('Error generating Excel file:', error);
             alert("เกิดข้อผิดพลาดในการสร้างไฟล์ Excel กรุณาลองใหม่อีกครั้ง");
         }
-    }
+    }; // แก้ไขการปิดฟังก์ชัน
 
     // ตรวจสอบว่ามีข้อมูลในตารางเรียนหรือไม่
     const hasData = timetables && timetables.length > 0;

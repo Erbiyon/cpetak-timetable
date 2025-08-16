@@ -1,19 +1,27 @@
-"use client"
-
+"use client";
 import React from 'react';
 import ExcelJS from "exceljs";
 import { Download } from "lucide-react";
 import { Button } from "../ui/button";
 
-type ScheduleData = {
+interface ScheduleData {
     title1: string;
     title2: string;
     term: string;
     semester: string;
     fname: string;
     lname: string;
+    curriculum: string;
     day: string[];
     timeSlot: string[];
+    timetables: {
+        period: number;
+        day: string;
+        subject: string;
+        room: string;
+        planType: string;
+        yearLevel: string;
+    }[];
 }
 
 type CellOptions = {
@@ -39,6 +47,8 @@ type TimetableData = {
     day: number;
     startPeriod: number;
     endPeriod: number;
+    planType?: string;
+    yearLevel?: string;
     plan: {
         subjectCode: string;
         subjectName: string;
@@ -48,6 +58,8 @@ type TimetableData = {
         labHour: number;
         curriculum?: string;
         year?: string;
+        planType?: string;
+        yearLevel?: string;
     };
     room: {
         roomCode: string;
@@ -66,20 +78,68 @@ export default function DownloadTeacherButton({
     currentTermYear,
     timetables = []
 }: DownloadTeacherButtonProps) {
-    const scheduleData: ScheduleData = {
+
+    // ฟังก์ชันกำหนดข้อมูลหลักสูตรจาก timetables
+    const getCurriculumInfo = () => {
+        if (timetables.length === 0) return { curriculum: 'หลักสูตรไม่ระบุ', filePrefix: 'ตารางสอน' };
+
+        // ใช้ข้อมูลจากรายการแรกเป็นตัวแทน
+        const firstItem = timetables[0];
+        const planType = firstItem.plan?.planType;
+        const yearLevel = firstItem.plan?.yearLevel;
+
+        switch (planType) {
+            case 'TRANSFER':
+                return {
+                    curriculum: `หลักสูตร : วศ.บ.วิศวกรรมคอมพิวเตอร์ เทียบโอน ${yearLevel || ''}`,
+                    filePrefix: `ตารางสอนเทียบโอน_${yearLevel || ''}`
+                };
+            case 'FOUR_YEAR':
+                return {
+                    curriculum: `หลักสูตร : วศ.บ.วิศวกรรมคอมพิวเตอร์ 4 ปี ${yearLevel || ''}`,
+                    filePrefix: `ตารางสอน4ปี_${yearLevel || ''}`
+                };
+            case 'DVE_LVC':
+                return {
+                    curriculum: `หลักสูตร : ทค.เทคนิคคอมพิวเตอร์ ${yearLevel || ''}`,
+                    filePrefix: `ตารางสอนทค_${yearLevel || ''}`
+                };
+            case 'DVE_MSIX':
+                return {
+                    curriculum: `หลักสูตร : ทค.เทคนิคคอมพิวเตอร์ ${yearLevel || ''}`,
+                    filePrefix: `ตารางสอนทค_ม.6_${yearLevel || ''}`
+                };
+            default:
+                return { curriculum: 'หลักสูตร : ไม่ระบุ', filePrefix: 'ตารางสอน' };
+        }
+    };
+
+    const curriculumInfo = getCurriculumInfo();
+
+    // Enhanced schedule data structure to match DownloadButtonTimetable
+    const enhancedScheduleData: ScheduleData = {
         title1: "มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา ตาก",
         title2: "ตารางประจำตัวผู้สอนและปริมาณงานสอนของข้าราชการครู",
         term: currentTermYear || "ภาคเรียนที่ x",
         semester: "ปีการศึกษา",
         fname: selectedTeacher?.tName || "ชื่อ",
         lname: selectedTeacher?.tLastName || "นามสกุล",
+        curriculum: curriculumInfo.curriculum,
         day: ["จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา."],
         timeSlot: [
             "08.00-09.00", "09.00-10.00", "10.00-11.00", "11.00-12.00",
             "12.00-13.00", "13.00-14.00", "14.00-15.00", "15.00-16.00",
             "16.00-17.00", "17.00-18.00", "18.00-19.00", "19.00-20.00",
             "20.00-21.00", "21.00-22.00"
-        ]
+        ],
+        timetables: timetables.map(item => ({
+            period: item.startPeriod,
+            day: item.day.toString(),
+            subject: item.plan?.subjectName || 'ไม่ระบุ',
+            room: item.room?.roomCode || 'ไม่ระบุ',
+            planType: item.plan?.planType || 'ไม่ระบุ',
+            yearLevel: item.plan?.yearLevel || 'ไม่ระบุ'
+        }))
     }
 
     // Helper function to convert column number to Excel column letter
@@ -152,7 +212,7 @@ export default function DownloadTeacherButton({
     // Create main headers (Rows 1-2)
     const createMainHeaders = (worksheet: ExcelJS.Worksheet) => {
         // Row 1 - Main headers
-        createStyledCell(worksheet, 1, 1, scheduleData.title1, { merge: 'A1:E1' });
+        createStyledCell(worksheet, 1, 1, enhancedScheduleData.title1, { merge: 'A1:E1' });
         createStyledCell(worksheet, 1, 6, "ที่", { merge: 'F1:F2' });
         createStyledCell(worksheet, 1, 7, "รหัสวิชา", { merge: 'G1:G2' });
         createStyledCell(worksheet, 1, 8, "ชื่อวิชา", { merge: 'H1:Q2' });
@@ -164,7 +224,7 @@ export default function DownloadTeacherButton({
         createStyledCell(worksheet, 1, 30, "ห้องเรียน", { merge: 'AD1:AD2' });
 
         // Row 2 - Sub headers
-        createStyledCell(worksheet, 2, 1, scheduleData.title2, { merge: 'A2:E2' });
+        createStyledCell(worksheet, 2, 1, enhancedScheduleData.title2, { merge: 'A2:E2' });
         const subHeaders = ["วิชา", "กิต", "ท", "ป", "น", "ร", "ระดับ", "หลักสูฟตร/ชั้นปี", "ป", "ส", "ป", "ส"];
         subHeaders.forEach((text, index) => {
             createStyledCell(worksheet, 2, 18 + index, text);
@@ -421,8 +481,10 @@ export default function DownloadTeacherButton({
         createStyledCell(worksheet, 17, 2, 'คาบ');
         createStyledCell(worksheet, 18, 2, 'คาบ(ทะเบียนกลาง)', { font: { size: 9 } });
 
-        // Time slots and period numbers
-        const timeSlots = scheduleData.timeSlot;
+        // Time slots and period numbers - จำกัดไม่ให้เกิน 14 ช่วง (เพื่อไม่ให้เกินคอลัมน์ AD)
+        const timeSlots = enhancedScheduleData.timeSlot;
+        const maxTimeSlots = Math.min(timeSlots.length, 14); // จำกัดไม่เกิน 14 ช่วง
+
         const mergeRangesRow16 = [
             'C16:D16', 'E16:F16', 'G16:H16', 'I16:J16', 'K16:L16', 'M16:N16',
             'O16:P16', 'Q16:R16', 'S16:T16', 'U16:V16', 'W16:X16', 'Y16:Z16',
@@ -434,33 +496,49 @@ export default function DownloadTeacherButton({
             'AA17:AB17', 'AC17:AD17'
         ];
 
-        // Create time slots (row 16)
-        timeSlots.forEach((timeSlot, index) => {
-            const colStart = 3 + (index * 2); // Starting from column C (3)
-            createStyledCell(worksheet, 16, colStart, timeSlot, { merge: mergeRangesRow16[index] });
-        });
+        // Create time slots (row 16) - ใช้เฉพาะจำนวนที่จำกัด
+        for (let index = 0; index < maxTimeSlots; index++) {
+            if (index < mergeRangesRow16.length) {
+                const timeSlot = timeSlots[index];
+                const colStart = 3 + (index * 2); // Starting from column C (3)
+                safeMergeCells(worksheet, mergeRangesRow16[index]);
+                createStyledCell(worksheet, 16, colStart, timeSlot, {
+                    font: { size: 12, bold: false },
+                    alignment: { horizontal: 'center', vertical: 'middle' }
+                });
+            }
+        }
 
-        // Create period numbers (row 17)
-        timeSlots.forEach((_, index) => {
-            const colStart = 3 + (index * 2); // Starting from column C (3)
-            createStyledCell(worksheet, 17, colStart, (index + 1).toString(), { merge: mergeRangesRow17[index] });
-        });
+        // Create period numbers (row 17) - ใช้เฉพาะจำนวนที่จำกัด
+        for (let index = 0; index < maxTimeSlots; index++) {
+            if (index < mergeRangesRow17.length) {
+                const colStart = 3 + (index * 2); // Starting from column C (3)
+                safeMergeCells(worksheet, mergeRangesRow17[index]);
+                createStyledCell(worksheet, 17, colStart, (index + 1).toString(), {
+                    font: { size: 12, bold: false },
+                    alignment: { horizontal: 'center', vertical: 'middle' }
+                });
+            }
+        }
 
-        // Create numbers 1-25 in row 18 starting from column C
-        for (let i = 1; i <= 25; i++) {
+        // Create numbers 1-28 in row 18 starting from column C (จำกัดไม่ให้เกิน AD)
+        const maxPeriods = Math.min(28, 28); // จำกัดไม่เกิน 28 คาบ (ถึงคอลัมน์ AD)
+        for (let i = 1; i <= maxPeriods; i++) {
             const col = 2 + i; // Starting from column C (3)
-            createStyledCell(worksheet, 18, col, i.toString());
+            if (col <= 30) { // ไม่เกินคอลัมน์ AD (30)
+                createStyledCell(worksheet, 18, col, i.toString());
+            }
         }
 
         // Create days of week in column A starting from row 19 (each day has 2 rows)
-        scheduleData.day.forEach((day, index) => {
+        enhancedScheduleData.day.forEach((day: string, index: number) => {
             const startRow = 19 + (index * 2); // Each day takes 2 rows
             const endRow = startRow + 1;
             createStyledCell(worksheet, startRow, 1, day, { merge: `A${startRow}:A${endRow}` });
         });
 
         // Create education levels in column B for each day
-        scheduleData.day.forEach((_, index) => {
+        enhancedScheduleData.day.forEach((_: string, index: number) => {
             const startRow = 19 + (index * 2); // Starting from row 19, each day takes 2 rows
             createStyledCell(worksheet, startRow, 2, "ปวส."); // First row of each day
             createStyledCell(worksheet, startRow + 1, 2, "ป.ตรี"); // Second row of each day
@@ -487,15 +565,19 @@ export default function DownloadTeacherButton({
         };
 
         // Add timetable data to the schedule - merge only when there is data
-        scheduleData.day.forEach((day, dayIndex) => {
+        enhancedScheduleData.day.forEach((day: string, dayIndex: number) => {
             const startRow = 19 + (dayIndex * 2); // Starting from row 19, each day takes 2 rows
 
             // กรองข้อมูลตารางเรียนสำหรับวันนี้
             const dayTimetables = timetables.filter(item => item.day === dayIndex);
 
-            // วนลูปสำหรับแต่ละคาบในวัน
-            for (let period = 0; period < 25; period++) {
+            // วนลูปสำหรับแต่ละคาบในวัน (จำกัดไม่เกิน 28 คาบ)
+            const maxPeriodsInDay = Math.min(28, 28); // จำกัดไม่เกิน 28 คาบ
+            for (let period = 0; period < maxPeriodsInDay; period++) {
                 const col = 3 + period; // Column starts from C (3)
+
+                // ตรวจสอบไม่ให้เกินคอลัมน์ AD (30)
+                if (col > 30) break;
 
                 // ปวส. row
                 const pvsRow = startRow;
@@ -542,15 +624,18 @@ export default function DownloadTeacherButton({
                         const curriculumInfo = getCurriculumType(subjectInPeriod.plan);
                         const subjectText = `${subjectInPeriod.plan.subjectCode} ${subjectInPeriod.plan.subjectName} ${curriculumInfo}`;
 
-                        // Merge 2 rows เฉพาะเมื่อมีข้อมูล
+                        // Merge 2 rows เฉพาะเมื่อมีข้อมูล - ตรวจสอบไม่ให้เกินขอบเขต
                         if (colspan > 1) {
-                            // Merge across columns and merge 2 rows vertically
-                            const endCol = String.fromCharCode(67 + subjectInPeriod.endPeriod);
-                            const startCol = String.fromCharCode(67 + period);
-                            worksheet.mergeCells(`${startCol}${pvsRow}:${endCol}${btechRow}`);
+                            // ตรวจสอบไม่ให้ endPeriod เกิน 27 (period 27 = คอลัมน์ AD)
+                            const safeEndPeriod = Math.min(subjectInPeriod.endPeriod, 27);
+                            const endCol = getColumnLetter(3 + safeEndPeriod); // 3 = column C
+                            const startCol = getColumnLetter(3 + period);
+
+                            safeMergeCells(worksheet, `${startCol}${pvsRow}:${endCol}${btechRow}`);
                         } else {
                             // Merge 2 rows vertically for single period
-                            worksheet.mergeCells(`${String.fromCharCode(67 + period)}${pvsRow}:${String.fromCharCode(67 + period)}${btechRow}`);
+                            const colLetter = getColumnLetter(3 + period);
+                            safeMergeCells(worksheet, `${colLetter}${pvsRow}:${colLetter}${btechRow}`);
                         }
 
                         createStyledCell(worksheet, pvsRow, col, subjectText, {
@@ -598,6 +683,105 @@ export default function DownloadTeacherButton({
         }
     };
 
+    // Safe cell merging function
+    const safeMergeCells = (worksheet: ExcelJS.Worksheet, range: string) => {
+        try {
+            worksheet.mergeCells(range);
+        } catch (error) {
+            console.warn(`Failed to merge cells ${range}:`, error);
+        }
+    };
+
+    // Add detailed timetable functionality like DownloadButtonTimetable
+    const addDetailedTimetable = (workbook: ExcelJS.Workbook) => {
+        const detailWorksheet = workbook.addWorksheet('ตารางสอนรายละเอียด');
+
+        // Set column widths for better visibility
+        detailWorksheet.columns = [
+            { width: 15 }, // A: วัน
+            { width: 15 }, // B: เวลา
+            { width: 25 }, // C: รหัสวิชา
+            { width: 35 }, // D: ชื่อวิชา
+            { width: 15 }, // E: ห้องเรียน
+            { width: 20 }, // F: หลักสูตร
+            { width: 15 }  // G: ชั้นปี
+        ];
+
+        // Header section
+        createStyledCell(detailWorksheet, 1, 1, enhancedScheduleData.title1, {
+            font: { size: 16, bold: true },
+            alignment: { horizontal: 'center' }
+        });
+        safeMergeCells(detailWorksheet, 'A1:G1');
+
+        createStyledCell(detailWorksheet, 2, 1, enhancedScheduleData.title2, {
+            font: { size: 14, bold: true },
+            alignment: { horizontal: 'center' }
+        });
+        safeMergeCells(detailWorksheet, 'A2:G2');
+
+        createStyledCell(detailWorksheet, 3, 1, enhancedScheduleData.curriculum, {
+            font: { size: 12, bold: true },
+            alignment: { horizontal: 'center' }
+        });
+        safeMergeCells(detailWorksheet, 'A3:G3');
+
+        // Teacher and term info
+        createStyledCell(detailWorksheet, 4, 1, `อาจารย์: ${enhancedScheduleData.fname} ${enhancedScheduleData.lname}`, {
+            font: { size: 12 },
+            alignment: { horizontal: 'left' }
+        });
+        safeMergeCells(detailWorksheet, 'A4:D4');
+
+        createStyledCell(detailWorksheet, 4, 5, `ภาคเรียน: ${enhancedScheduleData.term}`, {
+            font: { size: 12 },
+            alignment: { horizontal: 'left' }
+        });
+        safeMergeCells(detailWorksheet, 'E4:G4');
+
+        // Table headers
+        const headers = ['วัน', 'เวลา', 'รหัสวิชา', 'ชื่อวิชา', 'ห้องเรียน', 'หลักสูตร', 'ชั้นปี'];
+        headers.forEach((header, index) => {
+            createStyledCell(detailWorksheet, 6, index + 1, header, {
+                font: { size: 12, bold: true },
+                alignment: { horizontal: 'center' }
+            });
+        });
+
+        // Data rows
+        let currentRow = 7;
+        const dayNames = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
+
+        enhancedScheduleData.timetables.forEach(item => {
+            const dayName = dayNames[parseInt(item.day) - 1] || 'ไม่ระบุ';
+            const timeSlot = enhancedScheduleData.timeSlot[item.period - 1] || 'ไม่ระบุ';
+
+            createStyledCell(detailWorksheet, currentRow, 1, dayName);
+            createStyledCell(detailWorksheet, currentRow, 2, timeSlot);
+            createStyledCell(detailWorksheet, currentRow, 3, item.subject.split(' ')[0] || 'ไม่ระบุ'); // Subject code
+            createStyledCell(detailWorksheet, currentRow, 4, item.subject);
+            createStyledCell(detailWorksheet, currentRow, 5, item.room);
+            createStyledCell(detailWorksheet, currentRow, 6, item.planType);
+            createStyledCell(detailWorksheet, currentRow, 7, item.yearLevel);
+
+            currentRow++;
+        });
+
+        // Add borders to the table
+        const tableRange = `A6:G${currentRow - 1}`;
+        for (let row = 6; row < currentRow; row++) {
+            for (let col = 1; col <= 7; col++) {
+                const cell = detailWorksheet.getCell(row, col);
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            }
+        }
+    };
+
     // Download Excel file
     const downloadExcel = async (buffer: ArrayBuffer) => {
         const blob = new Blob([buffer], {
@@ -624,22 +808,46 @@ export default function DownloadTeacherButton({
             const workbook = new ExcelJS.Workbook();
             const worksheet = initializeWorksheet(workbook);
 
-            // Build the Excel structure
+            // Build the Excel structure for main sheet
             createMainHeaders(worksheet);
             createDataRows(worksheet);
             createSummaryRow(worksheet);
             setBorders(worksheet);
             createTimeTableHeaders(worksheet);
 
-            // Generate and download file
+            // Add detailed timetable worksheet (like DownloadButtonTimetable)
+            addDetailedTimetable(workbook);
+
+            // Generate and download file with enhanced name including curriculum info
             const buffer = await workbook.xlsx.writeBuffer();
-            await downloadExcel(buffer);
+            await downloadExcelWithEnhancedName(buffer);
 
         } catch (error) {
             console.error('Error generating Excel file:', error);
             alert("เกิดข้อผิดพลาดในการสร้างไฟล์ Excel กรุณาลองใหม่อีกครั้ง");
         }
     }
+
+    // Enhanced download function with curriculum-specific naming
+    const downloadExcelWithEnhancedName = async (buffer: ArrayBuffer) => {
+        const blob = new Blob([buffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const url = URL.createObjectURL(blob);
+
+        // สร้างชื่อไฟล์ที่มีชื่ออาจารย์และภาคเรียนและหลักสูตร
+        const teacherName = selectedTeacher ? `${selectedTeacher.tName}_${selectedTeacher.tLastName}` : 'อาจารย์';
+        const termYear = currentTermYear || 'ภาคเรียน';
+        const fileName = `${curriculumInfo.filePrefix}_${teacherName}_${termYear}.xlsx`;
+
+        const a = Object.assign(document.createElement('a'), {
+            href: url,
+            download: fileName
+        });
+        a.click();
+
+        URL.revokeObjectURL(url);
+    };
 
     // ตรวจสอบว่ามีข้อมูลครบถ้วนหรือไม่
     const hasTeacher = selectedTeacher && currentTermYear;
