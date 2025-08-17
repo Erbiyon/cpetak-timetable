@@ -320,19 +320,69 @@ async function checkSectionDuplicate({
             return [];
         }
 
+        // แยกเลขตัวแรกของ section (prefix) สำหรับตรวจสอบการชนกัน
+        const sectionPrefix = section.split('-')[0];
+
+        // ตรวจสอบว่าเป็นวิชาที่มีการแบ่งส่วน (มี "-" ใน section)
+        const isSplitSubject = section.includes('-');
+
         // ค้นหาวิชาที่มีเงื่อนไขเดียวกันในทุกแผนการเรียนและทุกชั้นปี
         const duplicateSections = await prisma.timetable_tb.findMany({
             where: {
                 AND: [
                     { termYear }, // ภาคเรียนเดียวกัน
-                    // ลบเงื่อนไข yearLevel ออกเพื่อตรวจสอบทุกชั้นปี
                     { teacherId }, // อาจารย์คนเดียวกัน
-                    { section }, // Section เดียวกัน
                     { planId: { not: planId } }, // ไม่รวมวิชาตัวเอง
                     {
                         plan: {
                             subjectCode: currentPlan.subjectCode // รหัสวิชาเดียวกัน
                         }
+                    },
+                    {
+                        OR: [
+                            // กรณีที่ section ตรงกันทุกตัว
+                            { section },
+                            // กรณีที่เป็นวิชาแบ่งส่วน: ตรวจสอบเฉพาะวิชาที่ไม่ใช่ส่วนเดียวกัน
+                            ...(isSplitSubject ? [
+                                {
+                                    AND: [
+                                        { section: { startsWith: `${sectionPrefix}-` } },
+                                        { section: { not: section } }, // ไม่ใช่ section เดียวกัน
+                                        // ตรวจสอบเพิ่มเติมว่าไม่ใช่วิชาที่ถูกแบ่งออกมาจากวิชาเดียวกัน
+                                        {
+                                            plan: {
+                                                NOT: {
+                                                    AND: [
+                                                        { subjectCode: currentPlan.subjectCode },
+                                                        { subjectName: { contains: "(ส่วนที่" } }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    AND: [
+                                        { section: sectionPrefix },
+                                        // ตรวจสอบเพิ่มเติมว่าไม่ใช่วิชาที่ถูกแบ่งออกมาจากวิชาเดียวกัน
+                                        {
+                                            plan: {
+                                                NOT: {
+                                                    AND: [
+                                                        { subjectCode: currentPlan.subjectCode },
+                                                        { subjectName: { contains: "(ส่วนที่" } }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ] : [
+                                // กรณีที่ไม่ใช่วิชาแบ่งส่วน: ตรวจสอบปกติ
+                                { section: { startsWith: `${sectionPrefix}-` } },
+                                { section: sectionPrefix }
+                            ])
+                        ]
                     }
                 ]
             },
@@ -344,7 +394,7 @@ async function checkSectionDuplicate({
         });
 
         if (duplicateSections.length > 0) {
-            // จัดกลุ่ม conflicts ตาม planType และ yearLevel
+            // จัดกลุ่ม conflicts ตาม planType และ yearLevel และแสดงรายละเอียด section ที่ซ้ำ
             const conflictsByPlanAndYear = duplicateSections.reduce((acc: any, item) => {
                 const key = `${item.planType}-${item.yearLevel}`;
                 if (!acc[key]) {
@@ -354,7 +404,7 @@ async function checkSectionDuplicate({
                 return acc;
             }, {});
 
-            // สร้าง message ที่แสดงแผนและชั้นปีที่มีการซ้ำกัน
+            // สร้าง message ที่แสดงแผนและชั้นปีที่มีการซ้ำกัน พร้อมรายละเอียด section
             const conflictDetails = Object.entries(conflictsByPlanAndYear).map(([key, items]) => {
                 const [planTypeCode, yearLevel] = key.split('-');
                 let planTypeText;
@@ -367,12 +417,19 @@ async function checkSectionDuplicate({
                     default: planTypeText = planTypeCode;
                 }
 
+                // รวบรวม section ที่ซ้ำกันในแต่ละแผน
+                // const conflictingSections = (items as any[]).map((item: any) => `Section ${item.section}`).join(", ");
+
                 return `${planTypeText} ${yearLevel}`;
+                // (ซ้ำกับ ${conflictingSections})
             }).join(", ");
+
+            // สร้างรายการ section ทั้งหมดที่ซ้ำกัน
+            const allConflictingSections = duplicateSections.map(item => item.section).join(", ");
 
             const conflictResult = [{
                 type: "SECTION_DUPLICATE_CONFLICT",
-                message: `ไม่สามารถจัดตารางได้: อาจารย์ ${currentPlan.teacher?.tName} ${currentPlan.teacher?.tLastName} สอนวิชา ${currentPlan.subjectCode} Section ${section} อยู่แล้วในแผน ${conflictDetails} - กรุณาเปลี่ยน Section`,
+                message: `ไม่สามารถจัดตารางได้: อาจารย์ ${currentPlan.teacher?.tName} ${currentPlan.teacher?.tLastName} สอนวิชา ${currentPlan.subjectCode} Section ${section} ซ้ำกับ Section ${allConflictingSections} ที่มีอยู่แล้วในแผน ${conflictDetails} - กรุณาเปลี่ยน Section`,
                 conflicts: duplicateSections,
                 mainSubject: {
                     subjectCode: currentPlan.subjectCode,
