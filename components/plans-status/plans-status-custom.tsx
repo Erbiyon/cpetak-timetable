@@ -77,13 +77,10 @@ export default function PlansStatusCustom({
     console.log("PlansStatusCustom received:", { termYear, yearLevel, planType, plansCount: plans.length });
 
     // กรองวิชาเฉพาะ termYear, yearLevel, planType ที่กำหนด
-    // เพิ่มความยืดหยุ่นในการกรองข้อมูล
     const filteredPlans = plans.filter(plan => {
         // ตรวจสอบค่า termYear, yearLevel, planType
         console.log(`วิชา ${plan.subjectCode}: termYear=${plan.termYear}, yearLevel=${plan.yearLevel}, planType=${plan.planType}`);
 
-        // เงื่อนไขการกรองแบบยืดหยุ่น
-        // ถ้า yearLevel หรือ planType ว่าง ให้ถือว่าผ่านเงื่อนไข
         const termMatch = plan.termYear && plan.termYear.includes(termYear);
         const yearMatch = !yearLevel || (plan.yearLevel && plan.yearLevel.includes(yearLevel));
         const typeMatch = !planType || (plan.planType && plan.planType.includes(planType));

@@ -33,6 +33,8 @@ export default function ClearButtonSubject({
     const handleClearSubjects = async () => {
         setIsClearing(true);
         try {
+            console.log('🗑️ เริ่มการล้างตารางเรียน');
+
             // Call the API to delete all assignments for the current filter
             const response = await fetch('/api/timetable/clear', {
                 method: 'DELETE',
@@ -48,6 +50,38 @@ export default function ClearButtonSubject({
 
             if (!response.ok) {
                 throw new Error('Failed to clear timetable');
+            }
+
+            console.log(`✅ ล้างตาราง ${planType} สำเร็จ`);
+
+            // ซิ๊งค์การล้างไปยังอีกหลักสูตรสำหรับ DVE planTypes
+            const isDVEPlan = planType === "DVE-MSIX" || planType === "DVE-LVC";
+            if (isDVEPlan) {
+                const targetPlanType = planType === "DVE-MSIX" ? "DVE-LVC" : "DVE-MSIX";
+
+                try {
+                    console.log(`🔄 ซิ๊งค์การล้างไปยัง ${targetPlanType}`);
+
+                    const syncResponse = await fetch('/api/timetable/clear', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            termYear: termYear || '1',
+                            yearLevel: yearLevel || 'ปี 1',
+                            planType: targetPlanType,
+                        }),
+                    });
+
+                    if (syncResponse.ok) {
+                        console.log(`✅ ซิ๊งค์การล้างไปยัง ${targetPlanType} สำเร็จ`);
+                    } else {
+                        console.log(`⚠️ ซิ๊งค์การล้างไปยัง ${targetPlanType} ไม่สำเร็จ:`, await syncResponse.text());
+                    }
+                } catch (syncError) {
+                    console.log(`⚠️ เกิดข้อผิดพลาดในการซิ๊งค์การล้าง:`, syncError);
+                }
             }
 
             // Call the callback to update UI after clearing

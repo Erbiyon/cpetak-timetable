@@ -146,6 +146,12 @@ async function checkTimeConflicts({
 }) {
     const conflicts = [];
 
+    // ดึงข้อมูลวิชาปัจจุบันเพื่อใช้ในการตรวจสอบ
+    const currentPlan = await prisma.plans_tb.findUnique({
+        where: { id: planId },
+        select: { subjectCode: true }
+    });
+
     console.log("=== Checking Time Conflicts ===");
     console.log("Input data:", {
         planId,
@@ -154,6 +160,7 @@ async function checkTimeConflicts({
         planType,
         teacherId,
         section,
+        subjectCode: currentPlan?.subjectCode,
         teacherIdType: typeof teacherId,
         sectionType: typeof section,
         sectionTrimmed: section?.trim()
@@ -204,11 +211,26 @@ async function checkTimeConflicts({
             }
         });
 
-        if (roomConflicts.length > 0) {
+        // กรองออกการซิ๊งค์ระหว่าง DVE planTypes ที่มีรหัสวิชาเดียวกัน
+        const filteredRoomConflicts = roomConflicts.filter(item => {
+            const isDVEPlan = planType === "DVE-MSIX" || planType === "DVE-LVC";
+            const isConflictDVE = item.planType === "DVE-MSIX" || item.planType === "DVE-LVC";
+
+            // ถ้าทั้งคู่เป็น DVE planType และมีรหัสวิชาเดียวกัน ให้ยกเว้น
+            if (isDVEPlan && isConflictDVE &&
+                item.planType !== planType &&
+                item.plan?.subjectCode === currentPlan?.subjectCode) {
+                console.log(`ยกเว้นการตรวจสอบห้องระหว่าง ${planType} และ ${item.planType} สำหรับวิชา ${currentPlan?.subjectCode}`);
+                return false;
+            }
+            return true;
+        });
+
+        if (filteredRoomConflicts.length > 0) {
             conflicts.push({
                 type: "ROOM_CONFLICT",
-                message: `ห้อง ${roomConflicts[0].room?.roomCode} มีการใช้งานในเวลาเดียวกัน`,
-                conflicts: roomConflicts
+                message: `ห้อง ${filteredRoomConflicts[0].room?.roomCode} มีการใช้งานในเวลาเดียวกัน`,
+                conflicts: filteredRoomConflicts
             });
         }
     }
@@ -236,11 +258,26 @@ async function checkTimeConflicts({
             }
         });
 
-        if (teacherConflicts.length > 0) {
+        // กรองออกการซิ๊งค์ระหว่าง DVE planTypes ที่มีรหัสวิชาเดียวกัน
+        const filteredTeacherConflicts = teacherConflicts.filter(item => {
+            const isDVEPlan = planType === "DVE-MSIX" || planType === "DVE-LVC";
+            const isConflictDVE = item.planType === "DVE-MSIX" || item.planType === "DVE-LVC";
+
+            // ถ้าทั้งคู่เป็น DVE planType และมีรหัสวิชาเดียวกัน ให้ยกเว้น
+            if (isDVEPlan && isConflictDVE &&
+                item.planType !== planType &&
+                item.plan?.subjectCode === currentPlan?.subjectCode) {
+                console.log(`ยกเว้นการตรวจสอบอาจารย์ระหว่าง ${planType} และ ${item.planType} สำหรับวิชา ${currentPlan?.subjectCode}`);
+                return false;
+            }
+            return true;
+        });
+
+        if (filteredTeacherConflicts.length > 0) {
             conflicts.push({
                 type: "TEACHER_CONFLICT",
-                message: `อาจารย์ ${teacherConflicts[0].teacher?.tName} ${teacherConflicts[0].teacher?.tLastName} มีการสอนในเวลาเดียวกัน`,
-                conflicts: teacherConflicts
+                message: `อาจารย์ ${filteredTeacherConflicts[0].teacher?.tName} ${filteredTeacherConflicts[0].teacher?.tLastName} มีการสอนในเวลาเดียวกัน`,
+                conflicts: filteredTeacherConflicts
             });
         }
     }
@@ -326,6 +363,9 @@ async function checkSectionDuplicate({
         // ตรวจสอบว่าเป็นวิชาที่มีการแบ่งส่วน (มี "-" ใน section)
         const isSplitSubject = section.includes('-');
 
+        // ตรวจสอบว่าเป็น DVE planType หรือไม่
+        const isDVEPlan = planType === "DVE-MSIX" || planType === "DVE-LVC";
+
         // ค้นหาวิชาที่มีเงื่อนไขเดียวกันในทุกแผนการเรียนและทุกชั้นปี
         const duplicateSections = await prisma.timetable_tb.findMany({
             where: {
@@ -393,9 +433,22 @@ async function checkSectionDuplicate({
             }
         });
 
-        if (duplicateSections.length > 0) {
+        // กรองออกการซิ๊งค์ระหว่าง DVE planTypes ที่มีรหัสวิชาเดียวกัน
+        const filteredDuplicates = duplicateSections.filter(item => {
+            // ถ้าเป็น DVE planType และมีรหัสวิชาเดียวกัน ให้ยกเว้น
+            if (isDVEPlan && (item.planType === "DVE-MSIX" || item.planType === "DVE-LVC")) {
+                // ยกเว้นถ้าเป็น planType ต่างกันแต่รหัสวิชาเดียวกัน
+                if (item.planType !== planType && item.plan?.subjectCode === currentPlan.subjectCode) {
+                    console.log(`ยกเว้นการซิ๊งค์ระหว่าง ${planType} และ ${item.planType} สำหรับวิชา ${currentPlan.subjectCode}`);
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        if (filteredDuplicates.length > 0) {
             // จัดกลุ่ม conflicts ตาม planType และ yearLevel และแสดงรายละเอียด section ที่ซ้ำ
-            const conflictsByPlanAndYear = duplicateSections.reduce((acc: any, item) => {
+            const conflictsByPlanAndYear = filteredDuplicates.reduce((acc: any, item) => {
                 const key = `${item.planType}-${item.yearLevel}`;
                 if (!acc[key]) {
                     acc[key] = [];
@@ -425,12 +478,12 @@ async function checkSectionDuplicate({
             }).join(", ");
 
             // สร้างรายการ section ทั้งหมดที่ซ้ำกัน
-            const allConflictingSections = duplicateSections.map(item => item.section).join(", ");
+            const allConflictingSections = filteredDuplicates.map(item => item.section).join(", ");
 
             const conflictResult = [{
                 type: "SECTION_DUPLICATE_CONFLICT",
                 message: `ไม่สามารถจัดตารางได้: อาจารย์ ${currentPlan.teacher?.tName} ${currentPlan.teacher?.tLastName} สอนวิชา ${currentPlan.subjectCode} Section ${section} ซ้ำกับ Section ${allConflictingSections} ที่มีอยู่แล้วในแผน ${conflictDetails} - กรุณาเปลี่ยน Section`,
-                conflicts: duplicateSections,
+                conflicts: filteredDuplicates,
                 mainSubject: {
                     subjectCode: currentPlan.subjectCode,
                     subjectName: currentPlan.subjectName,

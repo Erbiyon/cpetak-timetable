@@ -17,6 +17,7 @@ export default function DveMsixTwoYear() {
     const [dragOverCell, setDragOverCell] = useState<{ day: number; period: number } | null>(null);
     const [conflicts, setConflicts] = useState<any[]>([]);  // เพิ่ม state เก็บข้อมูลการชนกัน
     const [dragFailedSubjectId, setDragFailedSubjectId] = useState<number | null>(null); // State สำหรับเก็บ ID วิชาที่ลากไม่สำเร็จ
+    const [timetableData, setTimetableData] = useState<any[]>([]); // เพิ่ม state สำหรับเก็บข้อมูลตารางเรียน
 
     // สถานะของวิชาในตาราง
     const [tableAssignments, setTableAssignments] = useState<{
@@ -73,6 +74,8 @@ export default function DveMsixTwoYear() {
                         const timetableData = await timetableRes.json();
                         console.log("Loaded timetable data:", timetableData);
 
+                        setTimetableData(timetableData);
+
                         // แปลงข้อมูลเป็นรูปแบบ tableAssignments
                         const assignments: { [subjectId: number]: { day: number, periods: number[] } } = {};
 
@@ -93,25 +96,21 @@ export default function DveMsixTwoYear() {
                         setTableAssignments(assignments);
                     }
 
-                    // ลองหลายแบบในการ query
+                    // ลองหลายแบบในการ query - ปรับให้ดึงทั้งสอง planType
                     console.log("=== Testing different query combinations ===");
 
-                    // ลองแบบ 1: Query ปกติ
-                    const query1 = `/api/subject?termYear=${encodeURIComponent(termData.termYear)}&yearLevel=${encodeURIComponent('ปี 2')}&planType=DVE-MSIX`;
-                    console.log("Query 1:", query1);
+                    // ลองแบบ 1: Query ทั้งสอง planType
+                    const query1 = `/api/subject?termYear=${encodeURIComponent(termData.termYear)}&yearLevel=${encodeURIComponent('ปี 2')}`;
+                    console.log("Query 1 (DVE both):", query1);
 
                     // ลองแบบ 2: Query เฉพาะ termYear
                     const query2 = `/api/subject?termYear=${encodeURIComponent(termData.termYear)}`;
                     console.log("Query 2:", query2);
 
-                    // ลองแบบ 3: Query เฉพาะ planType
-                    const query3 = `/api/subject?planType=DVE-MSIX`;
-                    console.log("Query 3:", query3);
-
                     let finalData = [];
 
                     // ลองเรียก API แต่ละแบบ
-                    for (const [index, query] of [query1, query2, query3].entries()) {
+                    for (const [index, query] of [query1, query2].entries()) {
                         console.log(`Testing query ${index + 1}:`, query);
                         const planRes = await fetch(query);
                         if (planRes.ok) {
@@ -135,7 +134,7 @@ export default function DveMsixTwoYear() {
                             const allData = await planRes.json();
                             console.log("Total data without filters:", allData.length);
 
-                            // กรองข้อมูลใน frontend
+                            // กรองข้อมูลใน frontend - เอาเฉพาะ DVE-MSIX
                             finalData = allData.filter((record: any) => {
                                 const matchTermYear = !termData.termYear || record.termYear === termData.termYear;
                                 const matchYearLevel = record.yearLevel === 'ปี 2';
@@ -155,17 +154,17 @@ export default function DveMsixTwoYear() {
                                 return matchTermYear && matchYearLevel && matchPlanType;
                             });
 
-                            console.log("Filtered data:", finalData.length, "records");
+                            console.log("Filtered DVE data:", finalData.length, "records");
                         }
                     }
 
                     // ตรวจสอบรูปแบบข้อมูลและกำหนดให้กับ state
                     if (Array.isArray(finalData)) {
                         setPlans(finalData);
-                        console.log("Set plans with", finalData.length, "records");
+                        console.log("Set plans with", finalData.length, "records (DVE-MSIX only)");
                     } else if (finalData && finalData.plans && Array.isArray(finalData.plans)) {
                         setPlans(finalData.plans);
-                        console.log("Set plans with", finalData.plans.length, "records");
+                        console.log("Set plans with", finalData.plans.length, "records (DVE-MSIX only)");
                     } else {
                         console.warn("API ส่งข้อมูลในรูปแบบที่ไม่ถูกต้อง");
                         setPlans([]);
@@ -189,7 +188,11 @@ export default function DveMsixTwoYear() {
         if (plans.length > 0) {
             console.log("ข้อมูลทั้งหมด:", plans.length);
             const year1Plans = plans.filter(plan => plan.yearLevel && plan.yearLevel.includes("ปี 2"));
-            console.log("วิชาปี 2:", year1Plans.length);
+            const dveMsixPlans = year1Plans.filter(plan => plan.planType === "DVE-MSIX");
+            const dveLvcPlans = year1Plans.filter(plan => plan.planType === "DVE-LVC");
+            console.log("วิชาปี 2 ทั้งหมด:", year1Plans.length);
+            console.log("วิชา DVE-MSIX:", dveMsixPlans.length);
+            console.log("วิชา DVE-LVC:", dveLvcPlans.length);
             console.log("ตัวอย่างวิชาปี 2:", year1Plans.length > 0 ? year1Plans[0] : "ไม่พบ");
         }
     }, [plans]);
@@ -415,6 +418,49 @@ export default function DveMsixTwoYear() {
                         console.log("บันทึกตารางเรียนสำเร็จ", data);
                         setConflicts([]); // เคลียร์การชนกัน
                         setDragFailedSubjectId(null); // เคลียร์ drag failed state
+
+                        // ซิ๊งค์ไปยัง DVE-LVC หากมีวิชารหัสเดียวกัน
+                        try {
+                            // ค้นหาวิชาใน DVE-LVC ที่มี subjectCode เดียวกัน
+                            const searchResponse = await fetch(`/api/subject?subjectCode=${encodeURIComponent(subject.subjectCode)}&termYear=${encodeURIComponent(termYear || '')}&yearLevel=${encodeURIComponent('ปี 2')}&planType=DVE-LVC`);
+
+                            if (searchResponse.ok) {
+                                const dveSubjects = await searchResponse.json();
+                                const matchingSubject = dveSubjects.find((s: any) => s.subjectCode === subject.subjectCode);
+
+                                if (matchingSubject) {
+                                    console.log("พบวิชาใน DVE-LVC ที่ต้องซิ๊งค์:", matchingSubject.subjectCode);
+
+                                    // บันทึกตารางสำหรับ DVE-LVC
+                                    const syncResponse = await fetch('/api/timetable', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({
+                                            planId: matchingSubject.id,
+                                            termYear: termYear || '1',
+                                            yearLevel: 'ปี 2',
+                                            planType: 'DVE-LVC',
+                                            day,
+                                            startPeriod,
+                                            endPeriod,
+                                            roomId: matchingSubject.roomId || null,
+                                            teacherId: matchingSubject.teacherId || null,
+                                            section: matchingSubject.section || null
+                                        }),
+                                    });
+
+                                    if (syncResponse.ok) {
+                                        console.log("ซิ๊งค์ตารางไปยัง DVE-LVC สำเร็จ");
+                                    } else {
+                                        console.warn("ไม่สามารถซิ๊งค์ตารางไปยัง DVE-LVC ได้:", await syncResponse.text());
+                                    }
+                                }
+                            }
+                        } catch (syncError) {
+                            console.warn("เกิดข้อผิดพลาดในการซิ๊งค์ไปยัง DVE-LVC:", syncError);
+                        }
                     }
                 } catch (error) {
                     console.error("เกิดข้อผิดพลาดในการบันทึกตารางเรียน:", error);
@@ -445,6 +491,9 @@ export default function DveMsixTwoYear() {
     // ฟังก์ชั่นสำหรับลบวิชาออกจากตาราง
     async function handleRemoveAssignment(subjectId: number) {
         try {
+            // หาข้อมูลวิชาก่อนลบ
+            const subject = plans.find(plan => plan.id === subjectId);
+
             // ลบข้อมูลจากฐานข้อมูล
             await fetch(`/api/timetable/${subjectId}`, {
                 method: 'DELETE',
@@ -464,6 +513,30 @@ export default function DveMsixTwoYear() {
 
             // เคลียร์ dragFailedSubjectId ถ้าเป็นวิชาเดียวกัน
             setDragFailedSubjectId(prev => prev === subjectId ? null : prev);
+
+            // ซิ๊งค์การลบไปยัง DVE-LVC หากมีวิชารหัสเดียวกัน
+            if (subject) {
+                try {
+                    const searchResponse = await fetch(`/api/subject?subjectCode=${encodeURIComponent(subject.subjectCode)}&termYear=${encodeURIComponent(termYear || '')}&yearLevel=${encodeURIComponent('ปี 2')}&planType=DVE-LVC`);
+
+                    if (searchResponse.ok) {
+                        const dveSubjects = await searchResponse.json();
+                        const matchingSubject = dveSubjects.find((s: any) => s.subjectCode === subject.subjectCode);
+
+                        if (matchingSubject) {
+                            console.log("ลบวิชาใน DVE-LVC ด้วย:", matchingSubject.subjectCode);
+
+                            await fetch(`/api/timetable/${matchingSubject.id}`, {
+                                method: 'DELETE',
+                            });
+
+                            console.log("ซิ๊งค์การลบไปยัง DVE-LVC สำเร็จ");
+                        }
+                    }
+                } catch (syncError) {
+                    console.warn("เกิดข้อผิดพลาดในการซิ๊งค์การลบไปยัง DVE-LVC:", syncError);
+                }
+            }
 
         } catch (error) {
             console.error("เกิดข้อผิดพลาดในการลบข้อมูลตารางเรียน:", error);
@@ -620,6 +693,49 @@ export default function DveMsixTwoYear() {
 
             console.log("Merge successful - Merged: ", mergedSubject, "Deleted: ", deletedParts);
 
+            // ซิ๊งค์การรวมวิชาไปยัง DVE-LVC หากมีวิชารหัสเดียวกัน
+            try {
+                console.log("🔄 ซิ๊งค์การรวมวิชาไปยัง DVE-LVC");
+
+                // ค้นหาวิชาใน DVE-LVC ที่มี subjectCode เดียวกัน
+                const searchResponse = await fetch(`/api/subject?subjectCode=${encodeURIComponent(mergedSubject.subjectCode)}&termYear=${encodeURIComponent(termYear || '')}&yearLevel=${encodeURIComponent('ปี 2')}&planType=DVE-LVC`);
+
+                if (searchResponse.ok) {
+                    const dveSubjects = await searchResponse.json();
+
+                    // หาวิชาที่แบ่งแล้วใน DVE-LVC (มี "(ส่วนที่" ในชื่อ)
+                    const splitSubjects = dveSubjects.filter((s: any) =>
+                        s.subjectCode === mergedSubject.subjectCode &&
+                        s.subjectName.includes('(ส่วนที่')
+                    );
+
+                    if (splitSubjects.length > 0) {
+                        console.log(`พบวิชาที่แบ่งแล้วใน DVE-LVC จำนวน ${splitSubjects.length} ส่วน`);
+
+                        // รวมวิชาแรกที่พบ (ระบบจะรวมทั้งหมดอัตโนมัติ)
+                        const firstSplitSubject = splitSubjects[0];
+
+                        const syncMergeResponse = await fetch('/api/subject/merge', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ subjectId: firstSplitSubject.id }),
+                        });
+
+                        if (syncMergeResponse.ok) {
+                            console.log("✅ ซิ๊งค์การรวมวิชาไปยัง DVE-LVC สำเร็จ");
+                        } else {
+                            console.log("⚠️ ซิ๊งค์การรวมวิชาไปยัง DVE-LVC ไม่สำเร็จ:", await syncMergeResponse.text());
+                        }
+                    } else {
+                        console.log("ไม่พบวิชาที่แบ่งแล้วใน DVE-LVC ที่ต้องรวม");
+                    }
+                }
+            } catch (syncError) {
+                console.log("⚠️ เกิดข้อผิดพลาดในการซิ๊งค์การรวมวิชา:", syncError);
+            }
+
         } catch (error: any) {
             console.error("Error merging subject:", error);
             alert(`เกิดข้อผิดพลาด: ${error.message}`);
@@ -727,6 +843,7 @@ export default function DveMsixTwoYear() {
 
                 // Convert to tableAssignments format
                 const assignments: { [subjectId: number]: { day: number, periods: number[] } } = {};
+                setTimetableData(timetableData);
 
                 timetableData.forEach((item: any) => {
                     const periods: number[] = [];
@@ -745,13 +862,18 @@ export default function DveMsixTwoYear() {
                 console.log("Updated tableAssignments after refresh:", assignments);
             }
 
-            // Optionally refresh the subject data if needed
-            const planRes = await fetch(`/api/subject?termYear=${encodeURIComponent(termYear || "")}&yearLevel=${encodeURIComponent('ปี 2')}&planType=DVE-MSIX`);
+            // รีเฟรชข้อมูลวิชา - ดึงทั้งสอง planType สำหรับ DVE
+            const planRes = await fetch(`/api/subject?termYear=${encodeURIComponent(termYear || "")}&yearLevel=${encodeURIComponent('ปี 2')}`);
             if (planRes.ok) {
-                const planData = await planRes.json();
-                if (Array.isArray(planData) && planData.length > 0) {
-                    setPlans(planData);
-                    console.log("Updated plans after refresh:", planData.length);
+                const allPlanData = await planRes.json();
+                // กรองเฉพาะ DVE-MSIX
+                const dvePlanData = allPlanData.filter((plan: any) =>
+                    plan.planType === "DVE-MSIX"
+                );
+
+                if (Array.isArray(dvePlanData) && dvePlanData.length > 0) {
+                    setPlans(dvePlanData);
+                    console.log("Updated plans after refresh:", dvePlanData.length, "records (DVE-MSIX only)");
                 }
             }
 
@@ -774,7 +896,10 @@ export default function DveMsixTwoYear() {
                 <div className="bg-card text-card-foreground rounded-xl border my-5 py-6 shadow-sm mx-auto max-w-7xl">
                     <div className="flex justify-between mx-8 pb-2 text-lg font-semibold">
                         ตารางเรียน ม.6 ขึ้น ปวส. ปี 2 ภาคเรียนที่ {termYear}
-                        <DownloadButtonTimetable />
+                        <DownloadButtonTimetable
+                            currentTermYear={termYear}
+                            timetables={timetableData}
+                        />
                     </div>
                     <div className="bg-card text-card-foreground px-8">
                         <TimeTableCustom

@@ -188,6 +188,53 @@ export default function AutoTimetableButton({
                                     console.log(`     ✅ บันทึกสำเร็จ: ${subject.subjectCode} ในวัน${dayNames[day]} คาบ ${neededPeriods.join(',')}`);
                                     scheduled = true;
                                     successCount++;
+
+                                    // ซิ๊งค์ไปยังอีกหลักสูตรสำหรับ DVE planTypes
+                                    const isDVEPlan = planType === "DVE-MSIX" || planType === "DVE-LVC";
+                                    if (isDVEPlan) {
+                                        const targetPlanType = planType === "DVE-MSIX" ? "DVE-LVC" : "DVE-MSIX";
+
+                                        try {
+                                            // ค้นหาวิชาในอีกหลักสูตรที่มี subjectCode เดียวกัน
+                                            const searchResponse = await fetch(`/api/subject?subjectCode=${encodeURIComponent(subject.subjectCode)}&termYear=${encodeURIComponent(termYear)}&yearLevel=${encodeURIComponent(yearLevel)}&planType=${targetPlanType}`);
+
+                                            if (searchResponse.ok) {
+                                                const targetSubjects = await searchResponse.json();
+                                                const matchingSubject = targetSubjects.find((s: any) => s.subjectCode === subject.subjectCode);
+
+                                                if (matchingSubject) {
+                                                    console.log(`     🔄 ซิ๊งค์ไปยัง ${targetPlanType} สำหรับวิชา ${subject.subjectCode}`);
+
+                                                    const syncResponse = await fetch('/api/timetable', {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                        },
+                                                        body: JSON.stringify({
+                                                            planId: matchingSubject.id,
+                                                            termYear: termYear,
+                                                            yearLevel: yearLevel,
+                                                            planType: targetPlanType,
+                                                            day: day,
+                                                            startPeriod: startPeriodSave,
+                                                            endPeriod: endPeriodSave,
+                                                            roomId: matchingSubject.roomId || null,
+                                                            teacherId: matchingSubject.teacherId || null,
+                                                            section: matchingSubject.section || null
+                                                        }),
+                                                    });
+
+                                                    if (syncResponse.ok) {
+                                                        console.log(`     ✅ ซิ๊งค์สำเร็จ: ${subject.subjectCode} ไปยัง ${targetPlanType}`);
+                                                    } else {
+                                                        console.log(`     ⚠️ ซิ๊งค์ไม่สำเร็จ: ${await syncResponse.text()}`);
+                                                    }
+                                                }
+                                            }
+                                        } catch (syncError) {
+                                            console.log(`     ⚠️ เกิดข้อผิดพลาดในการซิ๊งค์: ${syncError}`);
+                                        }
+                                    }
                                 } else {
                                     // Remove from assignments if save failed
                                     delete newAssignments[subject.id];

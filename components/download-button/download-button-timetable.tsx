@@ -93,12 +93,12 @@ export default function DownloadButtonTimetable({
                     curriculum: `หลักสูตร : วศ.บ.วิศวกรรมคอมพิวเตอร์ 4 ปี ${yearLevel || ''}`,
                     filePrefix: `ตารางเรียน4ปี_${yearLevel || ''}`
                 };
-            case 'DVE_LVC':
+            case 'DVE-LVC':
                 return {
                     curriculum: `หลักสูตร : ทค.เทคนิคคอมพิวเตอร์ ${yearLevel || ''}`,
-                    filePrefix: `ตารางเรียนทค_${yearLevel || ''}`
+                    filePrefix: `ตารางเรียนทค_ปวช._${yearLevel || ''}`
                 };
-            case 'DVE_MSIX':
+            case 'DVE-MSIX':
                 return {
                     curriculum: `หลักสูตร : ทค.เทคนิคคอมพิวเตอร์ ${yearLevel || ''}`,
                     filePrefix: `ตารางเรียนทค_ม.6_${yearLevel || ''}`

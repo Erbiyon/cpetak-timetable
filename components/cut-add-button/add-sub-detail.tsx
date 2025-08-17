@@ -282,22 +282,63 @@ export default function AddSubDetail({ subject, onUpdate }: {
             console.log("Subject ID:", subject.id);
             console.log("Submit data:", submitData);
 
-            // บันทึกการเปลี่ยนแปลงลงฐานข้อมูล
-            const updateResponse = await fetch(`/api/subject/${subject.id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(submitData),
-            });
+            // ตรวจสอบว่าเป็น DVE planType หรือไม่โดยดึงข้อมูลวิชาก่อน
+            const subjectDetailRes = await fetch(`/api/subject/${subject.id}`);
+            if (!subjectDetailRes.ok) {
+                throw new Error('ไม่สามารถดึงข้อมูลวิชาได้');
+            }
+            const subjectDetail = await subjectDetailRes.json();
 
-            if (!updateResponse.ok) {
-                const errorData = await updateResponse.json();
-                throw new Error(errorData.error || 'การอัปเดตข้อมูลล้มเหลว');
+            const isDVEPlan = subjectDetail.planType === "DVE-MSIX" || subjectDetail.planType === "DVE-LVC";
+
+            if (isDVEPlan) {
+                // อัปเดตวิชาทั้งสอง planType ที่มี subjectCode เดียวกัน
+                const searchResponse = await fetch(`/api/subject?subjectCode=${encodeURIComponent(subjectDetail.subjectCode)}&termYear=${encodeURIComponent(subjectDetail.termYear)}&yearLevel=${encodeURIComponent(subjectDetail.yearLevel)}`);
+
+                if (searchResponse.ok) {
+                    const allSameSubjects = await searchResponse.json();
+                    // กรองเฉพาะวิชาที่มี subjectCode เดียวกันและเป็น DVE planTypes
+                    const dveSubjects = allSameSubjects.filter((s: any) =>
+                        s.subjectCode === subjectDetail.subjectCode &&
+                        (s.planType === "DVE-MSIX" || s.planType === "DVE-LVC")
+                    );
+
+                    console.log("Updating DVE subjects with same subjectCode:", dveSubjects.length, "subjects");
+                    console.log("Subject codes being updated:", dveSubjects.map((s: any) => `${s.subjectCode}-${s.planType}`));
+
+                    // อัปเดตแต่ละวิชาที่มี subjectCode เดียวกัน
+                    for (const dveSubject of dveSubjects) {
+                        const updateResponse = await fetch(`/api/subject/${dveSubject.id}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(submitData),
+                        });
+
+                        if (!updateResponse.ok) {
+                            const errorData = await updateResponse.json();
+                            throw new Error(errorData.error || `การอัปเดตข้อมูล ${dveSubject.planType} ล้มเหลว`);
+                        }
+                    }
+                }
+            } else {
+                // อัปเดตวิชาเดียว (กรณีอื่นๆ)
+                const updateResponse = await fetch(`/api/subject/${subject.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(submitData),
+                });
+
+                if (!updateResponse.ok) {
+                    const errorData = await updateResponse.json();
+                    throw new Error(errorData.error || 'การอัปเดตข้อมูลล้มเหลว');
+                }
             }
 
-            const updatedData = await updateResponse.json();
-            console.log("Update response received:", updatedData);
+            console.log("Update completed successfully");
 
             // รีเซ็ต state
             setOriginalData(null);
