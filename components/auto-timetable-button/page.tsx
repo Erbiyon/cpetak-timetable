@@ -34,11 +34,11 @@ export default function AutoTimetableButton({
             const unassignedPlans = plans.filter(plan => !currentAssignments[plan.id]);
 
             if (unassignedPlans.length === 0) {
-                console.log("❌ ไม่มีวิชาที่ต้องจัดตาราง");
+                console.log("ไม่มีวิชาที่ต้องจัดตาราง");
                 return;
             }
 
-            console.log(`📝 จำนวนวิชาที่ต้องจัด: ${unassignedPlans.length}`);
+            console.log(`จำนวนวิชาที่ต้องจัด: ${unassignedPlans.length}`);
 
             // Sort subjects by total hours (descending) to schedule larger subjects first
             const sortedPlans = [...unassignedPlans].sort((a, b) => {
@@ -72,11 +72,11 @@ export default function AutoTimetableButton({
                 const totalPeriods = totalHours * 2;
 
                 if (totalPeriods === 0) {
-                    console.log(`⚠️ ข้ามวิชา ${subject.subjectCode} (ไม่มีชั่วโมงเรียน)`);
+                    console.log(`ข้ามวิชา ${subject.subjectCode} (ไม่มีชั่วโมงเรียน)`);
                     continue;
                 }
 
-                console.log(`\n📚 กำลังจัดวิชา ${subject.subjectCode} (${totalPeriods} คาบ)`);
+                console.log(`\nกำลังจัดวิชา ${subject.subjectCode} (${totalPeriods} คาบ)`);
                 console.log(`   อาจารย์: ${subject.teacher ? `${subject.teacher.tName} ${subject.teacher.tLastName}` : 'ไม่ระบุ'}`);
                 console.log(`   ห้อง: ${subject.room ? subject.room.roomCode : 'ไม่ระบุ'}`);
 
@@ -163,7 +163,7 @@ export default function AutoTimetableButton({
                                 const startPeriodSave = Math.min(...neededPeriods);
                                 const endPeriodSave = Math.max(...neededPeriods);
 
-                                console.log(`     💾 พยายามบันทึก: วัน ${day} คาบ ${startPeriodSave}-${endPeriodSave}`);
+                                console.log(`     พยายามบันทึก: วัน ${day} คาบ ${startPeriodSave}-${endPeriodSave}`);
 
                                 const response = await fetch('/api/timetable', {
                                     method: 'POST',
@@ -185,7 +185,7 @@ export default function AutoTimetableButton({
                                 });
 
                                 if (response.ok) {
-                                    console.log(`     ✅ บันทึกสำเร็จ: ${subject.subjectCode} ในวัน${dayNames[day]} คาบ ${neededPeriods.join(',')}`);
+                                    console.log(`     บันทึกสำเร็จ: ${subject.subjectCode} ในวัน${dayNames[day]} คาบ ${neededPeriods.join(',')}`);
                                     scheduled = true;
                                     successCount++;
 
@@ -203,7 +203,7 @@ export default function AutoTimetableButton({
                                                 const matchingSubject = targetSubjects.find((s: any) => s.subjectCode === subject.subjectCode);
 
                                                 if (matchingSubject) {
-                                                    console.log(`     🔄 ซิ๊งค์ไปยัง ${targetPlanType} สำหรับวิชา ${subject.subjectCode}`);
+                                                    console.log(`     ซิ๊งค์ไปยัง ${targetPlanType} สำหรับวิชา ${subject.subjectCode}`);
 
                                                     const syncResponse = await fetch('/api/timetable', {
                                                         method: 'POST',
@@ -225,21 +225,27 @@ export default function AutoTimetableButton({
                                                     });
 
                                                     if (syncResponse.ok) {
-                                                        console.log(`     ✅ ซิ๊งค์สำเร็จ: ${subject.subjectCode} ไปยัง ${targetPlanType}`);
+                                                        console.log(`     ซิ๊งค์สำเร็จ: ${subject.subjectCode} ไปยัง ${targetPlanType}`);
                                                     } else {
-                                                        console.log(`     ⚠️ ซิ๊งค์ไม่สำเร็จ: ${await syncResponse.text()}`);
+                                                        console.log(`     ซิ๊งค์ไม่สำเร็จ: ${await syncResponse.text()}`);
                                                     }
                                                 }
                                             }
                                         } catch (syncError) {
-                                            console.log(`     ⚠️ เกิดข้อผิดพลาดในการซิ๊งค์: ${syncError}`);
+                                            console.log(`     เกิดข้อผิดพลาดในการซิ๊งค์: ${syncError}`);
                                         }
                                     }
                                 } else {
                                     // Remove from assignments if save failed
                                     delete newAssignments[subject.id];
                                     const errorText = await response.text();
-                                    console.log(`     ❌ บันทึกไม่สำเร็จ: ${response.status} - ${errorText}`);
+                                    console.log(`     บันทึกไม่สำเร็จ: ${response.status} - ${errorText}`);
+
+                                    // ถ้าเจอ section conflict ให้ข้ามวิชานี้ทันที
+                                    if (response.status === 409 && errorText.includes("Section")) {
+                                        scheduled = false;
+                                        break; // ออกจากลูป startPeriod
+                                    }
 
                                     // Try next position
                                     continue;
@@ -247,22 +253,22 @@ export default function AutoTimetableButton({
                             } catch (error) {
                                 // Remove from assignments if error occurred
                                 delete newAssignments[subject.id];
-                                console.log(`     ❌ เกิดข้อผิดพลาด: ${error}`);
+                                console.log(`     เกิดข้อผิดพลาด: ${error}`);
                                 continue;
                             }
                         } else {
-                            console.log(`     ⚠️ ข้ามคาบ ${startPeriod}-${startPeriod + totalPeriods - 1}: ${conflictReason}`);
+                            console.log(`     ข้ามคาบ ${startPeriod}-${startPeriod + totalPeriods - 1}: ${conflictReason}`);
                         }
                     }
                 }
 
                 if (!scheduled) {
-                    console.log(`   ❌ ไม่สามารถจัดวิชา ${subject.subjectCode} ได้`);
+                    console.log(`   ไม่สามารถจัดวิชา ${subject.subjectCode} ได้`);
                     failCount++;
                 }
             }
 
-            console.log(`\n📊 สรุปผล: สำเร็จ ${successCount} วิชา, ไม่สำเร็จ ${failCount} วิชา`);
+            console.log(`\nสรุปผล: สำเร็จ ${successCount} วิชา, ไม่สำเร็จ ${failCount} วิชา`);
 
             // Call the callback with the new assignments
             if (onScheduleComplete) {
@@ -273,7 +279,7 @@ export default function AutoTimetableButton({
             }
 
         } catch (error) {
-            console.error("❌ เกิดข้อผิดพลาดในการจัดตาราง:", error);
+            console.error("เกิดข้อผิดพลาดในการจัดตาราง:", error);
         } finally {
             setIsScheduling(false);
         }
