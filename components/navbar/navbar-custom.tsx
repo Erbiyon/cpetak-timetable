@@ -51,7 +51,7 @@ export function NavigationMenuCustom() {
             title: "อาจารย์",
             icon: <SquareUser size={16} className="mr-2" />,
             items: [
-                { href: "/teachers", label: "จัดการอาจารย์" },
+                { href: "/teachers", label: "จัดการรายชื่ออาจารย์" },
                 { href: "/teachers/in-teacher", label: "เพิ่มอาจารย์วิชาภายในสาขา" },
                 { href: "/teachers/out-teacher", label: "เพิ่มอาจารย์วิชาภายนอกสาขา" },
             ]

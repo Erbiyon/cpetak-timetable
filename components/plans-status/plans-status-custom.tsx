@@ -703,7 +703,7 @@ function SubjectCard({
                             {/* เพิ่มข้อมูลรายละเอียดเพิ่มเติม */}
                             {subject.section && (
                                 <>
-                                    <div>Section:</div>
+                                    <div>กลุ่มเรียน:</div>
                                     <div className="text-right">{subject.section}</div>
                                 </>
                             )}
@@ -721,12 +721,12 @@ function SubjectCard({
                             )}
                         </div>
 
-                        {/* แสดงข้อความเตือนเมื่อ drag failed */}
+                        {/* แสดงข้อความเตือนเมื่อ drag failed
                         {isDragFailed && (
                             <div className="mt-2 p-2 bg-red-600 text-white rounded text-center">
                                 ไม่สามารถวางได้เนื่องจากมีการชนกัน
                             </div>
-                        )}
+                        )} */}
                     </div>
                 </TooltipContent>
             </Tooltip>

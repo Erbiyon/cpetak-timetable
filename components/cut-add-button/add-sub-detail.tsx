@@ -485,7 +485,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
 
                         {/* Section */}
                         <div className="grid gap-3">
-                            <Label htmlFor="section">Section</Label>
+                            <Label htmlFor="section">กลุ่มเรียน</Label>
                             <div className="relative">
                                 <Input
                                     id="section"
