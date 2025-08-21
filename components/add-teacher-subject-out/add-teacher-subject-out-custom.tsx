@@ -89,6 +89,19 @@ export function AddTeacherSubjectOutCustom({
         }
     }
 
+    useEffect(() => {
+        if (open && teacherName && teachers.length > 0) {
+            const current = teachers.find(
+                t => `${t.tName} ${t.tLastName}` === teacherName
+            )
+            if (current) {
+                setSelectedTeacherId(current.id.toString())
+            }
+        } else if (open && !teacherName) {
+            setSelectedTeacherId("")
+        }
+    }, [open, teacherName, teachers])
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -137,12 +150,6 @@ export function AddTeacherSubjectOutCustom({
                             </SelectContent>
                         </Select>
                     </div>
-
-                    {teacherName && (
-                        <div className="text-sm text-muted-foreground p-2 bg-muted rounded">
-                            อาจารย์ปัจจุบัน: {teacherName}
-                        </div>
-                    )}
                 </div>
 
                 <DialogFooter className="gap-2">

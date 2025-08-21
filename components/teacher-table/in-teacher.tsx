@@ -185,6 +185,7 @@ export default function InTeacher() {
                                                         <TableHead className="w-[120px]">นามสกุล</TableHead>
                                                         <TableHead className="w-[100px]">รหัสวิชา</TableHead>
                                                         <TableHead>ชื่อวิชา</TableHead>
+                                                        <TableHead className="text-center w-[100px]">สอนร่วม</TableHead>
                                                         <TableHead className="text-center w-[100px]">ดำเนินการ</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
@@ -206,10 +207,18 @@ export default function InTeacher() {
                                                                 </div>
                                                             </TableCell>
                                                             <TableCell className="text-center">
+                                                                ❌
+                                                            </TableCell>
+                                                            <TableCell className="text-center">
                                                                 <AddTeacherSubjectInCustom
                                                                     subjectId={subject.id}
                                                                     teacherName={`${subject.teacher?.tName || ""} ${subject.teacher?.tLastName || ""}`.trim()}
                                                                     onUpdate={handleTeacherUpdated}
+                                                                    subjectName={subject.subjectName}
+                                                                    subjectCode={subject.subjectCode}
+                                                                    planType={subject.planType}
+                                                                    termYear={termYear}
+                                                                    yearLevel={subject.yearLevel}
                                                                 />
                                                             </TableCell>
                                                         </TableRow>
