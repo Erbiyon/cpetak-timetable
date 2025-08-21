@@ -470,7 +470,7 @@ const SubjectInCell = React.memo(function SubjectInCell({
                             {/* เพิ่มการแสดงข้อมูล section, room และ teacher */}
                             {subject.section && (
                                 <>
-                                    <div>Section:</div>
+                                    <div>กลุ่มเรียน:</div>
                                     <div className="text-right">{subject.section}</div>
                                 </>
                             )}

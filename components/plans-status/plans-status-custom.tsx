@@ -720,13 +720,6 @@ function SubjectCard({
                                 </>
                             )}
                         </div>
-
-                        {/* แสดงข้อความเตือนเมื่อ drag failed
-                        {isDragFailed && (
-                            <div className="mt-2 p-2 bg-red-600 text-white rounded text-center">
-                                ไม่สามารถวางได้เนื่องจากมีการชนกัน
-                            </div>
-                        )} */}
                     </div>
                 </TooltipContent>
             </Tooltip>
