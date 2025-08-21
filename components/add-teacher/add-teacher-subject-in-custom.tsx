@@ -58,14 +58,12 @@ export function AddTeacherSubjectInCustom({
     const [otherPlan, setOtherPlan] = useState<any | null>(null)
     const [coTeaching, setCoTeaching] = useState(false)
 
-    // โหลดรายชื่ออาจารย์ภายในสาขา
     useEffect(() => {
         const fetchTeachers = async () => {
             try {
-                const res = await fetch("/api/teacher?inDepartment=true")
+                const res = await fetch("/api/teacher")
                 if (res.ok) {
                     const data = await res.json()
-                    // กรองเฉพาะอาจารย์ภายในสาขา
                     const filteredTeachers = data.filter((teacher: Teacher) =>
                         teacher.teacherType === "อาจารย์ภายในสาขา"
                     )
@@ -88,7 +86,6 @@ export function AddTeacherSubjectInCustom({
                 const res = await fetch("/api/subject")
                 if (res.ok) {
                     const plans = await res.json()
-                    // หาเฉพาะแผน 4 ปี กับ เทียบโอน ที่มี subjectCode ตรงกัน และอยู่ในปีการศึกษาปัจจุบัน
                     const filtered = plans.filter(
                         (p: any) =>
                             p.subjectCode === subjectCode &&
@@ -96,7 +93,6 @@ export function AddTeacherSubjectInCustom({
                             p.termYear === `ภาคเรียนที่ ${termYear}`
                     )
                     setShowDuplicate(filtered.length > 1)
-                    // หาอีกแผนที่ไม่ใช่แผนปัจจุบัน
                     const other = filtered.find((p: any) => p.planType !== planType)
                     setOtherPlan(other || null)
                 }
