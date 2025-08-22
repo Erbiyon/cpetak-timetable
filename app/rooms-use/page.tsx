@@ -38,7 +38,7 @@ export default function RoomsUse() {
         rooms.forEach(room => {
             if (room.roomType === "อาคารสาขาวิศวกรรมคอมพิวเตอร์") {
                 inDepartment.push(room);
-            } else if (room.roomType === "ห้องเรียนนอกสาขา") {
+            } else if (room.roomType === "ไม่ได้กำหนดประเภทห้อง") {
                 outDepartment.push(room);
             } else if (room.roomType === "ตึกวิศวกรรมศาสตร์") {
                 engineering.push(room);
@@ -552,7 +552,7 @@ function SubjectInCell({
                     <div className="text-xs p-1">
                         <div className="font-medium">
                             {subject.subjectCode}
-                            {subject.section && <span className="ml-2">Section: {subject.section}</span>}
+                            {subject.section && <span className="ml-2">กลุ่มเรียน: {subject.section}</span>}
                         </div>
                         <div className="mt-1">{subject.subjectName}</div>
                         <div className="mt-2 grid grid-cols-2 gap-2">
