@@ -12,6 +12,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { AddTeacherSubjectInCustom } from "../add-teacher/add-teacher-subject-in-custom";
 import { Badge } from "@/components/ui/badge";
+import CoTeachingInfo from "../co-teaching-Info/co-teaching-Info-custom";
 
 type Subject = {
     id: number;
@@ -226,7 +227,7 @@ export default function InTeacher() {
                                                             <TableHead className="w-[120px]">นามสกุล</TableHead>
                                                             <TableHead className="w-[100px]">รหัสวิชา</TableHead>
                                                             <TableHead>ชื่อวิชา</TableHead>
-                                                            <TableHead className="text-center w-[100px]">สอนร่วม</TableHead>
+                                                            <TableHead className="text-center w-[150px]">สอนร่วม</TableHead>
                                                             <TableHead className="text-center w-[100px]">ดำเนินการ</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
@@ -251,7 +252,7 @@ export default function InTeacher() {
                                                                     {isDVE(subject.planType) ? (
                                                                         null
                                                                     ) : (
-                                                                        <div>❌</div>
+                                                                        <CoTeachingInfo subjectId={subject.id} />
                                                                     )}
                                                                 </TableCell>
                                                                 <TableCell className="text-center">

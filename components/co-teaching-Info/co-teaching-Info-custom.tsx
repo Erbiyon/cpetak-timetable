@@ -1,0 +1,44 @@
+import { useEffect, useState } from "react";
+
+export default function CoTeachingInfo({ subjectId }: { subjectId: number }) {
+    const [info, setInfo] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchCoTeaching = async () => {
+            const res = await fetch(`/api/subject/co-teaching/check?subjectId=${subjectId}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.planIds && data.planIds.length > 1) {
+                    // ดึงข้อมูลแผน/ปีของวิชาอื่นในกลุ่ม (ยกเว้นตัวเอง)
+                    const otherSubjects = data.details?.filter((s: any) => s.id !== subjectId) || [];
+                    if (otherSubjects.length > 0) {
+                        setInfo(
+                            otherSubjects
+                                .map((s: any) => `${getPlanTypeText(s.planType)} ${s.yearLevel}`)
+                                .join(", ")
+                        );
+                    } else {
+                        setInfo("สอนร่วม");
+                    }
+                } else {
+                    setInfo(null);
+                }
+            }
+        };
+        fetchCoTeaching();
+    }, [subjectId]);
+
+    if (!info) return <div> </div>;
+    return <div className="text-green-700 dark:text-green-300">สอนร่วมกับ {info}</div>;
+}
+
+// ฟังก์ชันแปลง planType เป็นข้อความไทย (ใช้แบบเดียวกับใน component หลัก)
+function getPlanTypeText(planType: string) {
+    switch (planType) {
+        case "TRANSFER": return "เทียบโอน";
+        case "FOUR_YEAR": return "4 ปี";
+        case "DVE-MSIX": return "ม.6 ขึ้น ปวส.";
+        case "DVE-LVC": return "ปวช. ขึ้น ปวส.";
+        default: return planType;
+    }
+}
