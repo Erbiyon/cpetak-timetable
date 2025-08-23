@@ -47,13 +47,13 @@ export default function IndepartmentTeacher() {
     }, [])
 
     return (
-        <div className="bg-card text-card-foreground flex flex-col rounded-xl border shadow-sm max-h-[60vh] lg:max-h-[64vh] overflow-y-auto">
+        <div className="bg-card text-card-foreground flex flex-col rounded-xl border shadow-sm max-h-[84vh] lg:max-h-[88vh] overflow-y-auto">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 p-4 lg:px-8">
                 <h2 className="text-lg lg:text-xl font-bold">อาจารย์ภายในสาขา</h2>
                 <AddTeacherCustom onAdded={fetchTeachers} />
             </div>
 
-            <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-2 lg:my-5 shadow-sm mx-4 lg:mx-8 max-h-[50vh] lg:max-h-[56vh] overflow-y-auto">
+            <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-2 lg:my-5 shadow-sm mx-4 lg:mx-8 max-h-[84vh] lg:max-h-[88vh] overflow-y-auto">
                 {loading ? (
                     <div className="flex justify-center items-center p-8">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />

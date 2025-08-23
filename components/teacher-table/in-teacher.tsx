@@ -132,8 +132,41 @@ export default function InTeacher() {
         });
     };
 
+    // เพิ่มฟังก์ชันสำหรับเรียงลำดับ planType
+    const sortPlanTypes = (planTypes: string[]) => {
+        const order = ["DVE-LVC", "DVE-MSIX", "TRANSFER", "FOUR_YEAR"];
+        return planTypes.sort((a, b) => {
+            const idxA = order.indexOf(a);
+            const idxB = order.indexOf(b);
+            if (idxA === -1 && idxB === -1) return a.localeCompare(b);
+            if (idxA === -1) return 1;
+            if (idxB === -1) return -1;
+            return idxA - idxB;
+        });
+    };
+
     const isDVE = (planType: string) => {
         return planType.startsWith("DVE");
+    };
+
+    // สีพื้นหลังแต่ละแผนการเรียน (โทนฟ้า/เขียว/ม่วง/เทาอ่อน)
+    const getPlanTypeBgColor = (planType: string) => {
+        switch (planType) {
+            case "DVE-LVC": return "bg-blue-50 dark:bg-blue-900";
+            case "DVE-MSIX": return "bg-blue-100 dark:bg-blue-800";
+            case "TRANSFER": return "bg-blue-200 dark:bg-blue-700";
+            case "FOUR_YEAR": return "bg-blue-50 dark:bg-blue-900";
+            default: return "bg-gray-50 dark:bg-gray-800";
+        }
+    };
+
+    // สีพื้นหลังแต่ละชั้นปี (เฉดเทาอ่อนต่างกันเล็กน้อย)
+    const getYearLevelBgColor = (yearLevel: string) => {
+        if (yearLevel.includes("1")) return "bg-gray-100 dark:bg-gray-700";
+        if (yearLevel.includes("2")) return "bg-gray-200 dark:bg-gray-600";
+        if (yearLevel.includes("3")) return "bg-gray-100 dark:bg-gray-700";
+        if (yearLevel.includes("4")) return "bg-gray-200 dark:bg-gray-600";
+        return "bg-gray-50 dark:bg-gray-800";
     };
 
     return (
@@ -157,87 +190,92 @@ export default function InTeacher() {
                     </div>
                 ) : Object.keys(groupedSubjects).length > 0 ? (
                     <div className="space-y-6 p-4">
-                        {Object.entries(groupedSubjects).map(([planType, yearLevels]) => (
-                            <div key={planType} className="space-y-4">
-                                {/* หัวข้อ Plan Type */}
-                                <div className="p-3 rounded-lg border bg-muted border-border">
-                                    <h3 className="font-bold text-lg">
-                                        {getPlanTypeText(planType)}
-                                        <Badge variant="outline" className="ml-2">
-                                            {Object.values(yearLevels).flat().length} วิชา
-                                        </Badge>
-                                    </h3>
-                                </div>
+                        {sortPlanTypes(Object.keys(groupedSubjects)).map(planType => {
+                            const yearLevels = groupedSubjects[planType];
 
-                                {/* แสดงกลุ่มตาม Year Level */}
-                                {sortYearLevels(Object.keys(yearLevels)).map((yearLevel) => {
-                                    const subjects = yearLevels[yearLevel];
+                            return (
+                                <div key={planType} className="space-y-4">
+                                    {/* หัวข้อ Plan Type */}
+                                    <div className={`p-3 rounded-lg border border-border ${getPlanTypeBgColor(planType)}`}>
+                                        <h3 className="font-bold text-lg">
+                                            {getPlanTypeText(planType)}
+                                            <Badge variant="outline" className="ml-2">
+                                                {Object.values(yearLevels).flat().length} วิชา
+                                            </Badge>
+                                        </h3>
+                                    </div>
 
-                                    return (
-                                        <div key={`${planType}-${yearLevel}`} className="space-y-2">
-                                            {/* หัวข้อ Year Level */}
-                                            <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
-                                                <span className="font-medium">{yearLevel}</span>
-                                                <Badge variant="secondary">{subjects.length} วิชา</Badge>
-                                            </div>
+                                    {/* แสดงกลุ่มตาม Year Level */}
+                                    {sortYearLevels(Object.keys(yearLevels)).map((yearLevel) => {
+                                        const subjects = yearLevels[yearLevel];
 
-                                            {/* ตารางวิชา */}
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow>
-                                                        <TableHead className="w-[120px]">ชื่อจริง</TableHead>
-                                                        <TableHead className="w-[120px]">นามสกุล</TableHead>
-                                                        <TableHead className="w-[100px]">รหัสวิชา</TableHead>
-                                                        <TableHead>ชื่อวิชา</TableHead>
-                                                        <TableHead className="text-center w-[100px]">สอนร่วม</TableHead>
-                                                        <TableHead className="text-center w-[100px]">ดำเนินการ</TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {subjects.map(subject => (
-                                                        <TableRow key={subject.id} className="hover:bg-muted/50">
-                                                            <TableCell className="font-medium">
-                                                                {subject.teacher?.tName || "-"}
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                {subject.teacher?.tLastName || "-"}
-                                                            </TableCell>
-                                                            <TableCell className="font-mono text-sm">
-                                                                {subject.subjectCode}
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <div className="font-medium text-sm">
-                                                                    {subject.subjectName}
-                                                                </div>
-                                                            </TableCell>
-                                                            <TableCell className="text-center">
-                                                                {isDVE(subject.planType) ? (
-                                                                    null
-                                                                ) : (
-                                                                    <div>❌</div>
-                                                                )}
-                                                            </TableCell>
-                                                            <TableCell className="text-center">
-                                                                <AddTeacherSubjectInCustom
-                                                                    subjectId={subject.id}
-                                                                    teacherName={`${subject.teacher?.tName || ""} ${subject.teacher?.tLastName || ""}`.trim()}
-                                                                    onUpdate={handleTeacherUpdated}
-                                                                    subjectName={subject.subjectName}
-                                                                    subjectCode={subject.subjectCode}
-                                                                    planType={subject.planType}
-                                                                    termYear={termYear}
-                                                                    yearLevel={subject.yearLevel}
-                                                                />
-                                                            </TableCell>
+                                        return (
+                                            <div key={`${planType}-${yearLevel}`} className="space-y-2">
+                                                {/* หัวข้อ Year Level */}
+                                                <div className={`flex items-center gap-2 p-2 rounded-md ${getYearLevelBgColor(yearLevel)}`}>
+                                                    <span className="font-medium">{yearLevel}</span>
+                                                    <Badge variant="secondary">{subjects.length} วิชา</Badge>
+                                                    <span className="text-muted-foreground text-xs">({getPlanTypeText(planType)})</span>
+                                                </div>
+
+                                                {/* ตารางวิชา */}
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead className="w-[120px]">ชื่อจริง</TableHead>
+                                                            <TableHead className="w-[120px]">นามสกุล</TableHead>
+                                                            <TableHead className="w-[100px]">รหัสวิชา</TableHead>
+                                                            <TableHead>ชื่อวิชา</TableHead>
+                                                            <TableHead className="text-center w-[100px]">สอนร่วม</TableHead>
+                                                            <TableHead className="text-center w-[100px]">ดำเนินการ</TableHead>
                                                         </TableRow>
-                                                    ))}
-                                                </TableBody>
-                                            </Table>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ))}
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {subjects.map(subject => (
+                                                            <TableRow key={subject.id} className="hover:bg-muted/50">
+                                                                <TableCell className="font-medium">
+                                                                    {subject.teacher?.tName || "-"}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    {subject.teacher?.tLastName || "-"}
+                                                                </TableCell>
+                                                                <TableCell className="font-mono text-sm">
+                                                                    {subject.subjectCode}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="font-medium text-sm">
+                                                                        {subject.subjectName}
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="text-center">
+                                                                    {isDVE(subject.planType) ? (
+                                                                        null
+                                                                    ) : (
+                                                                        <div>❌</div>
+                                                                    )}
+                                                                </TableCell>
+                                                                <TableCell className="text-center">
+                                                                    <AddTeacherSubjectInCustom
+                                                                        subjectId={subject.id}
+                                                                        teacherName={`${subject.teacher?.tName || ""} ${subject.teacher?.tLastName || ""}`.trim()}
+                                                                        onUpdate={handleTeacherUpdated}
+                                                                        subjectName={subject.subjectName}
+                                                                        subjectCode={subject.subjectCode}
+                                                                        planType={subject.planType}
+                                                                        termYear={termYear}
+                                                                        yearLevel={subject.yearLevel}
+                                                                    />
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })}
                     </div>
                 ) : (
                     <div className="text-center text-muted-foreground py-8">

@@ -47,19 +47,12 @@ export default function AddRoomSubjectOutCustom({
     const getRoomType = (roomCode: string): string => {
         const trimmedCode = roomCode.trim().toUpperCase();
 
-        // ห้องขึ้นต้นด้วย "ENG" -> ตึกวิศวกรรมศาสตร์
-        if (trimmedCode.startsWith("ENG")) {
-            return "ตึกวิศวกรรมศาสตร์";
-        }
+        if (trimmedCode.includes("สนง.คณะวิทย์".toUpperCase())) return "สนง.คณะวิทย์";
+        if (trimmedCode.startsWith("ENG")) return "ตึกวิศวกรรมศาสตร์";
+        if (/^6\d*$/.test(trimmedCode)) return "อาคารสาขาวิศวกรรมคอมพิวเตอร์";
 
-        // ห้องขึ้นต้นด้วย "6" (โดยไม่มีตัวอักษรข้างหน้า) -> อาคารสาขาวิศวกรรมคอมพิวเตอร์
-        if (/^6\d*$/.test(trimmedCode)) {
-            return "อาคารสาขาวิศวกรรมคอมพิวเตอร์";
-        }
-
-        // กรณีอื่นๆ -> ห้องเรียนนอกสาขา
         return "ไม่ได้กำหนดประเภทห้อง";
-    }
+    };
 
     // เมื่อเปิด Dialog ให้เซ็ตค่าห้องที่เลือกไว้ (ถ้ามี)
     useEffect(() => {

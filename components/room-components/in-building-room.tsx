@@ -55,7 +55,7 @@ export default function InbuildingRoom() {
     };
 
     return (
-        <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border m-5 shadow-sm mx-auto">
+        <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border mt-2 shadow-sm mx-auto">
             <div className="mx-4">
                 <div className="flex justify-between items-center py-3">
                     <h1 className="text-xl font-bold">ตึกวิศวกรรมศาสตร์</h1>
@@ -65,7 +65,7 @@ export default function InbuildingRoom() {
                     />
                 </div>
 
-                <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-5 shadow-sm max-h-[71vh] overflow-y-auto">
+                <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-5 shadow-sm max-h-[72vh] overflow-y-auto">
                     {loading ? (
                         <div className="flex justify-center items-center p-8">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -89,8 +89,8 @@ export default function InbuildingRoom() {
                                                 <TableCell className="font-medium">{room.roomCode}</TableCell>
                                                 <TableCell className="text-center">
                                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${room.roomCate === "บรรยาย"
-                                                            ? "bg-blue-100 text-blue-800"
-                                                            : "bg-green-100 text-green-800"
+                                                        ? "bg-blue-100 text-blue-800"
+                                                        : "bg-green-100 text-green-800"
                                                         }`}>
                                                         {room.roomCate || "ไม่ระบุ"}
                                                     </span>

@@ -132,6 +132,26 @@ export default function OutdepartmentTeacher() {
         });
     };
 
+    // สีพื้นหลังแต่ละแผนการเรียน (โทนฟ้า/เขียว/ม่วง/เทาอ่อน)
+    const getPlanTypeBgColor = (planType: string) => {
+        switch (planType) {
+            case "DVE-LVC": return "bg-blue-50 dark:bg-blue-900";
+            case "DVE-MSIX": return "bg-blue-100 dark:bg-blue-800";
+            case "TRANSFER": return "bg-blue-200 dark:bg-blue-700";
+            case "FOUR_YEAR": return "bg-blue-50 dark:bg-blue-900";
+            default: return "bg-gray-50 dark:bg-gray-800";
+        }
+    };
+
+    // สีพื้นหลังแต่ละชั้นปี (เฉดเทาอ่อนต่างกันเล็กน้อย)
+    const getYearLevelBgColor = (yearLevel: string) => {
+        if (yearLevel.includes("1")) return "bg-gray-100 dark:bg-gray-700";
+        if (yearLevel.includes("2")) return "bg-gray-200 dark:bg-gray-600";
+        if (yearLevel.includes("3")) return "bg-gray-100 dark:bg-gray-700";
+        if (yearLevel.includes("4")) return "bg-gray-200 dark:bg-gray-600";
+        return "bg-gray-50 dark:bg-gray-800";
+    };
+
     return (
         <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-3 mx-5 py-5 shadow-sm">
             <div className="flex justify-between items-center mx-8">
@@ -156,7 +176,7 @@ export default function OutdepartmentTeacher() {
                         {Object.entries(groupedSubjects).map(([planType, yearLevels]) => (
                             <div key={planType} className="space-y-4">
                                 {/* หัวข้อ Plan Type */}
-                                <div className="p-3 rounded-lg border bg-muted border-border">
+                                <div className={`p-3 rounded-lg border border-border ${getPlanTypeBgColor(planType)}`}>
                                     <h3 className="font-bold text-lg">
                                         {getPlanTypeText(planType)}
                                         <Badge variant="outline" className="ml-2">
@@ -172,9 +192,10 @@ export default function OutdepartmentTeacher() {
                                     return (
                                         <div key={`${planType}-${yearLevel}`} className="space-y-2">
                                             {/* หัวข้อ Year Level */}
-                                            <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
+                                            <div className={`flex items-center gap-2 p-2 rounded-md ${getYearLevelBgColor(yearLevel)}`}>
                                                 <span className="font-medium">{yearLevel}</span>
                                                 <Badge variant="secondary">{subjects.length} วิชา</Badge>
+                                                <span className="text-muted-foreground text-xs">({getPlanTypeText(planType)})</span>
                                             </div>
 
                                             {/* ตารางวิชา */}
