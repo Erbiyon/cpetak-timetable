@@ -487,7 +487,7 @@ const SubjectInCell = React.memo(function SubjectInCell({
                                 </>
                             )}
                         </div>
-                        <div className="mt-1 text-[10px] opacity-75">
+                        <div className="mt-1 text-[10px] opacity-75 text-center">
                             คลิกขวาเพื่อนำออก หรือคลิกลากเพื่อย้าย
                         </div>
                     </div>
