@@ -387,7 +387,8 @@ export default function AddSubDetail({ subject, onUpdate }: {
                 <DialogHeader>
                     <DialogTitle>เพิ่มรายละเอียด</DialogTitle>
                     <DialogDescription>
-                        {`กรุณากรอกข้อมูลรายละเอียดเพิ่มเติมสำหรับวิชา ${subject.subjectName}`}
+                        กรุณากรอกข้อมูลรายละเอียดเพิ่มเติมสำหรับวิชา <br />
+                        ชื่อวิชา: {`${subject.subjectName}`}
                     </DialogDescription>
                 </DialogHeader>
 
