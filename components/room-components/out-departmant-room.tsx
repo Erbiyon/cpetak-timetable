@@ -181,7 +181,7 @@ export default function OutdepartmentRoom() {
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow>
-                                                        <TableHead className="w-[120px]">เลขห้อง</TableHead>
+                                                        <TableHead className="w-[220px]">เลขห้อง</TableHead>
                                                         <TableHead className="w-[100px]">ประเภท</TableHead>
                                                         <TableHead className="w-[100px]">รหัสวิชา</TableHead>
                                                         <TableHead>ชื่อวิชา</TableHead>

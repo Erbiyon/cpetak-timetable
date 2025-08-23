@@ -132,6 +132,10 @@ export default function InTeacher() {
         });
     };
 
+    const isDVE = (planType: string) => {
+        return planType.startsWith("DVE");
+    };
+
     return (
         <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-3 mx-5 py-5 shadow-sm">
             <div className="flex justify-between items-center mx-8">
@@ -207,7 +211,11 @@ export default function InTeacher() {
                                                                 </div>
                                                             </TableCell>
                                                             <TableCell className="text-center">
-                                                                ❌
+                                                                {isDVE(subject.planType) ? (
+                                                                    null
+                                                                ) : (
+                                                                    <div>❌</div>
+                                                                )}
                                                             </TableCell>
                                                             <TableCell className="text-center">
                                                                 <AddTeacherSubjectInCustom

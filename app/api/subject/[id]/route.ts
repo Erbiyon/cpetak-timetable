@@ -6,22 +6,17 @@ const prisma = new PrismaClient()
 // PUT method - อัปเดตข้อมูลวิชา
 export async function PATCH(
     request: Request,
-    { params }: { params: Promise<{ id: string }> } // เปลี่ยนเป็น Promise
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const resolvedParams = await params; // await params
+        const resolvedParams = await params;
         const id = parseInt(resolvedParams.id);
         const body = await request.json();
-
-        console.log("PATCH - Updating subject:", id, "with data:", body);
 
         // ตรวจสอบข้อมูลก่อนอัปเดต
         const existingSubject = await prisma.plans_tb.findUnique({
             where: { id },
-            include: {
-                room: true,
-                teacher: true,
-            },
+            include: { room: true, teacher: true },
         });
 
         if (!existingSubject) {
@@ -31,14 +26,6 @@ export async function PATCH(
             );
         }
 
-        console.log("Existing subject data:", {
-            id: existingSubject.id,
-            subjectCode: existingSubject.subjectCode,
-            currentRoomId: existingSubject.roomId,
-            currentTeacherId: existingSubject.teacherId,
-            currentSection: existingSubject.section
-        });
-
         // อัปเดตข้อมูล
         const updatedSubject = await prisma.plans_tb.update({
             where: { id },
@@ -47,34 +34,11 @@ export async function PATCH(
                 teacherId: body.teacherId === null || body.teacherId === "null" ? null : body.teacherId,
                 section: body.section === null || body.section === "" ? null : body.section,
             },
-            include: {
-                room: true,
-                teacher: true,
-            },
-        });
-
-        console.log("PATCH - Subject updated successfully:", {
-            id: updatedSubject.id,
-            subjectCode: updatedSubject.subjectCode,
-            subjectName: updatedSubject.subjectName,
-            section: updatedSubject.section,
-            roomId: updatedSubject.roomId,
-            teacherId: updatedSubject.teacherId,
-            room: updatedSubject.room ? {
-                id: updatedSubject.room.id,
-                roomCode: updatedSubject.room.roomCode,
-                roomType: updatedSubject.room.roomType
-            } : null,
-            teacher: updatedSubject.teacher ? {
-                id: updatedSubject.teacher.id,
-                tName: updatedSubject.teacher.tName,
-                tLastName: updatedSubject.teacher.tLastName
-            } : null
+            include: { room: true, teacher: true },
         });
 
         return NextResponse.json(updatedSubject);
     } catch (error) {
-        console.error("PATCH - Error updating subject:", error);
         return NextResponse.json(
             { error: "Failed to update subject" },
             { status: 500 }

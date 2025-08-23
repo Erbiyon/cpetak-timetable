@@ -57,6 +57,7 @@ export function AddTeacherSubjectInCustom({
     const [showDuplicate, setShowDuplicate] = useState(false)
     const [otherPlan, setOtherPlan] = useState<any | null>(null)
     const [coTeaching, setCoTeaching] = useState(false)
+    const [duplicatePlans, setDuplicatePlans] = useState<any[]>([])
 
     useEffect(() => {
         const fetchTeachers = async () => {
@@ -89,9 +90,9 @@ export function AddTeacherSubjectInCustom({
                     const filtered = plans.filter(
                         (p: any) =>
                             p.subjectCode === subjectCode &&
-                            (p.planType === "FOUR_YEAR" || p.planType === "TRANSFER") &&
                             p.termYear === `ภาคเรียนที่ ${termYear}`
                     )
+                    setDuplicatePlans(filtered)
                     setShowDuplicate(filtered.length > 1)
                     const other = filtered.find((p: any) => p.planType !== planType)
                     setOtherPlan(other || null)
@@ -99,6 +100,7 @@ export function AddTeacherSubjectInCustom({
             } catch (e) {
                 setShowDuplicate(false)
                 setOtherPlan(null)
+                setDuplicatePlans([])
             }
         }
         if (open && subjectCode && planType && termYear) {
@@ -106,24 +108,56 @@ export function AddTeacherSubjectInCustom({
         }
     }, [open, subjectCode, planType, termYear])
 
+    const isDVE = planType === "DVE-MSIX" || planType === "DVE-LVC"
+
     const handleSubmit = async () => {
         setLoading(true)
         try {
-            const res = await fetch(`/api/subject/${subjectId}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    teacherId: selectedTeacherId === "none" || selectedTeacherId === "" ? null : parseInt(selectedTeacherId)
-                })
-            })
+            let patchRequests: Promise<Response>[] = []
 
-            if (res.ok) {
+            // ถ้าเป็น DVE ให้ PATCH ทุกแผนที่รหัสเหมือนกันและ termYear เดียวกัน
+            if (isDVE && duplicatePlans.length > 0) {
+                patchRequests = duplicatePlans.map((plan) =>
+                    fetch(`/api/subject/${plan.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            teacherId: selectedTeacherId === "none" || selectedTeacherId === "" ? null : parseInt(selectedTeacherId)
+                        })
+                    })
+                )
+            } else {
+                // PATCH วิชาหลัก
+                patchRequests.push(
+                    fetch(`/api/subject/${subjectId}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            teacherId: selectedTeacherId === "none" || selectedTeacherId === "" ? null : parseInt(selectedTeacherId)
+                        })
+                    })
+                )
+                // ถ้าเลือกสอนร่วมและมี otherPlan ให้ PATCH อีกแผนด้วย
+                if (coTeaching && otherPlan) {
+                    patchRequests.push(
+                        fetch(`/api/subject/${otherPlan.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                teacherId: selectedTeacherId === "none" || selectedTeacherId === "" ? null : parseInt(selectedTeacherId)
+                            })
+                        })
+                    )
+                }
+            }
+
+            const responses = await Promise.all(patchRequests)
+            if (responses.every(res => res.ok)) {
                 setOpen(false)
                 setSelectedTeacherId("")
                 if (onUpdate) onUpdate()
-                alert(coTeaching ? "เปิดใช้งานการสอนร่วม" : "ปิดใช้งานการสอนร่วม")
+                alert(isDVE ? "อัปเดตอาจารย์ทุกแผน DVE สำเร็จ" : (coTeaching ? "เปิดใช้งานการสอนร่วม" : "ปิดใช้งานการสอนร่วม"))
             }
-
         } catch (error) {
             console.error("Error updating teacher:", error)
         } finally {
@@ -205,7 +239,7 @@ export function AddTeacherSubjectInCustom({
                         </Select>
                     </div>
 
-                    {showDuplicate && otherPlan && (
+                    {showDuplicate && otherPlan && !isDVE && (
                         <div>
                             มีวิชาที่มีรหัสเหมือนกัน {subjectCode} <br />
                             ในแผนการเรียน {getPlanTypeText(otherPlan.planType)} {otherPlan.yearLevel}
