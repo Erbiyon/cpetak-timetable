@@ -33,6 +33,7 @@ model Plans_tb {
   room        Room_tb?       @relation(fields: [roomId], references: [id])
   teacher     Teacher_tb?    @relation(fields: [teacherId], references: [id])
   timetables  Timetable_tb[]
+  coTeachings CoTeaching_tb[] @relation("CoTeachingPlans")
 
   @@index([section])
   @@index([roomId])
@@ -100,4 +101,10 @@ model Timetable_tb {
   @@index([teacherId])
   @@index([planId])
   @@map("Timetable_tb")
+}
+
+model CoTeaching_tb {
+  id        Int        @id @default(autoincrement())
+  groupKey  String
+  plans     Plans_tb[] @relation("CoTeachingPlans")
 }
