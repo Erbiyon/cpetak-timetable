@@ -162,8 +162,10 @@ export default function RequestRoomPage() {
             const response = await fetch('/api/room');
             if (response.ok) {
                 const data = await response.json();
-                console.log("Rooms received:", data);
-                setRooms(data);
+                // กรองห้องที่ roomType ไม่ใช่ "ไม่ได้กำหนดประเภทห้อง"
+                const filteredRooms = data.filter((room: Room) => room.roomType !== "ไม่ได้กำหนดประเภทห้อง");
+                console.log("Rooms received:", filteredRooms);
+                setRooms(filteredRooms);
             } else {
                 console.error('Failed to fetch rooms');
             }
