@@ -135,7 +135,8 @@ export default function InTeacher() {
 
     // เพิ่มฟังก์ชันสำหรับเรียงลำดับ planType
     const sortPlanTypes = (planTypes: string[]) => {
-        const order = ["DVE-LVC", "DVE-MSIX", "TRANSFER", "FOUR_YEAR"];
+        // ให้ DVE-MSIX (ม.6 ขึ้น ปวส.) ขึ้นก่อน
+        const order = ["DVE-MSIX", "DVE-LVC", "TRANSFER", "FOUR_YEAR"];
         return planTypes.sort((a, b) => {
             const idxA = order.indexOf(a);
             const idxB = order.indexOf(b);

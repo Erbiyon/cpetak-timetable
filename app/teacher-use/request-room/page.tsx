@@ -212,31 +212,49 @@ export default function RequestRoomPage() {
 
         try {
             setUpdating(subjectId);
-            console.log('Updating room for subject:', subjectId, 'to room:', roomId);
 
-            const response = await fetch(`/api/subject/${subjectId}/room`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    roomId: roomId === "none" ? null : parseInt(roomId),
-                }),
-            });
+            // หา subject หลัก
+            const subject = subjects.find(s => s.id === subjectId);
+            if (!subject) return;
 
-            if (response.ok) {
-                // รีเฟรชข้อมูล
-                await fetchSubjects();
+            // เช็คว่าเป็น DVE หรือไม่
+            const isDVE = subject.planType === "DVE-MSIX" || subject.planType === "DVE-LVC";
 
-                const selectedRoom = rooms.find(room => room.id === parseInt(roomId));
-                console.log(
-                    roomId === "none"
-                        ? "ลบการเลือกห้องเรียนแล้ว"
-                        : `เลือกห้อง ${selectedRoom?.roomCode} แล้ว`
-                );
-            } else {
-                console.error("เกิดข้อผิดพลาดในการอัปเดตห้องเรียน");
+            let updateSubjectIds: number[] = [subjectId];
+
+            if (isDVE) {
+                // หา subject อื่นๆ ที่รหัสวิชาเดียวกัน, planType เป็น DVE, termYear เดียวกัน
+                updateSubjectIds = subjects
+                    .filter(s =>
+                        s.subjectCode === subject.subjectCode &&
+                        (s.planType === "DVE-MSIX" || s.planType === "DVE-LVC") &&
+                        s.termYear === subject.termYear
+                    )
+                    .map(s => s.id);
             }
+
+            // PATCH ทุก subject ที่เกี่ยวข้อง
+            await Promise.all(
+                updateSubjectIds.map(id =>
+                    fetch(`/api/subject/${id}/room`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            roomId: roomId === "none" ? null : parseInt(roomId),
+                        }),
+                    })
+                )
+            );
+
+            // รีเฟรชข้อมูล
+            await fetchSubjects();
+
+            const selectedRoom = rooms.find(room => room.id === parseInt(roomId));
+            console.log(
+                roomId === "none"
+                    ? "ลบการเลือกห้องเรียนแล้ว"
+                    : `เลือกห้อง ${selectedRoom?.roomCode} แล้ว`
+            );
         } catch (error) {
             console.error("Error updating room:", error);
         } finally {
