@@ -148,6 +148,30 @@ export function AddTeacherSubjectInCustom({
                             })
                         })
                     )
+                    // === เพิ่มส่วนนี้ ===
+                    // สร้าง/อัปเดตกลุ่มสอนร่วมใน CoTeaching_tb
+                    const groupKey = `${subjectCode}-${termYear}`
+                    await fetch("/api/subject/co-teaching/merge", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            groupKey,
+                            planIds: [subjectId, otherPlan.id]
+                        })
+                    })
+                }
+
+                if (!coTeaching && otherPlan) {
+                    // ยกเลิกกลุ่มสอนร่วม
+                    const groupKey = `${subjectCode}-${termYear}`;
+                    await fetch("/api/subject/co-teaching/merge", {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            groupKey,
+                            planIds: [subjectId, otherPlan.id]
+                        })
+                    });
                 }
             }
 
@@ -156,7 +180,6 @@ export function AddTeacherSubjectInCustom({
                 setOpen(false)
                 setSelectedTeacherId("")
                 if (onUpdate) onUpdate()
-                // alert(isDVE ? "อัปเดตอาจารย์ทุกแผน DVE สำเร็จ" : (coTeaching ? "เปิดใช้งานการสอนร่วม" : "ปิดใช้งานการสอนร่วม"))
             }
         } catch (error) {
             console.error("Error updating teacher:", error)
@@ -187,6 +210,28 @@ export function AddTeacherSubjectInCustom({
             setSelectedTeacherId("")
         }
     }, [open, teacherName, teachers])
+
+    useEffect(() => {
+        // เช็คสถานะ co-teaching เมื่อเปิด Dialog
+        const checkCoTeaching = async () => {
+            if (!open || !subjectId) return;
+            try {
+                const res = await fetch(`/api/subject/co-teaching/check?subjectId=${subjectId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    // ถ้ามี groupKey และ planIds มากกว่า 1 แสดงว่าเป็นสอนร่วม
+                    if (data.groupKey && data.planIds && data.planIds.length > 1) {
+                        setCoTeaching(true);
+                    } else {
+                        setCoTeaching(false);
+                    }
+                }
+            } catch {
+                setCoTeaching(false);
+            }
+        };
+        checkCoTeaching();
+    }, [open, subjectId]);
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
