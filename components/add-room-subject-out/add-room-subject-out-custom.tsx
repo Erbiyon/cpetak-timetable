@@ -19,16 +19,29 @@ import React, { useEffect, useState } from "react"
 export default function AddRoomSubjectOutCustom({
     subjectId,
     roomCode,
-    onUpdate
+    onUpdate,
+    subjectCode,
+    planType,
+    termYear,
+    subjectName,
+    yearLevel
 }: {
     subjectId: number
     roomCode: string
     onUpdate?: () => void
+    subjectCode?: string
+    planType?: string
+    termYear?: string
+    subjectName?: string
+    yearLevel?: string
 }) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [inputRoomCode, setInputRoomCode] = useState("")
     const [error, setError] = useState<string | null>(null)
+    const [duplicatePlans, setDuplicatePlans] = useState<any[]>([])
+
+    const isDVE = planType === "DVE-MSIX" || planType === "DVE-LVC"
 
     // ฟังก์ชันกำหนดประเภทห้องตามเลขห้อง
     const getRoomType = (roomCode: string): string => {
@@ -56,15 +69,37 @@ export default function AddRoomSubjectOutCustom({
         }
     }, [open, roomCode])
 
+    useEffect(() => {
+        const checkDuplicateSubject = async () => {
+            if (!subjectCode || !planType || !termYear) return
+            try {
+                const res = await fetch("/api/subject")
+                if (res.ok) {
+                    const plans = await res.json()
+                    // filter เฉพาะ DVE ที่รหัสวิชาและ termYear เดียวกัน
+                    const filtered = plans.filter(
+                        (p: any) =>
+                            (p.planType === "DVE-MSIX" || p.planType === "DVE-LVC") &&
+                            p.subjectCode === subjectCode &&
+                            p.termYear === termYear // หรือ `ภาคเรียนที่ ${termYear}` // ถ้าข้อมูลใน db เป็นแบบนี้
+                    )
+                    setDuplicatePlans(filtered)
+                }
+            } catch (e) {
+                setDuplicatePlans([])
+            }
+        }
+        if (open && subjectCode && planType && termYear) {
+            checkDuplicateSubject()
+        }
+    }, [open, subjectCode, planType, termYear])
+
     const handleSubmit = async () => {
         try {
             setLoading(true)
             setError(null)
 
-            // ถ้าไม่กรอกเลขห้อง จะส่ง null
             const roomCodeValue = inputRoomCode.trim() || null
-
-            // ถ้ามีเลขห้อง ตรวจสอบว่าห้องมีอยู่จริงหรือไม่
             let roomId = null
 
             if (roomCodeValue) {
@@ -76,12 +111,9 @@ export default function AddRoomSubjectOutCustom({
 
                     if (room && room.id) {
                         roomId = room.id
-                        console.log(`Found existing room: ${roomCodeValue} with ID: ${roomId}`)
                     } else {
                         // ถ้าไม่พบห้อง ให้สร้างห้องใหม่ โดยตรวจสอบประเภทห้องจากเลขห้อง
                         const roomType = getRoomType(roomCodeValue)
-
-                        console.log(`Creating new room: ${roomCodeValue} as ${roomType}`)
 
                         const createRes = await fetch("/api/room", {
                             method: "POST",
@@ -97,7 +129,6 @@ export default function AddRoomSubjectOutCustom({
                         if (createRes.ok) {
                             const newRoom = await createRes.json()
                             roomId = newRoom.id
-                            console.log(`New room created with ID: ${roomId}`)
                         } else {
                             const errorData = await createRes.json()
                             throw new Error(errorData.error || "ไม่สามารถสร้างห้องใหม่ได้")
@@ -108,29 +139,38 @@ export default function AddRoomSubjectOutCustom({
                 }
             }
 
-            console.log("Updating subject", subjectId, "with roomId", roomId)
+            let patchRequests: Promise<Response>[] = []
+            // PATCH ทุกแผน DVE ที่รหัสวิชาและ termYear เดียวกัน
+            if (isDVE && duplicatePlans.length > 0) {
+                patchRequests = duplicatePlans.map((plan) =>
+                    fetch(`/api/subject/${plan.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            roomId: roomId
+                        }),
+                    })
+                )
+            } else {
+                patchRequests.push(
+                    fetch(`/api/subject/${subjectId}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            roomId: roomId
+                        }),
+                    })
+                )
+            }
 
-            // อัปเดตข้อมูลห้องให้กับวิชา
-            const updateRes = await fetch(`/api/subject/room`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    subjectId: subjectId,
-                    roomId: roomId
-                }),
-            })
-
-            if (updateRes.ok) {
+            const responses = await Promise.all(patchRequests)
+            if (responses.every(res => res.ok)) {
                 setOpen(false)
                 if (onUpdate) onUpdate()
             } else {
-                const data = await updateRes.json()
-                setError(data.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล")
+                setError("เกิดข้อผิดพลาดในการบันทึกข้อมูล")
             }
         } catch (error: any) {
-            console.error("Error updating room:", error)
             setError(error.message || "เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์")
         } finally {
             setLoading(false)
@@ -158,6 +198,16 @@ export default function AddRoomSubjectOutCustom({
         return 'เป็นห้องเรียนนอกสาขา';
     }
 
+    const getPlanTypeText = (planType: string) => {
+        switch (planType) {
+            case "TRANSFER": return "เทียบโอน";
+            case "FOUR_YEAR": return "4 ปี";
+            case "DVE-MSIX": return "ม.6 ขึ้น ปวส.";
+            case "DVE-LVC": return "ปวช. ขึ้น ปวส.";
+            default: return planType;
+        }
+    };
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -169,7 +219,9 @@ export default function AddRoomSubjectOutCustom({
                 <DialogHeader>
                     <DialogTitle>กำหนดห้องเรียน</DialogTitle>
                     <DialogDescription>
-                        กรอกเลขห้องเรียนสำหรับวิชานอกสาขานี้
+                        กรอกเลขห้องเรียนสำหรับวิชานอกสาขานี้ {termYear} <br />
+                        รหัสวิชา: {subjectCode} {getPlanTypeText(planType || " ")} {yearLevel} <br />
+                        วิชา: {subjectName}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">

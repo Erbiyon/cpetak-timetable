@@ -156,7 +156,7 @@ export function AddTeacherSubjectInCustom({
                 setOpen(false)
                 setSelectedTeacherId("")
                 if (onUpdate) onUpdate()
-                alert(isDVE ? "อัปเดตอาจารย์ทุกแผน DVE สำเร็จ" : (coTeaching ? "เปิดใช้งานการสอนร่วม" : "ปิดใช้งานการสอนร่วม"))
+                // alert(isDVE ? "อัปเดตอาจารย์ทุกแผน DVE สำเร็จ" : (coTeaching ? "เปิดใช้งานการสอนร่วม" : "ปิดใช้งานการสอนร่วม"))
             }
         } catch (error) {
             console.error("Error updating teacher:", error)

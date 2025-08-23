@@ -20,6 +20,7 @@ type Subject = {
     yearLevel: string;
     planType: string;
     dep?: string;
+    termYear?: string;
     roomId?: number | null;
     room?: {
         id: number;
@@ -219,6 +220,11 @@ export default function OutdepartmentRoom() {
                                                                 <AddRoomSubjectOutCustom
                                                                     subjectId={subject.id}
                                                                     roomCode={subject.room?.roomCode || ""}
+                                                                    subjectCode={subject.subjectCode}
+                                                                    planType={subject.planType}
+                                                                    termYear={subject.termYear}
+                                                                    subjectName={subject.subjectName}
+                                                                    yearLevel={subject.yearLevel}
                                                                     onUpdate={handleRoomUpdated}
                                                                 />
                                                             </TableCell>
