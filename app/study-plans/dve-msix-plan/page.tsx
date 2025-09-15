@@ -4,7 +4,6 @@ import { AddSubjectCustom } from "@/components/add-subject/add-subject-custom";
 import CardStudyPlansCustom from "@/components/card-study-plans-table/card-study-plans-custom";
 import { SelectCustom } from "@/components/select/select-custom";
 import { useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
 
 export default function DveMsixPlan() {
     const [year, setYear] = useState<string>("")
@@ -59,7 +58,7 @@ export default function DveMsixPlan() {
                     แผนการเรียนสำหรับนักศึกษาที่เข้ารับการศึกษาในปีการศึกษา {academicYear}
                 </h1>
                 <h3 className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-300 leading-relaxed">
-                    หลักสูตรวิศวกรรมคอมพิวเตอร์ <span className="text-yellow-600 font-medium">ม.6 ขึ้น ปวส.</span> มทร.ล้านนา ตาก
+                    หลักสูตรวิศวกรรมคอมพิวเตอร์ <span className="text-yellow-600 font-medium">ปวส. (ม.6)</span> มทร.ล้านนา ตาก
                 </h3>
             </div>
 

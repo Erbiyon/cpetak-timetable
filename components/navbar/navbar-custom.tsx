@@ -35,8 +35,8 @@ export function NavigationMenuCustom() {
             items: [
                 { href: "/study-plans/transfer-plan", label: "แผนการเรียน เทียบโอน" },
                 { href: "/study-plans/four-year-plan", label: "แผนการเรียน 4 ปี" },
-                { href: "/study-plans/dve-lvc-plan", label: "แผนการเรียน ปวช ขึ้น ปวส." },
-                { href: "/study-plans/dve-msix-plan", label: "แผนการเรียน ม.6 ขึ้น ปวส." },
+                { href: "/study-plans/dve-lvc-plan", label: "แผนการเรียน ปวส. (ปวช.)" },
+                { href: "/study-plans/dve-msix-plan", label: "แผนการเรียน ปวส. (ม.6)" },
             ]
         },
         {

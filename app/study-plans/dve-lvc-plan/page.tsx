@@ -58,7 +58,7 @@ export default function DveLvcPlan() {
                     แผนการเรียนสำหรับนักศึกษาที่เข้ารับการศึกษาในปีการศึกษา {academicYear}
                 </h1>
                 <h3 className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-300 leading-relaxed">
-                    หลักสูตรวิศวกรรมคอมพิวเตอร์ <span className="text-red-600 font-medium">ปวช. ขึ้น ปวส.</span> มทร.ล้านนา ตาก
+                    หลักสูตรวิศวกรรมคอมพิวเตอร์ <span className="text-red-600 font-medium">ปวส. (ปวช.)</span> มทร.ล้านนา ตาก
                 </h3>
             </div>
 
