@@ -6,24 +6,24 @@ const prisma = new PrismaClient()
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    context: any
 ) {
     try {
-        const resolvedParams = await params;
-        const id = parseInt(resolvedParams.id);
-        const body = await request.json();
+        const resolvedParams = await context.params
+        const id = parseInt(resolvedParams.id)
+        const body = await request.json()
 
 
         const existingSubject = await prisma.plans_tb.findUnique({
             where: { id },
             include: { room: true, teacher: true },
-        });
+        })
 
         if (!existingSubject) {
             return NextResponse.json(
                 { error: "ไม่พบข้อมูลวิชาที่ระบุ" },
                 { status: 404 }
-            );
+            )
         }
 
 
@@ -35,29 +35,29 @@ export async function PATCH(
                 section: body.section === null || body.section === "" ? null : body.section,
             },
             include: { room: true, teacher: true },
-        });
+        })
 
-        return NextResponse.json(updatedSubject);
+        return NextResponse.json(updatedSubject)
     } catch (error) {
         return NextResponse.json(
             { error: "ผิดพลาดในการอัปเดตวิชา" },
             { status: 500 }
-        );
+        )
     } finally {
-        await prisma.$disconnect();
+        await prisma.$disconnect()
     }
 }
 
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    context: any
 ) {
     try {
-        const resolvedParams = await params;
-        const id = parseInt(resolvedParams.id);
+        const resolvedParams = await context.params
+        const id = parseInt(resolvedParams.id)
 
-        console.log("GET - ดึงข้อมูลวิชา:", id);
+        console.log("GET - ดึงข้อมูลวิชา:", id)
 
         const subject = await prisma.plans_tb.findUnique({
             where: { id },
@@ -65,13 +65,13 @@ export async function GET(
                 room: true,
                 teacher: true,
             },
-        });
+        })
 
         if (!subject) {
             return NextResponse.json(
                 { error: "ไม่พบข้อมูลวิชาที่ระบุ" },
                 { status: 404 }
-            );
+            )
         }
 
         console.log("GET - วิชาที่พบ:", {
@@ -81,64 +81,64 @@ export async function GET(
             roomId: subject.roomId,
             teacherId: subject.teacherId,
             room: subject.room,
-            teacher: subject.teacher
-        });
+            teacher: subject.teacher,
+        })
 
-        return NextResponse.json(subject);
+        return NextResponse.json(subject)
     } catch (error) {
-        console.error("GET - ผิดพลาดในการดึงข้อมูลวิชา:", error);
+        console.error("GET - ผิดพลาดในการดึงข้อมูลวิชา:", error)
         return NextResponse.json(
             { error: "เกิดข้อผิดพลาดในการดึงข้อมูลวิชา" },
             { status: 500 }
-        );
+        )
     } finally {
-        await prisma.$disconnect();
+        await prisma.$disconnect()
     }
 }
 
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    context: any
 ) {
     try {
-        const resolvedParams = await params;
-        const id = parseInt(resolvedParams.id);
+        const resolvedParams = await context.params
+        const id = parseInt(resolvedParams.id)
 
-        console.log("DELETE - ลบวิชา:", id);
+        console.log("DELETE - ลบวิชา:", id)
 
 
         await prisma.timetable_tb.deleteMany({
-            where: { planId: id }
-        });
+            where: { planId: id },
+        })
 
 
         const deletedSubject = await prisma.plans_tb.delete({
-            where: { id }
-        });
+            where: { id },
+        })
 
-        console.log("DELETE - ลบวิชาเรียบร้อย:", deletedSubject.id);
+        console.log("DELETE - ลบวิชาเรียบร้อย:", deletedSubject.id)
 
-        return NextResponse.json({ success: true, deletedSubject });
+        return NextResponse.json({ success: true, deletedSubject })
     } catch (error) {
-        console.error("DELETE - ผิดพลาดในการลบวิชา:", error);
+        console.error("DELETE - ผิดพลาดในการลบวิชา:", error)
         return NextResponse.json(
             { error: "เกิดข้อผิดพลาดในการลบวิชา" },
             { status: 500 }
-        );
+        )
     } finally {
-        await prisma.$disconnect();
+        await prisma.$disconnect()
     }
 }
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    context: any
 ) {
     try {
-        const resolvedParams = await params;
-        const id = resolvedParams.id;
-        const body = await request.json();
+        const resolvedParams = await context.params
+        const id = resolvedParams.id
+        const body = await request.json()
         const {
             subjectCode,
             subjectName,
@@ -148,8 +148,8 @@ export async function PUT(
             termYear,
             yearLevel,
             planType,
-            dep
-        } = body;
+            dep,
+        } = body
 
         if (
             !subjectCode ||
@@ -163,7 +163,7 @@ export async function PUT(
             return NextResponse.json(
                 { error: "กรุณากรอกข้อมูลให้ครบถ้วน" },
                 { status: 400 }
-            );
+            )
         }
 
         const newSubject = await prisma.plans_tb.update({
@@ -177,15 +177,17 @@ export async function PUT(
                 yearLevel,
                 planType,
                 termYear,
-                dep
+                dep,
             },
-        });
+        })
 
-        return NextResponse.json(newSubject, { status: 201 });
+        return NextResponse.json(newSubject, { status: 201 })
     } catch (error: any) {
         return NextResponse.json(
             { error: error.message || "เกิดข้อผิดพลาด" },
             { status: 500 }
-        );
+        )
+    } finally {
+        await prisma.$disconnect()
     }
 }
