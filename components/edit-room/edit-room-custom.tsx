@@ -55,7 +55,7 @@ export default function EditRoomCustom({
             if (res.ok) {
                 setOpen(false);
 
-                // เรียก callback เพื่อ refresh ข้อมูล
+
                 if (onRoomUpdated) {
                     onRoomUpdated();
                 }
@@ -73,7 +73,7 @@ export default function EditRoomCustom({
     const handleOpenChange = (newOpen: boolean) => {
         setOpen(newOpen);
         if (newOpen) {
-            // รีเซ็ตค่าเมื่อเปิด dialog
+
             setRoomNumber(roomCode);
             setRoomCategory(roomCate || "บรรยาย");
         }

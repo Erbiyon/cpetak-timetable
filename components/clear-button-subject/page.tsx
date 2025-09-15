@@ -35,7 +35,7 @@ export default function ClearButtonSubject({
         try {
             console.log('🗑️ เริ่มการล้างตารางเรียน');
 
-            // Call the API to delete all assignments for the current filter
+
             const response = await fetch('/api/timetable/clear', {
                 method: 'DELETE',
                 headers: {
@@ -54,7 +54,7 @@ export default function ClearButtonSubject({
 
             console.log(`✅ ล้างตาราง ${planType} สำเร็จ`);
 
-            // ซิ๊งค์การล้างไปยังอีกหลักสูตรสำหรับ DVE planTypes
+
             const isDVEPlan = planType === "DVE-MSIX" || planType === "DVE-LVC";
             if (isDVEPlan) {
                 const targetPlanType = planType === "DVE-MSIX" ? "DVE-LVC" : "DVE-MSIX";
@@ -84,15 +84,15 @@ export default function ClearButtonSubject({
                 }
             }
 
-            // Call the callback to update UI after clearing
+
             if (onClearComplete) {
                 onClearComplete();
             }
 
-            // Force refresh หน้าเว็บหลังจาก clear สำเร็จ
+
             setTimeout(() => {
                 window.location.reload();
-            }, 500); // หน่วงเวลา 500ms เพื่อให้ UI อัปเดตก่อน
+            }, 500);
 
         } catch (error) {
             console.error("Error clearing timetable:", error);

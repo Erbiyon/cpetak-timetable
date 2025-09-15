@@ -14,7 +14,6 @@ export async function PUT(request: NextRequest) {
             );
         }
 
-        // อัปเดตข้อมูล teacherId ของวิชา
         const updatedSubject = await prisma.plans_tb.update({
             where: { id: Number(subjectId) },
             data: {

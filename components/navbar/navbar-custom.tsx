@@ -79,10 +79,10 @@ export function NavigationMenuCustom() {
             title: "จัดตารางเรียน ปวส.",
             icon: <Table size={16} color="#ff8000" className="mr-2" />,
             items: [
-                { href: "/adjust-time-tables/adjust-plan-dve/dve-one-year", label: "ปวช. ขึ้น ปวส. ปี 1" },
-                { href: "/adjust-time-tables/adjust-plan-dve/dve-two-year", label: "ปวช. ขึ้น ปวส. ปี 2" },
-                { href: "/adjust-time-tables/adjust-plan-dve/dve-ms-one-year", label: "ม.6 ขึ้น ปวส. ปี 1" },
-                { href: "/adjust-time-tables/adjust-plan-dve/dve-ms-two-year", label: "ม.6 ขึ้น ปวส. ปี 2" },
+                { href: "/adjust-time-tables/adjust-plan-dve/dve-one-year", label: "ปวส. ปี 1 (ปวช.)" },
+                { href: "/adjust-time-tables/adjust-plan-dve/dve-two-year", label: "ปวส. ปี 2 (ปวช.)" },
+                { href: "/adjust-time-tables/adjust-plan-dve/dve-ms-one-year", label: "ปวส. ปี 1 (ม.6)" },
+                { href: "/adjust-time-tables/adjust-plan-dve/dve-ms-two-year", label: "ปวส. ปี 2 (ม.6)" },
             ]
         }
     ]
@@ -95,11 +95,11 @@ export function NavigationMenuCustom() {
 
     return (
         <>
-            {/* Desktop Navigation */}
+
             <div className="hidden lg:block sticky top-0 left-0 w-full z-50">
                 <NavigationMenu viewport={false} className="sticky mx-auto py-4 top-0 left-0 w-screen z-50 shadow-background bg-card border p-2 rounded-b-xl">
                     <NavigationMenuList className="flex-wrap">
-                        {/* แผนการเรียน */}
+
                         <NavigationMenuItem>
                             <NavigationMenuTrigger className="bg-card text-xs xl:text-sm"><NotebookPen size={16} className="mr-2" /> แผนการเรียน</NavigationMenuTrigger>
                             <NavigationMenuContent className="z-50">
@@ -117,7 +117,7 @@ export function NavigationMenuCustom() {
                             </NavigationMenuContent>
                         </NavigationMenuItem>
 
-                        {/* จัดตารางเรียน menus */}
+
                         {menuItems.slice(1).map((menu) => (
                             <NavigationMenuItem key={menu.title}>
                                 <NavigationMenuTrigger className="bg-card text-xs xl:text-sm">{menu.icon} {menu.title}</NavigationMenuTrigger>
@@ -137,7 +137,7 @@ export function NavigationMenuCustom() {
                             </NavigationMenuItem>
                         ))}
 
-                        {/* Single Items */}
+
                         {singleItems.slice(0, 2).map((item) => (
                             <NavigationMenuItem key={item.href}>
                                 <NavigationMenuLink asChild className={`${navigationMenuTriggerStyle()} bg-card text-xs xl:text-sm`}>
@@ -146,7 +146,7 @@ export function NavigationMenuCustom() {
                             </NavigationMenuItem>
                         ))}
 
-                        {/* Remaining Single Items */}
+
                         {singleItems.slice(2).map((item) => (
                             <NavigationMenuItem key={item.href}>
                                 <NavigationMenuLink asChild className={`${navigationMenuTriggerStyle()} bg-card text-xs xl:text-sm`}>
@@ -155,7 +155,7 @@ export function NavigationMenuCustom() {
                             </NavigationMenuItem>
                         ))}
 
-                        {/* User Menu */}
+
                         <NavigationMenuItem>
                             <NavigationMenuTrigger className="bg-card text-xs xl:text-sm">
                                 <CircleUser className="mr-2 h-4 w-4" />
@@ -188,7 +188,7 @@ export function NavigationMenuCustom() {
                             </NavigationMenuContent>
                         </NavigationMenuItem>
 
-                        {/* Dark Mode Toggle */}
+
                         <NavigationMenuItem>
                             <DarkModeToggle />
                         </NavigationMenuItem>
@@ -196,7 +196,7 @@ export function NavigationMenuCustom() {
                 </NavigationMenu>
             </div>
 
-            {/* Mobile Navigation */}
+
             <div className="lg:hidden sticky top-0 left-0 w-full z-50 bg-card border-b p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-lg font-semibold">ระบบตารางเรียน</h1>
@@ -213,7 +213,7 @@ export function NavigationMenuCustom() {
                                     <SheetTitle>เมนู</SheetTitle>
                                 </SheetHeader>
                                 <div className="flex flex-col space-y-4 mt-6">
-                                    {/* User Info */}
+
                                     <div className="px-3 py-2 border-b border-border">
                                         <div className="font-medium text-foreground flex items-center">
                                             <CircleUser className="mr-2 h-4 w-4" />
@@ -224,7 +224,7 @@ export function NavigationMenuCustom() {
                                         </div>
                                     </div>
 
-                                    {/* Menu Items with Submenu */}
+
                                     {menuItems.map((menu) => (
                                         <Collapsible key={menu.title}>
                                             <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-accent rounded-md">
@@ -246,7 +246,7 @@ export function NavigationMenuCustom() {
                                         </Collapsible>
                                     ))}
 
-                                    {/* Single Items */}
+
                                     {singleItems.map((item) => (
                                         <Link
                                             key={item.href}
@@ -258,7 +258,7 @@ export function NavigationMenuCustom() {
                                         </Link>
                                     ))}
 
-                                    {/* Sign Out */}
+
                                     <button
                                         onClick={handleSignOut}
                                         className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950 rounded-md transition-colors mt-4"

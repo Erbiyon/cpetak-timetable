@@ -19,19 +19,16 @@ const handler = NextAuth({
                 }
 
                 try {
-                    // หาอาจารย์จาก tId
                     const teacher = await prisma.teacher_tb.findFirst({
                         where: {
                             tId: credentials.teacherId
                         }
                     })
 
-                    // ตรวจสอบว่าพบอาจารย์และรหัสผ่านตรงกัน (tId เป็นทั้ง username และ password)
                     if (teacher && credentials.password === teacher.tId) {
                         return {
                             id: teacher.id.toString(),
                             name: `${teacher.tName} ${teacher.tLastName}`,
-                            email: teacher.tId,
                             teacherId: teacher.tId,
                             teacherType: teacher.teacherType
                         }
@@ -52,12 +49,10 @@ const handler = NextAuth({
                 password: { label: "รหัสผ่าน", type: "password" }
             },
             async authorize(credentials) {
-                // ตรวจสอบ admin (hardcode หรือจาก database)
                 if (credentials?.adminId === "admin" && credentials?.password === "admin123") {
                     return {
                         id: "admin",
                         name: "ผู้ดูแลระบบ",
-                        email: "admin@system.com",
                         role: "admin"
                     }
                 }
@@ -67,7 +62,7 @@ const handler = NextAuth({
     ],
     session: {
         strategy: "jwt",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
+        maxAge: 30 * 24 * 60 * 60,
     },
     callbacks: {
         async jwt({ token, user }) {

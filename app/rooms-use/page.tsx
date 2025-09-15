@@ -26,10 +26,8 @@ export default function RoomsUse() {
     const [timetables, setTimetables] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState<string>("in-department");
 
-    // เพิ่มสำหรับภาคเรียนปัจจุบัน
     const [currentTermYear, setCurrentTermYear] = useState<string>("");
 
-    // กลุ่มห้องเรียนตามประเภท
     const roomGroups = useMemo(() => {
         const inDepartment: any[] = [];
         const outDepartment: any[] = [];
@@ -48,20 +46,17 @@ export default function RoomsUse() {
         return { inDepartment, outDepartment, engineering };
     }, [rooms]);
 
-    // โหลดข้อมูลเริ่มต้น
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
                 setLoading(true);
 
-                // โหลดข้อมูลห้องเรียน
                 const roomsResponse = await fetch('/api/room');
                 if (roomsResponse.ok) {
                     const roomsData = await roomsResponse.json();
                     setRooms(roomsData);
                 }
 
-                // โหลดข้อมูลภาคเรียนปัจจุบันจาก TermYear_tb
                 const termYearResponse = await fetch('/api/current-term-year');
                 if (termYearResponse.ok) {
                     const termYearData = await termYearResponse.json();
@@ -77,9 +72,8 @@ export default function RoomsUse() {
         fetchInitialData();
     }, []);
 
-    // เมื่อเปลี่ยน tab ให้เลือกห้องแรกของแต่ละกลุ่มโดยอัตโนมัติ
     useEffect(() => {
-        if (!currentTermYear) return; // รอให้โหลดภาคเรียนก่อน
+        if (!currentTermYear) return;
 
         if (activeTab === "in-department") {
             if (roomGroups.inDepartment.length > 0) {
@@ -111,7 +105,6 @@ export default function RoomsUse() {
         }
     }, [activeTab, roomGroups, currentTermYear]);
 
-    // โหลดข้อมูลตารางการใช้ห้องตามห้องและภาคเรียนปัจจุบัน
     const fetchTimetableByRoom = async (roomId: number, termYear: string) => {
         try {
             setLoading(true);
@@ -131,7 +124,6 @@ export default function RoomsUse() {
         }
     };
 
-    // เมื่อเลือกห้องให้โหลดข้อมูลตารางการใช้ห้องใหม่
     const handleRoomChange = (value: string) => {
         console.log("Room selected:", value);
         setSelectedRoomId(value);
@@ -140,13 +132,11 @@ export default function RoomsUse() {
         }
     };
 
-    // สร้างข้อมูลตารางเวลาในรูปแบบที่ต้องการ
     const { cellToSubject, cellColspan, cellSkip } = useMemo(() => {
         const cellToSubject: { [cellKey: string]: any } = {};
         const cellColspan: { [cellKey: string]: number } = {};
         const cellSkip: Set<string> = new Set();
 
-        // ตรวจสอบว่ามีข้อมูลตารางหรือไม่
         if (!timetables || timetables.length === 0 || !currentTermYear) {
             console.log("No timetable data available or no term year");
             return { cellToSubject, cellColspan, cellSkip };
@@ -154,7 +144,6 @@ export default function RoomsUse() {
 
         console.log(`Total timetable entries: ${timetables.length}, filtering for room ID: ${selectedRoomId}, Term Year: ${currentTermYear}`);
 
-        // กรองเฉพาะข้อมูลตารางของห้องและภาคเรียนปัจจุบัน
         const filteredTimetables = timetables.filter(item => {
             const roomMatch = String(item.roomId) === selectedRoomId;
             const termYearMatch = item.termYear === currentTermYear;
@@ -163,7 +152,6 @@ export default function RoomsUse() {
 
         console.log(`Filtered timetable entries: ${filteredTimetables.length}`);
 
-        // แปลงข้อมูลตารางเวลาให้เป็นรูปแบบที่ต้องการ
         filteredTimetables.forEach(item => {
             const { day, startPeriod, endPeriod, plan } = item;
 
@@ -186,7 +174,6 @@ export default function RoomsUse() {
             const colspan = endPeriod - startPeriod + 1;
             cellColspan[cellKey] = colspan;
 
-            // เพิ่มเซลล์ที่ต้องข้าม
             for (let p = startPeriod + 1; p <= endPeriod; p++) {
                 cellSkip.add(`${day}-${p}`);
             }
@@ -195,7 +182,6 @@ export default function RoomsUse() {
         return { cellToSubject, cellColspan, cellSkip };
     }, [timetables, selectedRoomId, currentTermYear]);
 
-    // สร้าง UI
     return (
         <div className="container mx-auto px-6 pt-2">
             <h2 className="text-2xl font-bold mb-2">ตารางการใช้ห้องเรียน</h2>
@@ -398,7 +384,6 @@ export default function RoomsUse() {
     );
 }
 
-// คอมโพเนนต์แสดงตารางการใช้ห้อง
 function RoomTimetable({
     cellToSubject,
     cellColspan,
@@ -434,9 +419,8 @@ function RoomTimetable({
                         <tr key={dayIndex}>
                             <td className="border text-center text-xs w-[72px]">{day}</td>
                             {Array.from({ length: 25 }, (_, colIdx) => {
-                                const period = colIdx;  // ไม่ต้อง +1 เพื่อให้ตรงกับ API
+                                const period = colIdx;
 
-                                // เฉพาะวันพุธ (dayIndex === 2) คาบ 15-18 (14-17 ใน database)
                                 if (dayIndex === 2 && period === 14) {
                                     return (
                                         <td
@@ -453,25 +437,20 @@ function RoomTimetable({
                                     return null;
                                 }
 
-                                // สำคัญ: ใช้ค่า dayIndex แทน day เพราะในตารางเราวนลูปโดยใช้ dayIndex
                                 const cellKey = `${dayIndex}-${period}`;
 
-                                // Debug
                                 if (cellToSubject[cellKey]) {
                                     console.log(`Found subject at ${cellKey}:`, cellToSubject[cellKey].subjectCode);
                                 }
 
-                                // ตรวจสอบการข้ามเซลล์
                                 if (cellSkip.has(cellKey)) {
                                     console.log(`Skipping cell ${cellKey}`);
                                     return null;
                                 }
 
-                                // เช็คว่าเซลล์นี้มีวิชาหรือไม่
                                 const subject = cellToSubject[cellKey];
                                 const colspan = cellColspan[cellKey] || 1;
 
-                                // แสดงเลขคาบเรียนที่ถูกต้องใน UI (เริ่มที่ 1)
                                 const displayPeriod = period + 1;
 
                                 return (
@@ -487,7 +466,6 @@ function RoomTimetable({
                                             <SubjectInCell
                                                 subject={{
                                                     ...subject,
-                                                    // แปลงเลขคาบเพื่อแสดงผล
                                                     startPeriod: subject.startPeriod + 1,
                                                     endPeriod: subject.endPeriod + 1
                                                 }}
@@ -505,7 +483,6 @@ function RoomTimetable({
     );
 }
 
-// แสดงวิชาในตาราง
 function SubjectInCell({
     subject,
     colspan = 1
@@ -513,7 +490,6 @@ function SubjectInCell({
     subject: any;
     colspan?: number;
 }) {
-    // คำนวณจำนวนชั่วโมงรวมของวิชา
     const lectureHours = subject.lectureHour || 0;
     const labHours = subject.labHour || 0;
     const totalHours = lectureHours + labHours;
@@ -565,7 +541,6 @@ function SubjectInCell({
                             <div>รวม:</div>
                             <div className="text-right">{totalHours} ชม. ({totalHours * 2} คาบ)</div>
 
-                            {/* แสดงข้อมูลอาจารย์ผู้สอน */}
                             {subject.teacher && (
                                 <>
                                     <div>อาจารย์:</div>

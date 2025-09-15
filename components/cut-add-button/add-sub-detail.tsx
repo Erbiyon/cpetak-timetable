@@ -2,7 +2,6 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
-    DialogClose,
     DialogContent,
     DialogDescription,
     DialogFooter,
@@ -31,7 +30,7 @@ type Teacher = {
     id: number;
     tName: string;
     tLastName: string;
-    teacherType?: string; // เพิ่ม teacherType เพื่อตรวจสอบประเภทอาจารย์
+    teacherType?: string;
 };
 
 type SubjectDetails = {
@@ -45,9 +44,9 @@ type SubjectDetails = {
     dep?: string | null;
 };
 
-export default function AddSubDetail({ subject, onUpdate }: {
+export default function AddSubDetail({ subject }: {
     subject?: SubjectDetails,
-    onUpdate?: (isFromAddSubDetail?: boolean) => void  // เพิ่ม parameter
+    onUpdate?: (isFromAddSubDetail?: boolean) => void
 }) {
     const [rooms, setRooms] = useState<Room[]>([]);
     const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -63,8 +62,8 @@ export default function AddSubDetail({ subject, onUpdate }: {
     const [loadingRooms, setLoadingRooms] = useState(false);
     const [loadingTeachers, setLoadingTeachers] = useState(false);
 
-    // เก็บข้อมูลเดิมไว้สำหรับกรณียกเลิก
-    const [originalData, setOriginalData] = useState<{
+
+    const [_originalData, setOriginalData] = useState<{
         roomId: number | null;
         teacherId: number | null;
         section: string | null;
@@ -72,7 +71,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
         teacher: Teacher | null;
     } | null>(null);
 
-    // โหลดข้อมูลห้องเรียน
+
     const fetchRooms = async () => {
         try {
             setLoadingRooms(true);
@@ -102,7 +101,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
         }
     };
 
-    // โหลดข้อมูลอาจารย์
+
     const fetchTeachers = async () => {
         try {
             setLoadingTeachers(true);
@@ -125,7 +124,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
         }
     };
 
-    // โหลดข้อมูลเมื่อเปิด Dialog
+
     useEffect(() => {
         if (open && subject) {
             console.log("=== AddSubDetail Opening ===");
@@ -138,7 +137,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
                 section: subject.section
             });
 
-            // เก็บข้อมูลเดิมไว้สำหรับกรณียกเลิก
+
             setOriginalData({
                 roomId: subject.roomId || null,
                 teacherId: subject.teacherId || null,
@@ -147,7 +146,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
                 teacher: subject.teacher || null
             });
 
-            // ตั้งค่า state ตามข้อมูลปัจจุบัน
+
             setSelectedRoomId(subject.roomId ? String(subject.roomId) : "NONE");
             setSelectedTeacherId(subject.teacherId ? String(subject.teacherId) : "null");
             setSection(subject.section || "");
@@ -160,7 +159,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
                 section: subject.section || ""
             });
 
-            // โหลดข้อมูลล่าสุดจาก database
+
             const loadFreshData = async () => {
                 try {
                     setLoadingSection(true);
@@ -179,14 +178,14 @@ export default function AddSubDetail({ subject, onUpdate }: {
                             teacher: freshData.teacher
                         });
 
-                        // อัปเดต state ด้วยข้อมูลล่าสุด
+
                         setSelectedRoomId(freshData.roomId ? String(freshData.roomId) : "NONE");
                         setSelectedTeacherId(freshData.teacherId ? String(freshData.teacherId) : "null");
                         setSection(freshData.section || "");
                         setSelectedRoom(freshData.room || null);
                         setSelectedTeacher(freshData.teacher || null);
 
-                        // อัปเดตข้อมูลเดิมด้วยข้อมูลล่าสุด
+
                         setOriginalData({
                             roomId: freshData.roomId || null,
                             teacherId: freshData.teacherId || null,
@@ -204,7 +203,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
                 }
             };
 
-            // เริ่มโหลดข้อมูลทั้งหมดพร้อมกัน
+
             loadFreshData();
             fetchRooms();
             fetchTeachers();
@@ -212,7 +211,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
         }
     }, [open, subject?.id]);
 
-    // ฟังก์ชันจัดการการเลือกห้อง
+
     const handleRoomChange = (value: string) => {
         console.log("Room selection changed:", value);
         setSelectedRoomId(value);
@@ -228,7 +227,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
         }
     };
 
-    // ฟังก์ชันจัดการการเลือกอาจารย์
+
     const handleTeacherChange = (value: string) => {
         console.log("Teacher selection changed:", value);
         setSelectedTeacherId(value);
@@ -244,11 +243,11 @@ export default function AddSubDetail({ subject, onUpdate }: {
         }
     };
 
-    // ฟังก์ชันสำหรับยกเลิก - ไม่ต้อง mutate subject object
+
     const handleCancel = () => {
         console.log("Cancelling - not mutating subject object");
 
-        // รีเซ็ต state เท่านั้น ไม่ต้อง mutate subject object
+
         setSelectedRoomId(null);
         setSelectedTeacherId(null);
         setSelectedRoom(null);
@@ -257,11 +256,11 @@ export default function AddSubDetail({ subject, onUpdate }: {
         setError(null);
         setOriginalData(null);
 
-        // ปิด dialog
+
         setOpen(false);
     };
 
-    // แก้ไขเมื่อกดปุ่มบันทึก
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!subject) {
@@ -282,7 +281,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
             console.log("Subject ID:", subject.id);
             console.log("Submit data:", submitData);
 
-            // ตรวจสอบว่าเป็น DVE planType หรือไม่โดยดึงข้อมูลวิชาก่อน
+
             const subjectDetailRes = await fetch(`/api/subject/${subject.id}`);
             if (!subjectDetailRes.ok) {
                 throw new Error('ไม่สามารถดึงข้อมูลวิชาได้');
@@ -292,12 +291,12 @@ export default function AddSubDetail({ subject, onUpdate }: {
             const isDVEPlan = subjectDetail.planType === "DVE-MSIX" || subjectDetail.planType === "DVE-LVC";
 
             if (isDVEPlan) {
-                // อัปเดตวิชาทั้งสอง planType ที่มี subjectCode เดียวกัน
+
                 const searchResponse = await fetch(`/api/subject?subjectCode=${encodeURIComponent(subjectDetail.subjectCode)}&termYear=${encodeURIComponent(subjectDetail.termYear)}&yearLevel=${encodeURIComponent(subjectDetail.yearLevel)}`);
 
                 if (searchResponse.ok) {
                     const allSameSubjects = await searchResponse.json();
-                    // กรองเฉพาะวิชาที่มี subjectCode เดียวกันและเป็น DVE planTypes
+
                     const dveSubjects = allSameSubjects.filter((s: any) =>
                         s.subjectCode === subjectDetail.subjectCode &&
                         (s.planType === "DVE-MSIX" || s.planType === "DVE-LVC")
@@ -306,7 +305,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
                     console.log("Updating DVE subjects with same subjectCode:", dveSubjects.length, "subjects");
                     console.log("Subject codes being updated:", dveSubjects.map((s: any) => `${s.subjectCode}-${s.planType}`));
 
-                    // อัปเดตแต่ละวิชาที่มี subjectCode เดียวกัน
+
                     for (const dveSubject of dveSubjects) {
                         const updateResponse = await fetch(`/api/subject/${dveSubject.id}`, {
                             method: 'PATCH',
@@ -323,7 +322,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
                     }
                 }
             } else {
-                // อัปเดตวิชาเดียว (กรณีอื่นๆ)
+
                 const updateResponse = await fetch(`/api/subject/${subject.id}`, {
                     method: 'PATCH',
                     headers: {
@@ -340,13 +339,13 @@ export default function AddSubDetail({ subject, onUpdate }: {
 
             console.log("Update completed successfully");
 
-            // รีเซ็ต state
+
             setOriginalData(null);
 
-            // ปิด dialog
+
             setOpen(false);
 
-            // Force refresh หน้าเว็บแบบล้างทั้งหมด (เหมือน Ctrl+F5)
+
             window.location.reload();
 
         } catch (error: any) {
@@ -357,7 +356,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
         }
     };
 
-    // ตรวจสอบว่าปิด Dialog ถ้า subject ไม่มีค่า
+
     useEffect(() => {
         if (!subject && open) {
             setOpen(false);
@@ -373,7 +372,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
             open={open}
             onOpenChange={(newOpen) => {
                 if (!newOpen) {
-                    // เมื่อปิด dialog (ไม่ว่าจะด้วยวิธีไหน) ให้เรียก handleCancel
+
                     handleCancel();
                 } else {
                     setOpen(newOpen);
@@ -394,7 +393,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
 
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-4 py-4">
-                        {/* ห้องเรียน */}
+
                         <div className="grid gap-3">
                             <Label htmlFor="room">ห้องเรียน</Label>
                             {subject.dep === "นอกสาขา" ? (
@@ -439,7 +438,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
                             )}
                         </div>
 
-                        {/* อาจารย์ */}
+
                         <div className="grid gap-3">
                             <Label htmlFor="teacher">อาจารย์</Label>
                             {subject.dep === "นอกสาขา" ? (
@@ -484,7 +483,7 @@ export default function AddSubDetail({ subject, onUpdate }: {
                             )}
                         </div>
 
-                        {/* Section */}
+
                         <div className="grid gap-3">
                             <Label htmlFor="section">กลุ่มเรียน</Label>
                             <div className="relative">

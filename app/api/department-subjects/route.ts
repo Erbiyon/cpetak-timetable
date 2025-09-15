@@ -8,13 +8,12 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const termYear = searchParams.get('termYear');
 
-        console.log('Fetching department subjects for termYear:', termYear);
+        console.log('กำลังดึงรายวิชาของภาควิชาสำหรับปีการศึกษา:', termYear);
 
-        // ดึงข้อมูลวิชาในสาขาทั้งหมด
         const subjects = await prisma.plans_tb.findMany({
             where: {
                 ...(termYear && { termYear: termYear }),
-                dep: "ในสาขา" // เฉพาะวิชาในสาขา
+                dep: "ในสาขา"
             },
             include: {
                 room: {
@@ -27,9 +26,9 @@ export async function GET(request: NextRequest) {
                 teacher: {
                     select: {
                         id: true,
-                        tName: true,        // เปลี่ยนจาก teacherName เป็น tName
-                        tLastName: true,    // เพิ่ม lastName
-                        tId: true           // เปลี่ยนจาก teacherId เป็น tId
+                        tName: true,
+                        tLastName: true,
+                        tId: true
                     }
                 }
             },
@@ -40,10 +39,10 @@ export async function GET(request: NextRequest) {
             ]
         });
 
-        console.log('Found subjects:', subjects.length);
+        console.log('จำนวนวิชาที่เจอ:', subjects.length);
         return NextResponse.json(subjects);
     } catch (error) {
-        console.error('Error fetching department subjects:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        console.error('ผิดพลาดในการดึงข้อมูลวิชาในสาขา:', error);
+        return NextResponse.json({ error: 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์' }, { status: 500 });
     }
 }

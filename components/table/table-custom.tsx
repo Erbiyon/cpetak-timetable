@@ -45,7 +45,7 @@ export function TableCustom({ planType, termYear, yearLevel, refreshKey }: {
                 <TableHeader className="sticky top-0 z-10 bg-card">
                     <TableRow>
                         <TableHead className="text-xs lg:text-sm">รหัสวิชา</TableHead>
-                        <TableHead className="text-xs lg:text-sm">ชื่อวิชา</TableHead>
+                        <TableHead className="text-xs lg:text-sm w-[400px]">ชื่อวิชา</TableHead>
                         <TableHead className="text-xs lg:text-sm text-center">หน่วยกิต</TableHead>
                         <TableHead className="text-xs lg:text-sm text-center">ชั่วโมงบรรยาย</TableHead>
                         <TableHead className="text-xs lg:text-sm text-center">ชั่วโมงปฎิบัติ</TableHead>

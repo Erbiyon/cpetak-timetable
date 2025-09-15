@@ -9,7 +9,7 @@ export default function CoTeachingInfo({ subjectId }: { subjectId: number }) {
             if (res.ok) {
                 const data = await res.json();
                 if (data.planIds && data.planIds.length > 1) {
-                    // ดึงข้อมูลแผน/ปีของวิชาอื่นในกลุ่ม (ยกเว้นตัวเอง)
+
                     const otherSubjects = data.details?.filter((s: any) => s.id !== subjectId) || [];
                     if (otherSubjects.length > 0) {
                         setInfo(
@@ -32,7 +32,7 @@ export default function CoTeachingInfo({ subjectId }: { subjectId: number }) {
     return <div className="text-green-700 dark:text-green-300">สอนร่วมกับ {info}</div>;
 }
 
-// ฟังก์ชันแปลง planType เป็นข้อความไทย (ใช้แบบเดียวกับใน component หลัก)
+
 function getPlanTypeText(planType: string) {
     switch (planType) {
         case "TRANSFER": return "เทียบโอน";

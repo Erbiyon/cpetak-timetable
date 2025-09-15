@@ -22,7 +22,7 @@ export default function TimeTableCustom({
 }) {
     const days = ["จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา."];
 
-    // สร้าง stable key สำหรับ assignments เพื่อใช้ใน dependency
+
     const assignmentsKey = useMemo(() => {
         return JSON.stringify(assignments);
     }, [assignments]);
@@ -31,7 +31,7 @@ export default function TimeTableCustom({
         return JSON.stringify(plans.map(p => ({ id: p.id, subjectCode: p.subjectCode })));
     }, [plans]);
 
-    // ใช้ useMemo เพื่อคำนวณข้อมูลเกี่ยวกับ cell เพียงครั้งเดียวเมื่อ dependencies เปลี่ยนแปลง
+
     const {
         cellToSubject,
         cellColspan,
@@ -41,7 +41,7 @@ export default function TimeTableCustom({
         const cellColspan: { [cellKey: string]: number } = {};
         const cellSkip: Set<string> = new Set();
 
-        // วนลูปทุกวิชาที่มีการจัดตาราง
+
         Object.entries(assignments).forEach(([subjectId, assignment]) => {
             if (!assignment) return;
 
@@ -50,15 +50,15 @@ export default function TimeTableCustom({
 
             if (!subject || periods.length === 0) return;
 
-            // เรียงคาบตามลำดับเพื่อหาคาบแรกและคาบสุดท้าย
+
             const sortedPeriods = [...periods].sort((a, b) => a - b);
             const firstPeriod = sortedPeriods[0];
             const lastPeriod = sortedPeriods[sortedPeriods.length - 1];
 
-            // ตรวจสอบว่าคาบต่อเนื่องกันหรือไม่ (จำเป็นสำหรับ colspan)
+
             let isConsecutive = true;
             for (let i = firstPeriod; i < lastPeriod; i++) {
-                // ข้ามการตรวจสอบช่วงกิจกรรม (วันพุธคาบ 14-17)
+
                 if (day === 2 && i >= 14 && i <= 17) continue;
 
                 if (!sortedPeriods.includes(i)) {
@@ -67,12 +67,12 @@ export default function TimeTableCustom({
                 }
             }
 
-            // กรณีคาบต่อเนื่องกัน สามารถใช้ colspan ได้
+
             if (isConsecutive) {
-                // คำนวณ colspan (จำนวนช่องที่จะ span)
+
                 const colspan = lastPeriod - firstPeriod + 1;
 
-                // กำหนดข้อมูลวิชาที่คาบแรก
+
                 const startCellKey = `${day}-${firstPeriod}`;
                 cellToSubject[startCellKey] = {
                     ...subject,
@@ -80,27 +80,27 @@ export default function TimeTableCustom({
                 };
                 cellColspan[startCellKey] = colspan;
 
-                // เพิ่มเซลล์ที่ต้องข้าม
+
                 for (let p = firstPeriod + 1; p <= lastPeriod; p++) {
                     cellSkip.add(`${day}-${p}`);
                 }
             } else {
-                // กรณีคาบไม่ต่อเนื่อง ให้แสดงแยกกัน
+
                 periods.forEach(period => {
                     const cellKey = `${day}-${period}`;
                     cellToSubject[cellKey] = {
                         ...subject,
                         assignmentData: { day, periods: [period] },
                     };
-                    cellColspan[cellKey] = 1; // ไม่ใช้ colspan
+                    cellColspan[cellKey] = 1;
                 });
             }
         });
 
         return { cellToSubject, cellColspan, cellSkip };
-    }, [assignmentsKey, plansKey]); // ใช้ key แทน object โดยตรง
+    }, [assignmentsKey, plansKey]);
 
-    // สร้าง key สำหรับ dragOverCell และ activeSubject
+
     const dragOverCellKey = useMemo(() => {
         return dragOverCell ? `${dragOverCell.day}-${dragOverCell.period}` : null;
     }, [dragOverCell]);
@@ -109,7 +109,7 @@ export default function TimeTableCustom({
         return activeSubject ? `${activeSubject.id}-${activeSubject.lectureHour}-${activeSubject.labHour}` : null;
     }, [activeSubject]);
 
-    // แยกส่วนของ highlight info ออกมา
+
     const calculatedHighlight = useMemo(() => {
         if (!activeSubject || !dragOverCell) {
             return {
@@ -124,26 +124,26 @@ export default function TimeTableCustom({
         const totalHours = (activeSubject.lectureHour || 0) + (activeSubject.labHour || 0);
         const totalPeriods = totalHours * 2;
 
-        // คำนวณจุดเริ่มต้น - ใช้ตำแหน่งเมาส์เป็นตำแหน่งเริ่มต้นเสมอ
+
         const startPeriod = period;
 
-        // รวบรวมคาบทั้งหมดที่จะแสดง
+
         const periods: number[] = [];
         for (let i = 0; i < totalPeriods; i++) {
             const currentPeriod = startPeriod + i;
 
-            // ข้ามคาบกิจกรรมวันพุธ
+
             if (day === 2 && (currentPeriod >= 14 && currentPeriod <= 17)) {
                 continue;
             }
 
-            // เช็คว่าอยู่ในขอบเขตตาราง
+
             if (currentPeriod < 25) {
                 periods.push(currentPeriod);
             }
         }
 
-        // ถ้าไม่มีคาบที่แสดงได้ ให้ return ค่าว่าง
+
         if (periods.length === 0) {
             return {
                 startCell: null,
@@ -153,18 +153,18 @@ export default function TimeTableCustom({
             };
         }
 
-        // เรียงคาบตามลำดับ
+
         periods.sort((a, b) => a - b);
         const firstPeriod = periods[0];
         const lastPeriod = periods[periods.length - 1];
 
-        // กรณีคาบไม่พอสำหรับวิชา
+
         const invalid = periods.length < totalPeriods;
 
-        // สร้างรายการเซลล์ที่ต้องข้าม
+
         const skipCells: string[] = [];
         for (let p = firstPeriod + 1; p <= lastPeriod; p++) {
-            // ข้ามคาบกิจกรรม
+
             if (day === 2 && p >= 14 && p <= 17) continue;
             skipCells.push(`${day}-${p}`);
         }
@@ -177,9 +177,9 @@ export default function TimeTableCustom({
             period: firstPeriod,
             invalid
         };
-    }, [activeSubjectKey, dragOverCellKey]); // ใช้ key แทน object โดยตรง
+    }, [activeSubjectKey, dragOverCellKey]);
 
-    // สร้าง memoized callback สำหรับ onRemoveAssignment
+
     const memoizedOnRemoveAssignment = useCallback((subjectId: number) => {
         if (onRemoveAssignment) {
             onRemoveAssignment(subjectId);
@@ -204,7 +204,7 @@ export default function TimeTableCustom({
                         <tr key={rowIdx}>
                             <td className="border text-center text-xs w-[72px]">{day}</td>
                             {Array.from({ length: 25 }, (_, colIdx) => {
-                                // เฉพาะวันพุธ (rowIdx === 2) คาบ 15-18 (colIdx 14-17)
+
                                 if (rowIdx === 2 && colIdx === 14) {
                                     return (
                                         <td
@@ -221,33 +221,33 @@ export default function TimeTableCustom({
                                     return null;
                                 }
 
-                                // ตรวจสอบว่าเซลล์นี้เป็นส่วนหนึ่งของ colspan หรือไม่
+
                                 const cellKey = `${rowIdx}-${colIdx}`;
 
-                                // ตรวจสอบการข้ามเซลล์จากวิชาที่มีอยู่แล้ว
+
                                 if (cellSkip.has(cellKey)) {
-                                    // ข้ามเซลล์ที่เป็นส่วนหนึ่งของ colspan
+
                                     return null;
                                 }
 
-                                // ตรวจสอบการข้ามเซลล์จาก highlight
+
                                 if (calculatedHighlight.skipCells?.includes(cellKey)) {
                                     return null;
                                 }
 
-                                // เช็คว่าเซลล์นี้มีวิชาหรือไม่
+
                                 const subject = cellToSubject[cellKey];
                                 const colspan = cellColspan[cellKey] || 1;
 
-                                // เช็คว่าเซลล์นี้เป็นจุดเริ่มต้นของ highlight หรือไม่
+
                                 const isHighlightStart = cellKey === calculatedHighlight.startCell;
                                 const highlightColspan = isHighlightStart && calculatedHighlight.colspan ? calculatedHighlight.colspan : 1;
                                 const isInvalidHighlight = isHighlightStart && calculatedHighlight.invalid;
 
-                                // เตรียม key แยกออกจาก props
+
                                 const uniqueCellKey = `cell-${rowIdx}-${colIdx}`;
 
-                                // ใช้ SimpleCell แทน TableCell เพื่อลดความซับซ้อน
+
                                 return (
                                     <SimpleCell
                                         key={uniqueCellKey}
@@ -271,7 +271,7 @@ export default function TimeTableCustom({
     );
 }
 
-// แยก SimpleCell ออกมาเพื่อลดความซับซ้อน
+
 const SimpleCell = React.memo(function SimpleCell({
     id,
     day,
@@ -298,28 +298,28 @@ const SimpleCell = React.memo(function SimpleCell({
         data: { day, period },
     });
 
-    // สร้าง classes ที่ทำงานได้ดีทั้งใน Light Mode และ Dark Mode
+
     let cellClasses = "border text-center h-[36px] p-0 align-middle overflow-hidden text-xs transition-colors";
 
     if (isOver) {
-        // เมื่อลากมาอยู่เหนือ - ใช้สีที่เห็นได้ชัดเจนใน Dark Mode
+
         cellClasses += isInvalidHighlight
             ? " bg-red-300 dark:bg-red-700 border-2 border-red-500 dark:border-red-500"
             : " bg-green-300 dark:bg-green-700 border-2 border-green-500 dark:border-green-500";
     } else if (isHighlighted) {
-        // เมื่อเป็นส่วนหนึ่งของพื้นที่ highlight แต่ไม่ใช่เซลล์ที่เมาส์อยู่เหนือ
+
         cellClasses += isInvalidHighlight
             ? " bg-red-200 dark:bg-red-800 border border-red-400 dark:border-red-600"
             : " bg-green-200 dark:bg-green-600 border border-green-400 dark:border-green-400";
     } else if (subject) {
-        // เมื่อมีวิชาอยู่แล้ว
+
         cellClasses += " bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 p-0";
     } else {
-        // เซลล์ว่าง
+
         cellClasses += " bg-card hover:bg-slate-50 dark:hover:bg-slate-800";
     }
 
-    // ฟังก์ชั่นจัดการคลิกขวาเพื่อลบวิชาออกจากตาราง
+
     const handleContextMenu = useCallback((e: React.MouseEvent) => {
         if (subject && onRemoveAssignment) {
             e.preventDefault();
@@ -348,7 +348,7 @@ const SimpleCell = React.memo(function SimpleCell({
     );
 });
 
-// แสดงตัวอย่างขณะลาก (Highlight)
+
 const HighlightPreview = React.memo(function HighlightPreview({
     subject,
     colspan = 1,
@@ -358,7 +358,7 @@ const HighlightPreview = React.memo(function HighlightPreview({
     colspan?: number;
     isInvalid?: boolean;
 }) {
-    // คำนวณจำนวนชั่วโมงรวมของวิชา
+
     const lectureHours = subject.lectureHour || 0;
     const labHours = subject.labHour || 0;
     const totalHours = lectureHours + labHours;
@@ -392,7 +392,7 @@ const HighlightPreview = React.memo(function HighlightPreview({
     );
 });
 
-// แสดงวิชาในตาราง
+
 const SubjectInCell = React.memo(function SubjectInCell({
     subject,
     colspan = 1
@@ -400,16 +400,16 @@ const SubjectInCell = React.memo(function SubjectInCell({
     subject: any;
     colspan?: number;
 }) {
-    // ใช้ useDraggable เพื่อให้สามารถลากย้ายวิชาในตารางได้
+
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `table-subject-${subject.id}`,
         data: {
             subject,
-            fromTable: true,  // เพิ่มแฟล็กนี้เพื่อบ่งชี้ว่าลากมาจากตาราง
+            fromTable: true,
         },
     });
 
-    // คำนวณจำนวนชั่วโมงรวมของวิชา
+
     const lectureHours = subject.lectureHour || 0;
     const labHours = subject.labHour || 0;
     const totalHours = lectureHours + labHours;
@@ -467,7 +467,7 @@ const SubjectInCell = React.memo(function SubjectInCell({
                             <div>รวม:</div>
                             <div className="text-right">{totalHours} ชม. ({totalHours * 2} คาบ)</div>
 
-                            {/* เพิ่มการแสดงข้อมูล section, room และ teacher */}
+
                             {subject.section && (
                                 <>
                                     <div>กลุ่มเรียน:</div>

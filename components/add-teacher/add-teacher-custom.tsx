@@ -22,7 +22,7 @@ export function AddTeacherCustom({
     onAdded?: () => void;
     teacherType?: "อาจารย์ภายในสาขา" | "อาจารย์ภายนอกสาขา";
 }) {
-    // ใช้ teacherType ที่ส่งเข้ามาแทนการกำหนดค่าคงที่
+
     const initialForm = {
         tName: "",
         tLastName: "",

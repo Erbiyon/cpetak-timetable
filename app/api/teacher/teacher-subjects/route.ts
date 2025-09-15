@@ -13,12 +13,12 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Teacher ID is required' }, { status: 400 });
         }
 
-        // ดึงข้อมูลวิชาที่อาจารย์สอน
+
         const subjects = await prisma.plans_tb.findMany({
             where: {
                 teacherId: parseInt(teacherId),
                 ...(termYear && { termYear: termYear }),
-                dep: "ในสาขา" // เฉพาะวิชาในสาขา
+                dep: "ในสาขา"
             },
             include: {
                 room: {

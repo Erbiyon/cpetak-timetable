@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
         const roomCode = url.searchParams.get('roomCode');
 
         if (!roomCode) {
-            return NextResponse.json({ error: "Room code is required" }, { status: 400 });
+            return NextResponse.json({ error: "ต้องระบุรหัสห้อง" }, { status: 400 });
         }
 
         const room = await prisma.room_tb.findFirst({

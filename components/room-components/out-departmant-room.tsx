@@ -35,7 +35,7 @@ type GroupedSubjects = {
     }
 };
 
-// สีพื้นหลังแต่ละแผนการเรียน (โทนฟ้า/เขียว/ม่วง/เทาอ่อน)
+
 const getPlanTypeBgColor = (planType: string) => {
     switch (planType) {
         case "DVE-LVC": return "bg-blue-50 dark:bg-blue-900";
@@ -46,7 +46,7 @@ const getPlanTypeBgColor = (planType: string) => {
     }
 };
 
-// สีพื้นหลังแต่ละชั้นปี (เฉดเทาอ่อนต่างกันเล็กน้อย)
+
 const getYearLevelBgColor = (yearLevel: string) => {
     if (yearLevel.includes("1")) return "bg-gray-100 dark:bg-gray-700";
     if (yearLevel.includes("2")) return "bg-gray-200 dark:bg-gray-600";
@@ -69,7 +69,7 @@ export default function OutdepartmentRoom() {
                 const data = await res.json();
                 console.log("API response:", data);
 
-                // กรองเฉพาะวิชานอกสาขาในภาคเรียนปัจจุบัน
+
                 const filteredSubjects = data.filter((s: any) =>
                     s.dep === "นอกสาขา" &&
                     s.termYear === `ภาคเรียนที่ ${termYear}`
@@ -85,7 +85,7 @@ export default function OutdepartmentRoom() {
         }
     };
 
-    // โหลดข้อมูล term year ปัจจุบัน
+
     useEffect(() => {
         async function fetchTermYear() {
             try {
@@ -102,14 +102,14 @@ export default function OutdepartmentRoom() {
         fetchTermYear();
     }, []);
 
-    // โหลดข้อมูลวิชาเมื่อมีการเปลี่ยน term year หรือมีการรีเฟรช
+
     useEffect(() => {
         if (termYear) {
             fetchSubjects();
         }
     }, [termYear, refreshKey]);
 
-    // ฟังก์ชันสำหรับแปลง planType เป็นข้อความภาษาไทย
+
     const getPlanTypeText = (planType: string) => {
         switch (planType) {
             case "TRANSFER": return "เทียบโอน";
@@ -120,12 +120,12 @@ export default function OutdepartmentRoom() {
         }
     };
 
-    // ฟังก์ชันสำหรับรีโหลดข้อมูลหลังจากอัปเดต
+
     const handleRoomUpdated = () => {
         setRefreshKey(prev => prev + 1);
     };
 
-    // จัดกลุ่มวิชาตาม planType และ yearLevel
+
     const groupedSubjects: GroupedSubjects = subjects.reduce((acc, subject) => {
         if (!acc[subject.planType]) {
             acc[subject.planType] = {};
@@ -137,10 +137,10 @@ export default function OutdepartmentRoom() {
         return acc;
     }, {} as GroupedSubjects);
 
-    // เพิ่มฟังก์ชันสำหรับเรียงลำดับ yearLevel
+
     const sortYearLevels = (yearLevels: string[]) => {
         return yearLevels.sort((a, b) => {
-            // แยกเลขจากชื่อ yearLevel (เช่น "ปวส.1" -> 1, "ปวส.2" -> 2)
+
             const getYearNumber = (yearLevel: string) => {
                 const match = yearLevel.match(/(\d+)/);
                 return match ? parseInt(match[1]) : 0;
@@ -149,7 +149,7 @@ export default function OutdepartmentRoom() {
             const yearA = getYearNumber(a);
             const yearB = getYearNumber(b);
 
-            return yearA - yearB; // เรียงจากน้อยไปมาก (1, 2, 3, 4)
+            return yearA - yearB;
         });
     };
 
@@ -176,7 +176,7 @@ export default function OutdepartmentRoom() {
                     <div className="space-y-6 p-4">
                         {Object.entries(groupedSubjects).map(([planType, yearLevels]) => (
                             <div key={planType} className="space-y-4">
-                                {/* หัวข้อ Plan Type */}
+
                                 <div className={`p-3 rounded-lg border border-border ${getPlanTypeBgColor(planType)}`}>
                                     <h3 className="font-bold text-lg">
                                         {getPlanTypeText(planType)}
@@ -186,20 +186,20 @@ export default function OutdepartmentRoom() {
                                     </h3>
                                 </div>
 
-                                {/* แสดงกลุ่มตาม Year Level */}
+
                                 {sortYearLevels(Object.keys(yearLevels)).map((yearLevel) => {
                                     const subjects = yearLevels[yearLevel];
 
                                     return (
                                         <div key={`${planType}-${yearLevel}`} className="space-y-2">
-                                            {/* หัวข้อ Year Level */}
+
                                             <div className={`flex items-center gap-2 p-2 rounded-md ${getYearLevelBgColor(yearLevel)}`}>
                                                 <span className="font-medium">{yearLevel}</span>
                                                 <Badge variant="secondary">{subjects.length} วิชา</Badge>
                                                 <span className="text-muted-foreground text-xs">({getPlanTypeText(planType)})</span>
                                             </div>
 
-                                            {/* ตารางวิชา */}
+
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow>

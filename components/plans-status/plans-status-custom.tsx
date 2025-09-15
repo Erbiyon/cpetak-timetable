@@ -1,5 +1,5 @@
 import { useDraggable } from "@dnd-kit/core";
-import { PlusCircle, TriangleAlert, Wand } from "lucide-react"; // เพิ่ม import ไอคอน Scissors
+import { TriangleAlert } from "lucide-react";
 import CutButton from "../cut-add-button/cut-button";
 import AddSubDetail from "../cut-add-button/add-sub-detail";
 import {
@@ -9,7 +9,6 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
-import { ConflictDetails } from "../conflict-details/conflict-details";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import AutoTimetableButton from "../auto-timetable-button/page";
@@ -20,14 +19,6 @@ type SplitData = {
     part2: { lectureHour: number; labHour: number; partNumber: number };
 };
 
-type ConflictType = {
-    type: string;
-    message: string;
-    conflicts?: any[];
-    maxConsecutive?: number;
-};
-
-// เพิ่ม prop ใหม่ใน interface
 interface PlansStatusCustomProps {
     termYear: string;
     yearLevel?: string;
@@ -46,7 +37,6 @@ interface PlansStatusCustomProps {
         mainSubject?: any;
     }>;
     onSubjectUpdate?: () => void;
-    // เพิ่ม props สำหรับ drag feedback
     dragFailedSubjectId?: number | null;
     onDragFailedReset?: () => void;
 }
@@ -58,7 +48,6 @@ export default function PlansStatusCustom({
     plans = [],
     assignments = {},
     assignedCount = 0,
-    onRemoveAssignment = undefined,
     onSplitSubject,
     onMergeSubject,
     conflicts = [],
@@ -66,19 +55,13 @@ export default function PlansStatusCustom({
     dragFailedSubjectId = null,
     onDragFailedReset,
 }: PlansStatusCustomProps) {
-    // เพิ่ม state สำหรับแสดง conflict popup
     const [showConflictDialog, setShowConflictDialog] = useState(false);
-    // เพิ่ม state เพื่อเก็บ conflicts ล่าสุดที่แสดงแล้ว
-    const [lastShownConflicts, setLastShownConflicts] = useState<any[]>([]);
-    // เพิ่ม ref เพื่อติดตาม timestamp ของ conflicts ล่าสุด
+    const [_lastShownConflicts, setLastShownConflicts] = useState<any[]>([]);
     const [lastConflictTimestamp, setLastConflictTimestamp] = useState<number>(0);
 
-    // เพิ่ม log เพื่อดูค่าที่ได้รับ
     console.log("PlansStatusCustom received:", { termYear, yearLevel, planType, plansCount: plans.length });
 
-    // กรองวิชาเฉพาะ termYear, yearLevel, planType ที่กำหนด
     const filteredPlans = plans.filter(plan => {
-        // ตรวจสอบค่า termYear, yearLevel, planType
         console.log(`วิชา ${plan.subjectCode}: termYear=${plan.termYear}, yearLevel=${plan.yearLevel}, planType=${plan.planType}`);
 
         const termMatch = plan.termYear && plan.termYear.includes(termYear);
@@ -88,50 +71,40 @@ export default function PlansStatusCustom({
         return termMatch && yearMatch && typeMatch;
     });
 
-    // แสดงจำนวนวิชาที่ผ่านการกรอง
     console.log(`จำนวนวิชาหลังกรอง: ${filteredPlans.length}`);
 
-    // กรองเฉพาะวิชาที่ยังไม่ได้จัดลงตาราง
     const unassignedPlans = filteredPlans.filter(plan => !assignments[plan.id]);
 
-    // แก้ไข useEffect สำหรับการแสดง conflict popup
     useEffect(() => {
         const currentTime = Date.now();
 
         if (conflicts && conflicts.length > 0) {
-            // ตรวจสอบว่ามี conflicts ใหม่หรือไม่ โดยใช้ timestamp
-            if (currentTime > lastConflictTimestamp + 1000) { // ให้แสดงใหม่ได้หลังจาก 1 วินาที
+            if (currentTime > lastConflictTimestamp + 1000) {
                 setShowConflictDialog(true);
                 setLastShownConflicts([...conflicts]);
                 setLastConflictTimestamp(currentTime);
             }
         } else {
-            // ถ้าไม่มี conflicts แล้ว ให้รีเซ็ต state ทันที
             setShowConflictDialog(false);
             setLastShownConflicts([]);
-            // ไม่ต้องอัปเดต timestamp เมื่อ conflicts หายไป
         }
     }, [conflicts]);
 
-    // เพิ่มฟังก์ชันสำหรับปิด dialog
     const handleCloseConflictDialog = () => {
         setShowConflictDialog(false);
-        // อัปเดต timestamp เพื่อป้องกันการแสดงซ้ำทันที
         setLastConflictTimestamp(Date.now());
     };
 
-    // Reset drag failed state หลังจากแสดง feedback
     useEffect(() => {
         if (dragFailedSubjectId && onDragFailedReset) {
             const timer = setTimeout(() => {
                 onDragFailedReset();
-            }, 1000); // แสดง feedback 1 วินาที
+            }, 1000);
 
             return () => clearTimeout(timer);
         }
     }, [dragFailedSubjectId, onDragFailedReset]);
 
-    // แสดง UI เมื่อไม่มีข้อมูล
     if (filteredPlans.length === 0) {
         return (
             <div className="flex gap-4 mx-auto my-5 max-w-7xl">
@@ -151,7 +124,6 @@ export default function PlansStatusCustom({
         );
     }
 
-    // แอดแอปเตอร์สำหรับฟังก์ชัน onSplitSubject
     const handleSplitSubjectAdapter = (
         subjectId: number,
         splitData: {
@@ -159,7 +131,6 @@ export default function PlansStatusCustom({
             part2: { lectureHour: number; labHour: number };
         }
     ) => {
-        // เพิ่มคุณสมบัติ partNumber เพื่อให้ตรงกับพารามิเตอร์ที่ฟังก์ชันต้องการ
         const adaptedSplitData = {
             part1: { ...splitData.part1, partNumber: 1 },
             part2: { ...splitData.part2, partNumber: 2 }
@@ -177,10 +148,10 @@ export default function PlansStatusCustom({
                             แผนการเรียน {
                                 planType === 'TRANSFER' ? 'เทียบโอน' :
                                     planType === 'FOUR_YEAR' ? '4 ปี' :
-                                        planType === 'DVE-LVC' ? 'ปวช. ขึ้น ปวส.' :
-                                            planType === 'DVE-MSIX' ? 'ม.6 ขึ้น ปวส.' :
+                                        planType === 'DVE-LVC' ? `ปวส. ${yearLevel} (ปวช.)` :
+                                            planType === 'DVE-MSIX' ? `ปวส. ${yearLevel} (ม.6)` :
                                                 planType
-                            } {yearLevel} ภาคเรียนที่ {termYear}
+                            } ภาคเรียนที่ {termYear}
                         </div>
                         <div className="text-sm text-muted-foreground">
                             จำนวนวิชาทั้งหมด: {filteredPlans.length} วิชา | จัดตารางแล้ว: {assignedCount} วิชา
@@ -191,8 +162,7 @@ export default function PlansStatusCustom({
                                     yearLevel={yearLevel}
                                     planType={planType}
                                     currentAssignments={assignments}
-                                    onScheduleComplete={(newAssignments) => {
-                                        // Update the parent component with the new assignments
+                                    onScheduleComplete={(_newAssignments) => {
                                         if (onSubjectUpdate) {
                                             onSubjectUpdate();
                                         }
@@ -204,7 +174,6 @@ export default function PlansStatusCustom({
                                         yearLevel={yearLevel}
                                         planType={planType}
                                         onClearComplete={() => {
-                                            // This will refresh the timetable data after clearing
                                             if (onSubjectUpdate) {
                                                 onSubjectUpdate();
                                             }
@@ -239,7 +208,6 @@ export default function PlansStatusCustom({
                 </div>
             </div>
 
-            {/* Conflict Dialog */}
             {showConflictDialog && conflicts && conflicts.length > 0 && (
                 <ConflictDialog
                     conflicts={conflicts}
@@ -250,7 +218,6 @@ export default function PlansStatusCustom({
     );
 }
 
-// เพิ่ม ConflictDialog component ที่รองรับ Section Duplicate
 function ConflictDialog({
     conflicts,
     onClose
@@ -264,7 +231,6 @@ function ConflictDialog({
     }>;
     onClose: () => void;
 }) {
-    // ฟังก์ชันแปลง planType
     const getPlanTypeText = (planType: string) => {
         switch (planType) {
             case "TRANSFER": return "เทียบโอน";
@@ -275,7 +241,6 @@ function ConflictDialog({
         }
     };
 
-    // ฟังก์ชันกำหนดสีของ Badge ตาม conflict type
     const getBadgeVariant = (conflict: any, field: string) => {
         switch (conflict.type) {
             case "YEAR_LEVEL_CONFLICT":
@@ -311,7 +276,6 @@ function ConflictDialog({
                     <div className="space-y-6">
                         {conflicts.map((conflict, index) => (
                             <div key={index} className="border rounded-lg p-4 bg-card">
-                                {/* กรณีการชนกันของ Section แสดงเฉพาะข้อความเตือนโดยไม่แสดงรายการวิชาที่ชนกัน */}
                                 {conflict.type === "SECTION_DUPLICATE_CONFLICT" ? (
                                     <>
                                         <div className="flex items-center gap-2 mb-3">
@@ -321,7 +285,6 @@ function ConflictDialog({
                                             </h3>
                                         </div>
 
-                                        {/* แสดงวิชาที่กำลังจัดตาราง (หากมี) */}
                                         {conflict.mainSubject && (
                                             <div className="p-3 border bg-card rounded">
                                                 <div className="flex flex-col gap-2">
@@ -359,7 +322,6 @@ function ConflictDialog({
                                     </>
                                 ) : (
                                     <>
-                                        {/* สำหรับการชนกันประเภทอื่นๆ ให้แสดงแบบเดิม */}
                                         <div className="flex items-center gap-2 mb-3">
                                             <div className="w-3 h-3 rounded-full bg-red-500"></div>
                                             <h3 className="font-medium text-red-700 dark:text-red-500">
@@ -367,7 +329,6 @@ function ConflictDialog({
                                             </h3>
                                         </div>
 
-                                        {/* วิชาที่กำลังจัดตาราง */}
                                         {conflict.mainSubject && (
                                             <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border-l-4 border-blue-400 mb-4">
                                                 <div className="flex items-center gap-2 text-sm flex-wrap">
@@ -398,7 +359,6 @@ function ConflictDialog({
                                             </div>
                                         )}
 
-                                        {/* รายการวิชาที่ชนกัน */}
                                         {conflict.conflicts && conflict.conflicts.length > 0 && (
                                             <div>
                                                 <div className="flex items-center gap-2 mb-3">
@@ -412,7 +372,7 @@ function ConflictDialog({
                                                     {conflict.conflicts.map((item, itemIndex) => (
                                                         <div key={itemIndex} className="p-3 border rounded-lg bg-card">
                                                             <div className="flex justify-between items-start gap-4">
-                                                                {/* ข้อมูลวิชา */}
+
                                                                 <div className="flex-1">
                                                                     <div className="flex items-center gap-2 mb-1">
                                                                         <span className="font-mono font-medium text-blue-600 text-sm">
@@ -448,9 +408,7 @@ function ConflictDialog({
                                                                     </div>
                                                                 </div>
 
-                                                                {/* ข้อมูลเวลาและทรัพยากร */}
                                                                 <div className="text-right text-sm">
-                                                                    {/* แสดงเวลาเฉพาะกรณีที่มีการชนกันเรื่องเวลา */}
                                                                     {(conflict.type === "TIME_CONFLICT" || conflict.type === "ROOM_CONFLICT" || conflict.type === "TEACHER_CONFLICT") && (
                                                                         <div className="font-medium">
                                                                             {['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'][item.day]}
@@ -508,7 +466,6 @@ function ConflictDialog({
     );
 }
 
-// Card วิชาที่สามารถลากได้
 function SubjectCard({
     subject,
     onSplitSubject,
@@ -522,10 +479,8 @@ function SubjectCard({
     onUpdate?: () => void;
     isDragFailed?: boolean;
 }) {
-    // เพิ่ม state เพื่อ force re-render
     const [updateTrigger, setUpdateTrigger] = useState(0);
 
-    // Debug การ render
     useEffect(() => {
         console.log("SubjectCard render:", {
             id: subject.id,
@@ -548,25 +503,20 @@ function SubjectCard({
     const labHours = subject.labHour || 0;
     const totalHours = lectureHours + labHours;
 
-    // ปรับปรุงการควบคุม tooltip
     const [openTooltip, setOpenTooltip] = useState<boolean>(false);
 
-    // เพิ่มฟังก์ชันจัดการกดที่ปุ่ม
     const handleButtonClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setOpenTooltip(false); // ปิด tooltip ทันที
+        setOpenTooltip(false);
     };
 
-    // แก้ไขฟังก์ชัน handleMergeSubjectWithRefresh
     const handleMergeSubjectWithRefresh = async (subjectId: number) => {
         if (onMergeSubject) {
             try {
                 await onMergeSubject(subjectId);
 
-                // Force re-render และเรียก parent update
                 setUpdateTrigger(prev => prev + 1);
 
-                // รอให้ state อัปเดตแล้ว refresh อีกครั้ง
                 setTimeout(() => {
                     if (onUpdate) {
                         onUpdate();
@@ -578,7 +528,6 @@ function SubjectCard({
         }
     };
 
-    // แก้ไข callback สำหรับ AddSubDetail
     const handleAddSubDetailUpdate = () => {
         console.log("=== AddSubDetail Update Callback ===");
         console.log("Subject after update:", {
@@ -588,10 +537,8 @@ function SubjectCard({
             teacher: subject.teacher
         });
 
-        // Force re-render
         setUpdateTrigger(prev => prev + 1);
 
-        // เรียก parent update
         if (onUpdate) {
             setTimeout(() => {
                 console.log("Calling parent onUpdate");
@@ -614,14 +561,12 @@ function SubjectCard({
                                 : ''
                             }`}
                     >
-                        {/* เพิ่ม icon แสดงสถานะ drag failed */}
                         {isDragFailed && (
                             <div className="absolute top-1 text-xs left-1">
                                 <TriangleAlert size={15} color="#ffff00" className="animate-pulse" />
                             </div>
                         )}
 
-                        {/* ปุ่ม PlusCircle ที่มุมขวาบน */}
                         <div
                             className="absolute top-[-8px] right-[-8px]"
                             onClick={handleButtonClick}
@@ -633,7 +578,6 @@ function SubjectCard({
                             />
                         </div>
 
-                        {/* ปุ่ม CutButton ที่มุมล่างขวา */}
                         <div
                             className="absolute bottom-[-1px] right-[-1px]"
                             onClick={handleButtonClick}
@@ -649,7 +593,6 @@ function SubjectCard({
                         <div className="text-center">
                             <div className="font-medium mb-1 text-slate-900 dark:text-slate-100">
                                 {subject.subjectCode}
-                                {/* แสดง section ถ้ามี */}
                                 {subject.section && (
                                     <span className="ml-1 text-[8px] bg-blue-200 dark:bg-blue-700 px-1 rounded">
                                         {subject.section}
@@ -660,7 +603,6 @@ function SubjectCard({
                                 {subject.subjectName}
                             </div>
 
-                            {/* แสดงข้อมูลห้องและอาจารย์ */}
                             {(subject.room?.roomCode || subject.teacher?.tName) && (
                                 <div className="text-[8px] mt-1 flex flex-wrap justify-center gap-1">
                                     {subject.room?.roomCode && (
@@ -700,7 +642,6 @@ function SubjectCard({
                             <div>รวม:</div>
                             <div className="text-right">{totalHours} ชม. ({totalHours * 2} คาบ)</div>
 
-                            {/* เพิ่มข้อมูลรายละเอียดเพิ่มเติม */}
                             {subject.section && (
                                 <>
                                     <div>กลุ่มเรียน:</div>

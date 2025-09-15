@@ -6,7 +6,7 @@ import { NavigationMenuCustom } from "@/components/navbar/navbar-custom";
 export default function HideNavbar() {
     const pathname = usePathname();
 
-    // หน้าที่ไม่ต้องแสดง Navigation Bar
+
     const hideNavbarPages = [
         "/login",
         "/",

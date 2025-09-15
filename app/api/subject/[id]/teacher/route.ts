@@ -12,13 +12,13 @@ export async function PATCH(
         const subjectId = parseInt(id);
         const { teacherId } = await request.json();
 
-        console.log('Updating subject teacher:', { subjectId, teacherId });
+        console.log('กำลังอัปเดตอาจารย์ของวิชา:', { subjectId, teacherId });
 
         if (isNaN(subjectId)) {
-            return NextResponse.json({ error: 'Invalid subject ID' }, { status: 400 });
+            return NextResponse.json({ error: 'ID วิชาไม่ถูกต้อง' }, { status: 400 });
         }
 
-        // อัปเดตอาจารย์ผู้สอน
+
         const updatedSubject = await prisma.plans_tb.update({
             where: { id: subjectId },
             data: { teacherId: teacherId },
@@ -33,18 +33,18 @@ export async function PATCH(
                 teacher: {
                     select: {
                         id: true,
-                        tName: true,        // แก้ตรงนี้
-                        tLastName: true,    // เพิ่ม lastName
-                        tId: true           // แก้ตรงนี้
+                        tName: true,
+                        tLastName: true,
+                        tId: true
                     }
                 }
             }
         });
 
-        console.log('Updated subject:', updatedSubject);
+        console.log('วิชาได้รับการอัปเดตแล้ว:', updatedSubject);
         return NextResponse.json(updatedSubject);
     } catch (error) {
-        console.error('Error updating subject teacher:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        console.error('ผิดพลาดในการอัปเดตอาจารย์ของวิชา:', error);
+        return NextResponse.json({ error: 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์' }, { status: 500 });
     }
 }

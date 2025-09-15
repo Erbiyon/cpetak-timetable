@@ -4,20 +4,19 @@ import { AddSubjectCustom } from "@/components/add-subject/add-subject-custom";
 import CardStudyPlansCustom from "@/components/card-study-plans-table/card-study-plans-custom";
 import { SelectCustom } from "@/components/select/select-custom";
 import { useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
 
 export default function TransferPlan() {
     const [year, setYear] = useState<string>("")
     const [terms, setTerms] = useState<any[]>([])
     const [yearLevels, setYearLevels] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
+    const [_loading, setLoading] = useState(true)
 
     useEffect(() => {
         async function fetchData() {
             try {
                 setLoading(true)
 
-                // ตั้งค่าปีปัจจุบันเป็นค่าเริ่มต้น (ปี พ.ศ.)
+
                 const currentYear = new Date().getFullYear() + 543
                 setYear(currentYear.toString())
 
@@ -52,20 +51,9 @@ export default function TransferPlan() {
     const academicYear2 = parseInt(year) + 1 || new Date().getFullYear() + 544
     const academicYear3 = parseInt(year) + 2 || new Date().getFullYear() + 545
 
-    if (loading) {
-        return (
-            <div className="container mx-auto px-4 py-4">
-                <div className="flex justify-center items-center min-h-[60vh]">
-                    <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
-                    <span className="ml-2 text-sm sm:text-base">กำลังโหลดข้อมูล...</span>
-                </div>
-            </div>
-        )
-    }
-
     return (
         <div className="container mx-auto px-4 py-4">
-            {/* Header Section */}
+
             <div className="py-4 sm:py-6 lg:py-8 px-2 sm:px-4 md:px-8 lg:px-16 xl:px-32 2xl:px-48">
                 <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold mb-2 sm:mb-3 break-words leading-tight">
                     แผนการเรียนสำหรับนักศึกษาที่เข้ารับการศึกษาในปีการศึกษา {academicYear}
@@ -75,14 +63,14 @@ export default function TransferPlan() {
                 </h3>
             </div>
 
-            {/* Select Component */}
+
             <div className="mb-4 sm:mb-6 lg:mb-8">
                 <SelectCustom currentYear={year} onYearChange={handleYearChange} />
             </div>
 
-            {/* Study Plan Cards */}
+
             <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-                {/* Year 1 */}
+
                 <CardStudyPlansCustom
                     planType="TRANSFER"
                     termYear={`${terms[0]?.name}/${academicYear}`}
@@ -149,7 +137,7 @@ export default function TransferPlan() {
                     )}
                 </CardStudyPlansCustom>
 
-                {/* Year 2 */}
+
                 <CardStudyPlansCustom
                     planType="TRANSFER"
                     termYear={`${terms[0]?.name}/${academicYear2}`}
@@ -216,7 +204,7 @@ export default function TransferPlan() {
                     )}
                 </CardStudyPlansCustom>
 
-                {/* Year 3 */}
+
                 <CardStudyPlansCustom
                     planType="TRANSFER"
                     termYear={`${terms[0]?.name}/${academicYear3}`}

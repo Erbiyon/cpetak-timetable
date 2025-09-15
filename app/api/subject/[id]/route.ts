@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
-// PUT method - อัปเดตข้อมูลวิชา
+
 export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -13,7 +13,7 @@ export async function PATCH(
         const id = parseInt(resolvedParams.id);
         const body = await request.json();
 
-        // ตรวจสอบข้อมูลก่อนอัปเดต
+
         const existingSubject = await prisma.plans_tb.findUnique({
             where: { id },
             include: { room: true, teacher: true },
@@ -26,7 +26,7 @@ export async function PATCH(
             );
         }
 
-        // อัปเดตข้อมูล
+
         const updatedSubject = await prisma.plans_tb.update({
             where: { id },
             data: {
@@ -40,7 +40,7 @@ export async function PATCH(
         return NextResponse.json(updatedSubject);
     } catch (error) {
         return NextResponse.json(
-            { error: "Failed to update subject" },
+            { error: "ผิดพลาดในการอัปเดตวิชา" },
             { status: 500 }
         );
     } finally {
@@ -48,16 +48,15 @@ export async function PATCH(
     }
 }
 
-// GET method สำหรับดึงข้อมูลวิชาเดี่ยว
+
 export async function GET(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> } // เปลี่ยนเป็น Promise
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const resolvedParams = await params; // await params
+        const resolvedParams = await params;
         const id = parseInt(resolvedParams.id);
 
-        console.log("GET - Fetching subject:", id);
+        console.log("GET - ดึงข้อมูลวิชา:", id);
 
         const subject = await prisma.plans_tb.findUnique({
             where: { id },
@@ -74,7 +73,7 @@ export async function GET(
             );
         }
 
-        console.log("GET - Subject found:", {
+        console.log("GET - วิชาที่พบ:", {
             id: subject.id,
             subjectCode: subject.subjectCode,
             section: subject.section,
@@ -86,9 +85,9 @@ export async function GET(
 
         return NextResponse.json(subject);
     } catch (error) {
-        console.error("GET - Error fetching subject:", error);
+        console.error("GET - ผิดพลาดในการดึงข้อมูลวิชา:", error);
         return NextResponse.json(
-            { error: "Failed to fetch subject" },
+            { error: "เกิดข้อผิดพลาดในการดึงข้อมูลวิชา" },
             { status: 500 }
         );
     } finally {
@@ -96,34 +95,33 @@ export async function GET(
     }
 }
 
-// DELETE method (ถ้าต้องการ)
+
 export async function DELETE(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> } // เปลี่ยนเป็น Promise
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const resolvedParams = await params; // await params
+        const resolvedParams = await params;
         const id = parseInt(resolvedParams.id);
 
-        console.log("DELETE - Deleting subject:", id);
+        console.log("DELETE - ลบวิชา:", id);
 
-        // ลบข้อมูลตารางเรียนที่เกี่ยวข้องก่อน
+
         await prisma.timetable_tb.deleteMany({
             where: { planId: id }
         });
 
-        // ลบข้อมูลวิชา
+
         const deletedSubject = await prisma.plans_tb.delete({
             where: { id }
         });
 
-        console.log("DELETE - Subject deleted successfully:", deletedSubject.id);
+        console.log("DELETE - ลบวิชาเรียบร้อย:", deletedSubject.id);
 
         return NextResponse.json({ success: true, deletedSubject });
     } catch (error) {
-        console.error("DELETE - Error deleting subject:", error);
+        console.error("DELETE - ผิดพลาดในการลบวิชา:", error);
         return NextResponse.json(
-            { error: "Failed to delete subject" },
+            { error: "เกิดข้อผิดพลาดในการลบวิชา" },
             { status: 500 }
         );
     } finally {
@@ -154,8 +152,8 @@ export async function PUT(
             !subjectCode ||
             !subjectName ||
             !credit ||
-            // !lectureHour ||
-            // !labHour ||
+
+
             !termYear ||
             !yearLevel ||
             !planType ||

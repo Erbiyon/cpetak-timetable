@@ -30,26 +30,23 @@ export default function LoginPage() {
     const [adminId, setAdminId] = useState("")
     const [adminPassword, setAdminPassword] = useState("")
     const [error, setError] = useState("")
-    const [rememberTeacher, setRememberTeacher] = useState(false) // แยกสำหรับอาจารย์
-    const [rememberAdmin, setRememberAdmin] = useState(false)     // แยกสำหรับผู้ดูแล
+    const [rememberTeacher, setRememberTeacher] = useState(false)
+    const [rememberAdmin, setRememberAdmin] = useState(false)
     const [isClient, setIsClient] = useState(false)
     const [showTeacherPassword, setShowTeacherPassword] = useState(false)
     const [showAdminPassword, setShowAdminPassword] = useState(false)
     const router = useRouter()
 
-    // ตรวจสอบว่าเป็น client-side และโหลดข้อมูลที่จดจำไว้
     useEffect(() => {
         setIsClient(true)
 
         if (typeof window !== 'undefined') {
-            // โหลดข้อมูลที่จดจำของอาจารย์
             const rememberedTeacher = localStorage.getItem("rememberedTeacherId")
             if (rememberedTeacher) {
                 setTeacherId(rememberedTeacher)
                 setRememberTeacher(true)
             }
 
-            // โหลดข้อมูลที่จดจำของผู้ดูแล
             const rememberedAdmin = localStorage.getItem("rememberedAdminId")
             if (rememberedAdmin) {
                 setAdminId(rememberedAdmin)
@@ -73,7 +70,6 @@ export default function LoginPage() {
             if (result?.error) {
                 setError("รหัสประจำตัวหรือรหัสผ่านไม่ถูกต้อง")
             } else {
-                // บันทึกการจดจำสำหรับอาจารย์ (เฉพาะ client-side)
                 if (isClient && typeof window !== 'undefined') {
                     if (rememberTeacher) {
                         localStorage.setItem("rememberedTeacherId", teacherId)
@@ -107,7 +103,6 @@ export default function LoginPage() {
             if (result?.error) {
                 setError("รหัสผู้ดูแลหรือรหัสผ่านไม่ถูกต้อง")
             } else {
-                // บันทึกการจดจำสำหรับผู้ดูแล (เฉพาะ client-side)
                 if (isClient && typeof window !== 'undefined') {
                     if (rememberAdmin) {
                         localStorage.setItem("rememberedAdminId", adminId)
@@ -126,7 +121,6 @@ export default function LoginPage() {
         }
     }
 
-    // แสดง loading หรือ blank จนกว่าจะโหลด client-side เสร็จ
     if (!isClient) {
         return (
             <div className="min-h-screen flex items-center justify-center px-4">
@@ -336,7 +330,6 @@ export default function LoginPage() {
                     </TabsContent>
                 </Tabs>
 
-                {/* Footer */}
                 <div className="text-center mt-6 sm:mt-8">
                     <p className="text-xs sm:text-sm text-gray-500">
                         © 2025 ระบบจัดตารางเรียน สาขาวิศวกรรมคอมพิวเตอร์

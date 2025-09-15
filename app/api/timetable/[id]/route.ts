@@ -1,10 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 export async function DELETE(
-    req: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -18,7 +17,7 @@ export async function DELETE(
             );
         }
 
-        // ลบข้อมูลตารางเรียนของวิชานี้
+
         await prisma.timetable_tb.deleteMany({
             where: { planId }
         });

@@ -19,7 +19,7 @@ import { Info } from "lucide-react"
 export default function CutButton({
     subject,
     onSplitSubject,
-    onMergeSubject, // เพิ่ม prop ใหม่
+    onMergeSubject,
 }: {
     subject: any
     onSplitSubject?: (
@@ -29,29 +29,29 @@ export default function CutButton({
             part2: { lectureHour: number; labHour: number; partNumber: number }
         }
     ) => void
-    onMergeSubject?: (subjectId: number) => void // เพิ่ม prop ใหม่
+    onMergeSubject?: (subjectId: number) => void
 }) {
-    // ชั่วโมงรวมของวิชาทั้งหมด
+
     const totalLectureHours = subject?.lectureHour || 0
     const totalLabHours = subject?.labHour || 0
     const totalHours = totalLectureHours + totalLabHours
 
-    // หาเลขส่วนปัจจุบัน (ถ้าไม่มี = ส่วนที่ 1)
+
     const currentPartNumber = useMemo(() => {
         const nameMatch = subject?.subjectName?.match(/\(ส่วนที่ (\d+)\)$/);
         return nameMatch ? parseInt(nameMatch[1], 10) : 1;
     }, [subject?.subjectName]);
 
-    // สถานะสำหรับเก็บค่าการแบ่ง (จำนวนชั่วโมงส่วนที่ 1)
+
     const [hoursPart1, setHoursPart1] = useState(Math.floor(totalHours / 2))
 
-    // คำนวณชั่วโมงส่วนที่ 2
+
     const hoursPart2 = totalHours - hoursPart1
 
-    // ตรวจสอบว่ามีส่วนใดส่วนหนึ่งที่มีชั่วโมงรวมเป็น 0 หรือไม่
+
     const hasSomePartZeroHours = hoursPart1 === 0 || hoursPart2 === 0
 
-    // ข้อความแจ้งเตือนหรือข้อความอธิบาย
+
     const infoMessage = useMemo(() => {
         if (hoursPart1 === 0) {
             return `ส่วนที่ ${currentPartNumber} มีชั่วโมงรวมเป็น 0 - จะปรับปรุงวิชาเป็นส่วนที่ ${currentPartNumber + 1} เท่านั้น`
@@ -62,22 +62,22 @@ export default function CutButton({
         return `ทั้งสองส่วนจะถูกสร้างขึ้น - ส่วนที่ ${currentPartNumber} และส่วนที่ ${currentPartNumber + 1}`
     }, [hoursPart1, hoursPart2, currentPartNumber])
 
-    // คำนวณอัตราส่วนการแบ่งชั่วโมงบรรยายและปฏิบัติตามสัดส่วนเดิม
+
     const calculateSplit = () => {
-        // คำนวณสัดส่วนการแบ่งชั่วโมงรวม
+
         const ratio = hoursPart1 / totalHours
 
-        // คำนวณชั่วโมงบรรยายและปฏิบัติสำหรับส่วนที่ 1
+
         let lectureHourPart1 = Math.round(totalLectureHours * ratio)
         let labHourPart1 = hoursPart1 - lectureHourPart1
 
-        // ปรับค่าให้ไม่ติดลบ
+
         if (labHourPart1 < 0) {
-            lectureHourPart1 += labHourPart1 // ลดชั่วโมงบรรยาย
+            lectureHourPart1 += labHourPart1
             labHourPart1 = 0
         }
 
-        // คำนวณชั่วโมงบรรยายและปฏิบัติสำหรับส่วนที่ 2
+
         const lectureHourPart2 = totalLectureHours - lectureHourPart1
         const labHourPart2 = totalLabHours - labHourPart1
 
@@ -95,7 +95,7 @@ export default function CutButton({
         }
     }
 
-    // จัดการการ submit form
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
 
@@ -119,13 +119,9 @@ export default function CutButton({
         }
     }
 
-    // คำนวณการแบ่งชั่วโมงเพื่อแสดงผล
-    const splitPreview = calculateSplit()
-
-    // ตรวจสอบว่าวิชานี้เป็นวิชาที่แบ่งมาแล้วหรือไม่
     const isAlreadySplitSubject = subject?.subjectName?.includes('(ส่วนที่');
 
-    // จัดการการรวมวิชา
+
     const handleMerge = async (e: React.FormEvent) => {
         e.preventDefault()
 
@@ -159,7 +155,7 @@ export default function CutButton({
                     </DialogDescription>
                 </DialogHeader>
 
-                {/* แสดงปุ่มรวมส่วนกลับ สำหรับวิชาที่แบ่งแล้ว */}
+
                 {isAlreadySplitSubject && (
                     <div className="py-4 border-b">
                         <Alert className="mb-4">
@@ -183,7 +179,7 @@ export default function CutButton({
                     </div>
                 )}
 
-                {/* ส่วนแบ่งวิชา (แสดงเสมอ) */}
+
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-4 py-4">
                         <div className="text-sm font-medium">
@@ -221,7 +217,7 @@ export default function CutButton({
                             </div>
                         </div>
 
-                        {/* ปรับแต่งส่วนรายละเอียดการแบ่งให้เหมาะสมและดูง่ายขึ้น - แสดงเฉพาะยอดรวม */}
+
                         <div className="rounded-lg border p-4 bg-card mt-4 shadow-sm">
                             <div className="text-sm font-medium mb-3">รายละเอียดการแบ่ง</div>
                             <div className="grid grid-cols-3 gap-2 text-sm">
@@ -259,7 +255,7 @@ export default function CutButton({
                             </div>
                         </div>
 
-                        {/* แสดงข้อความอธิบายเกี่ยวกับการแบ่ง */}
+
                         <Alert
                             variant={hasSomePartZeroHours ? "destructive" : "default"}
                             className={`bg-muted/50 ${hasSomePartZeroHours ? "border-yellow-500 dark:border-yellow-700" : ""}`}

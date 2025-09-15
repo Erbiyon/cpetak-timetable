@@ -1,4 +1,4 @@
-// components/conflict-details/conflict-details.tsx
+
 import {
     Dialog,
     DialogContent,
@@ -31,7 +31,7 @@ interface ConflictDetailsProps {
 }
 
 export function ConflictDetails({ conflict }: ConflictDetailsProps) {
-    // ฟังก์ชันแปลง planType
+
     const getPlanTypeText = (planType: string) => {
         switch (planType) {
             case "TRANSFER": return "เทียบโอน";
@@ -42,7 +42,7 @@ export function ConflictDetails({ conflict }: ConflictDetailsProps) {
         }
     };
 
-    // ฟังก์ชันกำหนดสีของ Badge ตาม conflict type
+
     const getBadgeVariant = (field: string) => {
         switch (conflict.type) {
             case "YEAR_LEVEL_CONFLICT":
@@ -77,7 +77,7 @@ export function ConflictDetails({ conflict }: ConflictDetailsProps) {
                     </DialogDescription>
                 </DialogHeader>
 
-                {/* วิชาที่กำลังจัดตาราง */}
+
                 {conflict.mainSubject && (
                     <div className="p-3 bg-blue-50 rounded border-l-4 border-blue-400">
                         <p className="text-sm font-medium text-blue-700 mb-1">วิชาที่กำลังจัดตาราง</p>
@@ -108,7 +108,7 @@ export function ConflictDetails({ conflict }: ConflictDetailsProps) {
                     </div>
                 )}
 
-                {/* รายการวิชาที่ชนกัน */}
+
                 {conflict.conflicts && conflict.conflicts.length > 0 && (
                     <div>
                         <div className="flex items-center gap-2 mb-3">
@@ -120,7 +120,7 @@ export function ConflictDetails({ conflict }: ConflictDetailsProps) {
                             {conflict.conflicts.map((item, index) => (
                                 <div key={index} className="p-3 border rounded-lg">
                                     <div className="flex justify-between items-start gap-4">
-                                        {/* ข้อมูลวิชา */}
+
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <span className="font-mono font-medium text-blue-600 text-sm">
@@ -154,9 +154,9 @@ export function ConflictDetails({ conflict }: ConflictDetailsProps) {
                                             </div>
                                         </div>
 
-                                        {/* ข้อมูลเวลาและทรัพยากร */}
+
                                         <div className="text-right text-sm">
-                                            {/* แสดงเวลาถ้ามีการชนกันเรื่องเวลา */}
+
                                             {(conflict.type === "TIME_CONFLICT" || conflict.type === "ROOM_CONFLICT" || conflict.type === "TEACHER_CONFLICT") && (
                                                 <div className="font-medium">
                                                     {['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'][item.day]}
@@ -181,7 +181,7 @@ export function ConflictDetails({ conflict }: ConflictDetailsProps) {
                                         </div>
                                     </div>
 
-                                    {/* แสดงข้อความเตือนเพิ่มเติมสำหรับ Section Duplicate */}
+
                                     {conflict.type === "SECTION_DUPLICATE_CONFLICT" && (
                                         <div className="mt-2 p-2 bg-red-50 border-l-4 border-red-400 text-red-700 text-xs">
                                             <div className="font-medium">⚠️ การซ้ำกันของ Section:</div>
@@ -194,7 +194,7 @@ export function ConflictDetails({ conflict }: ConflictDetailsProps) {
                     </div>
                 )}
 
-                {/* แสดงคำแนะนำแก้ไข */}
+
                 <div className="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400">
                     <h4 className="text-sm font-medium text-yellow-800 mb-1">คำแนะนำในการแก้ไข:</h4>
                     <div className="text-xs text-yellow-700">

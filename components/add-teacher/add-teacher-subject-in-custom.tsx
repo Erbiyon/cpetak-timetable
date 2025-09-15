@@ -115,7 +115,7 @@ export function AddTeacherSubjectInCustom({
         try {
             let patchRequests: Promise<Response>[] = []
 
-            // ถ้าเป็น DVE ให้ PATCH ทุกแผนที่รหัสเหมือนกันและ termYear เดียวกัน
+
             if (isDVE && duplicatePlans.length > 0) {
                 patchRequests = duplicatePlans.map((plan) =>
                     fetch(`/api/subject/${plan.id}`, {
@@ -127,7 +127,7 @@ export function AddTeacherSubjectInCustom({
                     })
                 )
             } else {
-                // PATCH วิชาหลัก
+
                 patchRequests.push(
                     fetch(`/api/subject/${subjectId}`, {
                         method: "PATCH",
@@ -137,7 +137,7 @@ export function AddTeacherSubjectInCustom({
                         })
                     })
                 )
-                // ถ้าเลือกสอนร่วมและมี otherPlan ให้ PATCH อีกแผนด้วย
+
                 if (coTeaching && otherPlan) {
                     patchRequests.push(
                         fetch(`/api/subject/${otherPlan.id}`, {
@@ -148,8 +148,8 @@ export function AddTeacherSubjectInCustom({
                             })
                         })
                     )
-                    // === เพิ่มส่วนนี้ ===
-                    // สร้าง/อัปเดตกลุ่มสอนร่วมใน CoTeaching_tb
+
+
                     const groupKey = `${subjectCode}-${termYear}`
                     await fetch("/api/subject/co-teaching/merge", {
                         method: "POST",
@@ -162,7 +162,7 @@ export function AddTeacherSubjectInCustom({
                 }
 
                 if (!coTeaching && otherPlan) {
-                    // ยกเลิกกลุ่มสอนร่วม
+
                     const groupKey = `${subjectCode}-${termYear}`;
                     await fetch("/api/subject/co-teaching/merge", {
                         method: "DELETE",
@@ -212,14 +212,14 @@ export function AddTeacherSubjectInCustom({
     }, [open, teacherName, teachers])
 
     useEffect(() => {
-        // เช็คสถานะ co-teaching เมื่อเปิด Dialog
+
         const checkCoTeaching = async () => {
             if (!open || !subjectId) return;
             try {
                 const res = await fetch(`/api/subject/co-teaching/check?subjectId=${subjectId}`);
                 if (res.ok) {
                     const data = await res.json();
-                    // ถ้ามี groupKey และ planIds มากกว่า 1 แสดงว่าเป็นสอนร่วม
+
                     if (data.groupKey && data.planIds && data.planIds.length > 1) {
                         setCoTeaching(true);
                     } else {

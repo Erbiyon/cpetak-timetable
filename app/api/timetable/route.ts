@@ -1,21 +1,21 @@
-// app/api/timetable/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// API บันทึกการจัดตาราง
+
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { planId, termYear, yearLevel, planType, day, startPeriod, endPeriod, roomId, teacherId, section } = body;
 
-        // ตรวจสอบข้อมูลที่จำเป็น
+
         if (!planId || day === undefined || startPeriod === undefined || endPeriod === undefined) {
             return NextResponse.json({ error: "ข้อมูลไม่ครบถ้วน" }, { status: 400 });
         }
 
-        // ตรวจสอบการชนกันก่อนบันทึก
+
         const conflicts = await checkTimeConflicts({
             planId, termYear, yearLevel, planType,
             day, startPeriod, endPeriod, roomId, teacherId, section
@@ -25,12 +25,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ conflicts }, { status: 409 });
         }
 
-        // ลบข้อมูลเดิมของวิชานี้ (ถ้ามี) ก่อนบันทึกข้อมูลใหม่
+
         await prisma.timetable_tb.deleteMany({
             where: { planId }
         });
 
-        // บันทึกข้อมูลตารางเรียน
+
         const timetable = await prisma.timetable_tb.create({
             data: {
                 planId,
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(timetable);
     } catch (error: any) {
-        console.error("Error saving timetable:", error);
+        console.error("ผิดพลาดในการบันทึกข้อมูลตารางเรียน:", error);
         return NextResponse.json(
             { error: error.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูล" },
             { status: 500 }
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// API ดึงข้อมูลตารางทั้งหมด
+
 export async function GET(request: NextRequest) {
     try {
         const url = new URL(request.url);
@@ -71,37 +71,37 @@ export async function GET(request: NextRequest) {
         const roomId = roomIdParam ? parseInt(roomIdParam) : undefined;
         const teacherId = teacherIdParam ? parseInt(teacherIdParam) : undefined;
 
-        console.log("API: Fetching timetable for:", { roomId, teacherId, termYear, yearLevel, planType });
+        console.log("API: กำลังดึงข้อมูลตารางเรียนสำหรับ:", { roomId, teacherId, termYear, yearLevel, planType });
 
-        // สร้าง where condition
+
         const whereCondition: any = {};
 
-        // เพิ่มเงื่อนไข roomId ถ้ามี
+
         if (roomId && !isNaN(roomId)) {
             whereCondition.roomId = roomId;
         }
 
-        // เพิ่มเงื่อนไข teacherId ถ้ามี
+
         if (teacherId && !isNaN(teacherId)) {
             whereCondition.teacherId = teacherId;
         }
 
-        // เพิ่มเงื่อนไขภาคเรียนถ้ามีการส่งมา
+
         if (termYear) {
             whereCondition.termYear = termYear;
         }
 
-        // เพิ่มเงื่อนไข yearLevel ถ้ามี
+
         if (yearLevel) {
             whereCondition.yearLevel = yearLevel;
         }
 
-        // เพิ่มเงื่อนไข planType ถ้ามี
+
         if (planType) {
             whereCondition.planType = planType;
         }
 
-        // ถ้าไม่มีเงื่อนไขใดๆ ให้ส่งค่าว่างกลับ
+
         if (Object.keys(whereCondition).length === 0) {
             return NextResponse.json([]);
         }
@@ -119,16 +119,16 @@ export async function GET(request: NextRequest) {
             ]
         });
 
-        console.log(`API: Found ${timetables.length} entries for the specified criteria`);
+        console.log(`API: พบ ${timetables.length} รายการสำหรับเงื่อนไขที่ระบุ`);
 
         return NextResponse.json(timetables);
     } catch (error: any) {
-        console.error("Error fetching timetable:", error);
+        console.error("ผิดพลาดในการดึงข้อมูลตารางเรียน:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
 
-// ฟังก์ชันตรวจสอบการชนกัน
+
 async function checkTimeConflicts({
     planId, termYear, yearLevel, planType,
     day, startPeriod, endPeriod, roomId, teacherId, section
@@ -146,14 +146,14 @@ async function checkTimeConflicts({
 }) {
     const conflicts = [];
 
-    // ดึงข้อมูลวิชาปัจจุบันเพื่อใช้ในการตรวจสอบ
+
     const currentPlan = await prisma.plans_tb.findUnique({
         where: { id: planId },
         select: { subjectCode: true }
     });
 
-    console.log("=== Checking Time Conflicts ===");
-    console.log("Input data:", {
+    console.log("ตรวจสอบการชนกันสำหรับการจัดตาราง:");
+    console.log("ข้อมูลนำเข้า:", {
         planId,
         termYear,
         yearLevel,
@@ -166,29 +166,29 @@ async function checkTimeConflicts({
         sectionTrimmed: section?.trim()
     });
 
-    // ตรวจสอบเงื่อนไขให้ชัดเจน
+
     const hasTeacherId = teacherId && teacherId !== null && teacherId !== undefined;
     const hasSection = section !== null && section !== undefined &&
         typeof section === 'string' && section.trim() !== "";
 
-    console.log("Validation checks:", { hasTeacherId, hasSection });
+    console.log("ตรวจสอบความถูกต้อง:", { hasTeacherId, hasSection });
 
     if (hasTeacherId && hasSection) {
-        console.log("Checking section duplicate...");
+        console.log("กำลังตรวจสอบการซ้ำซ้อนของกลุ่มเรียน...");
         const sectionConflicts = await checkSectionDuplicate({
             planId, termYear, yearLevel, planType, teacherId, section: section.trim()
         });
-        console.log("Section conflicts found:", sectionConflicts.length);
+        console.log("พบการซ้ำซ้อนของกลุ่มเรียน:", sectionConflicts.length);
         conflicts.push(...sectionConflicts);
     } else {
-        console.log("Skipping section duplicate check:", {
+        console.log("ข้ามการตรวจสอบการซ้ำซ้อนของกลุ่มเรียน:", {
             teacherId,
             section,
-            reason: !hasTeacherId ? "No teacherId" : "No section"
+            reason: !hasTeacherId ? "ไม่มี teacherId" : "ไม่มี section"
         });
     }
 
-    // 1. ตรวจสอบการชนกันของห้องเรียน
+
     if (roomId) {
         const roomConflicts = await prisma.timetable_tb.findMany({
             where: {
@@ -201,7 +201,7 @@ async function checkTimeConflicts({
                     }
                 ],
                 NOT: {
-                    planId: planId // ไม่นับวิชาเดียวกัน
+                    planId: planId
                 }
             },
             include: {
@@ -211,12 +211,12 @@ async function checkTimeConflicts({
             }
         });
 
-        // กรองออกการซิ๊งค์ระหว่าง DVE planTypes ที่มีรหัสวิชาเดียวกัน
+
         const filteredRoomConflicts = roomConflicts.filter(item => {
             const isDVEPlan = planType === "DVE-MSIX" || planType === "DVE-LVC";
             const isConflictDVE = item.planType === "DVE-MSIX" || item.planType === "DVE-LVC";
 
-            // ถ้าทั้งคู่เป็น DVE planType และมีรหัสวิชาเดียวกัน ให้ยกเว้น
+
             if (isDVEPlan && isConflictDVE &&
                 item.planType !== planType &&
                 item.plan?.subjectCode === currentPlan?.subjectCode) {
@@ -235,7 +235,7 @@ async function checkTimeConflicts({
         }
     }
 
-    // 2. ตรวจสอบการชนกันของอาจารย์
+
     if (teacherId) {
         const teacherConflicts = await prisma.timetable_tb.findMany({
             where: {
@@ -248,7 +248,7 @@ async function checkTimeConflicts({
                     }
                 ],
                 NOT: {
-                    planId: planId // ไม่นับวิชาเดียวกัน
+                    planId: planId
                 }
             },
             include: {
@@ -258,12 +258,12 @@ async function checkTimeConflicts({
             }
         });
 
-        // กรองออกการซิ๊งค์ระหว่าง DVE planTypes ที่มีรหัสวิชาเดียวกัน
+
         const filteredTeacherConflicts = teacherConflicts.filter(item => {
             const isDVEPlan = planType === "DVE-MSIX" || planType === "DVE-LVC";
             const isConflictDVE = item.planType === "DVE-MSIX" || item.planType === "DVE-LVC";
 
-            // ถ้าทั้งคู่เป็น DVE planType และมีรหัสวิชาเดียวกัน ให้ยกเว้น
+
             if (isDVEPlan && isConflictDVE &&
                 item.planType !== planType &&
                 item.plan?.subjectCode === currentPlan?.subjectCode) {
@@ -282,7 +282,7 @@ async function checkTimeConflicts({
         }
     }
 
-    // 3. ตรวจสอบการชนกันของนักศึกษาชั้นปีเดียวกัน (ยกเว้นกรณีมี section แยก)
+
     if (!section) {
         const yearLevelConflicts = await prisma.timetable_tb.findMany({
             where: {
@@ -296,9 +296,9 @@ async function checkTimeConflicts({
                         endPeriod: { gte: startPeriod }
                     }
                 ],
-                section: null, // เฉพาะวิชาที่ไม่ได้แบ่ง section
+                section: null,
                 NOT: {
-                    planId: planId // ไม่นับวิชาเดียวกัน
+                    planId: planId
                 }
             },
             include: {
@@ -315,8 +315,8 @@ async function checkTimeConflicts({
         }
     }
 
-    // 4. ตรวจสอบการชนกับช่วงกิจกรรม (วันพุธ คาบ 14-17)
-    if (day === 2) { // วันพุธ
+
+    if (day === 2) {
         const activityPeriods = [14, 15, 16, 17];
         const hasConflictWithActivity = activityPeriods.some(p =>
             p >= startPeriod && p <= endPeriod
@@ -333,7 +333,7 @@ async function checkTimeConflicts({
     return conflicts;
 }
 
-// แก้ไขฟังก์ชันตรวจสอบ Section Duplicate
+
 async function checkSectionDuplicate({
     planId, termYear, yearLevel, planType, teacherId, section
 }: {
@@ -345,7 +345,7 @@ async function checkSectionDuplicate({
     section: string;
 }) {
     try {
-        // ดึงข้อมูลวิชาที่กำลังจะจัดตาราง
+
         const currentPlan = await prisma.plans_tb.findUnique({
             where: { id: planId },
             include: {
@@ -357,38 +357,38 @@ async function checkSectionDuplicate({
             return [];
         }
 
-        // แยกเลขตัวแรกของ section (prefix) สำหรับตรวจสอบการชนกัน
+
         const sectionPrefix = section.split('-')[0];
 
-        // ตรวจสอบว่าเป็นวิชาที่มีการแบ่งส่วน (มี "-" ใน section)
+
         const isSplitSubject = section.includes('-');
 
-        // ตรวจสอบว่าเป็น DVE planType หรือไม่
+
         const isDVEPlan = planType === "DVE-MSIX" || planType === "DVE-LVC";
 
-        // ค้นหาวิชาที่มีเงื่อนไขเดียวกันในทุกแผนการเรียนและทุกชั้นปี
+
         const duplicateSections = await prisma.timetable_tb.findMany({
             where: {
                 AND: [
-                    { termYear }, // ภาคเรียนเดียวกัน
-                    { teacherId }, // อาจารย์คนเดียวกัน
-                    { planId: { not: planId } }, // ไม่รวมวิชาตัวเอง
+                    { termYear },
+                    { teacherId },
+                    { planId: { not: planId } },
                     {
                         plan: {
-                            subjectCode: currentPlan.subjectCode // รหัสวิชาเดียวกัน
+                            subjectCode: currentPlan.subjectCode
                         }
                     },
                     {
                         OR: [
-                            // กรณีที่ section ตรงกันทุกตัว
+
                             { section },
-                            // กรณีที่เป็นวิชาแบ่งส่วน: ตรวจสอบเฉพาะวิชาที่ไม่ใช่ส่วนเดียวกัน
+
                             ...(isSplitSubject ? [
                                 {
                                     AND: [
                                         { section: { startsWith: `${sectionPrefix}-` } },
-                                        { section: { not: section } }, // ไม่ใช่ section เดียวกัน
-                                        // ตรวจสอบเพิ่มเติมว่าไม่ใช่วิชาที่ถูกแบ่งออกมาจากวิชาเดียวกัน
+                                        { section: { not: section } },
+
                                         {
                                             plan: {
                                                 NOT: {
@@ -404,7 +404,7 @@ async function checkSectionDuplicate({
                                 {
                                     AND: [
                                         { section: sectionPrefix },
-                                        // ตรวจสอบเพิ่มเติมว่าไม่ใช่วิชาที่ถูกแบ่งออกมาจากวิชาเดียวกัน
+
                                         {
                                             plan: {
                                                 NOT: {
@@ -418,7 +418,7 @@ async function checkSectionDuplicate({
                                     ]
                                 }
                             ] : [
-                                // กรณีที่ไม่ใช่วิชาแบ่งส่วน: ตรวจสอบปกติ
+
                                 { section: { startsWith: `${sectionPrefix}-` } },
                                 { section: sectionPrefix }
                             ])
@@ -433,11 +433,11 @@ async function checkSectionDuplicate({
             }
         });
 
-        // กรองออกการซิ๊งค์ระหว่าง DVE planTypes ที่มีรหัสวิชาเดียวกัน
+
         const filteredDuplicates = duplicateSections.filter(item => {
-            // ถ้าเป็น DVE planType และมีรหัสวิชาเดียวกัน ให้ยกเว้น
+
             if (isDVEPlan && (item.planType === "DVE-MSIX" || item.planType === "DVE-LVC")) {
-                // ยกเว้นถ้าเป็น planType ต่างกันแต่รหัสวิชาเดียวกัน
+
                 if (item.planType !== planType && item.plan?.subjectCode === currentPlan.subjectCode) {
                     console.log(`ยกเว้นการซิ๊งค์ระหว่าง ${planType} และ ${item.planType} สำหรับวิชา ${currentPlan.subjectCode}`);
                     return false;
@@ -447,7 +447,7 @@ async function checkSectionDuplicate({
         });
 
         if (filteredDuplicates.length > 0) {
-            // จัดกลุ่ม conflicts ตาม planType และ yearLevel และแสดงรายละเอียด section ที่ซ้ำ
+
             const conflictsByPlanAndYear = filteredDuplicates.reduce((acc: any, item) => {
                 const key = `${item.planType}-${item.yearLevel}`;
                 if (!acc[key]) {
@@ -457,8 +457,8 @@ async function checkSectionDuplicate({
                 return acc;
             }, {});
 
-            // สร้าง message ที่แสดงแผนและชั้นปีที่มีการซ้ำกัน พร้อมรายละเอียด section
-            const conflictDetails = Object.entries(conflictsByPlanAndYear).map(([key, items]) => {
+
+            const conflictDetails = Object.entries(conflictsByPlanAndYear).map(([key]) => {
                 const [planTypeCode, yearLevel] = key.split('-');
                 let planTypeText;
 
@@ -470,14 +470,14 @@ async function checkSectionDuplicate({
                     default: planTypeText = planTypeCode;
                 }
 
-                // รวบรวม section ที่ซ้ำกันในแต่ละแผน
-                // const conflictingSections = (items as any[]).map((item: any) => `Section ${item.section}`).join(", ");
+
+
 
                 return `${planTypeText} ${yearLevel}`;
-                // (ซ้ำกับ ${conflictingSections})
+
             }).join(", ");
 
-            // สร้างรายการ section ทั้งหมดที่ซ้ำกัน
+
             const allConflictingSections = filteredDuplicates.map(item => item.section).join(", ");
 
             const conflictResult = [{
@@ -492,7 +492,7 @@ async function checkSectionDuplicate({
                     section: section,
                     teacher: currentPlan.teacher
                 },
-                // เก็บข้อมูลความขัดแย้งในรูปแบบที่เข้าถึงง่าย
+
                 conflictDetails: Object.keys(conflictsByPlanAndYear).map(key => {
                     const [planType, yearLevel] = key.split('-');
                     return { planType, yearLevel };
@@ -504,7 +504,7 @@ async function checkSectionDuplicate({
 
         return [];
     } catch (error) {
-        console.error("Error checking section duplicate:", error);
+        console.error("เกิดข้อผิดพลาดระหว่างตรวจสอบการซ้ำของเซกชัน:", error);
         return [];
     }
 }

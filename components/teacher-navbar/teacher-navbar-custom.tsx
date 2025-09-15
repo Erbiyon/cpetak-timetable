@@ -27,7 +27,7 @@ export function TeacherNavbarCustom() {
 
     return (
         <>
-            {/* Desktop Navigation */}
+
             <div className="hidden lg:block">
                 <NavigationMenu viewport={false} className="sticky mx-auto py-4 top-0 left-0 w-screen z-50 shadow-background bg-card border p-2 rounded-b-xl">
                     <NavigationMenuList>
@@ -43,7 +43,7 @@ export function TeacherNavbarCustom() {
                             </NavigationMenuLink>
                         </NavigationMenuItem>
 
-                        {/* เมนูผู้ใช้ */}
+
                         <NavigationMenuItem>
                             <NavigationMenuTrigger className="bg-card text-xs xl:text-sm">
                                 <CircleUser className="mr-2 h-4 w-4" />
@@ -79,7 +79,7 @@ export function TeacherNavbarCustom() {
                             </NavigationMenuContent>
                         </NavigationMenuItem>
 
-                        {/* Dark Mode Toggle */}
+
                         <NavigationMenuItem>
                             <DarkModeToggle />
                         </NavigationMenuItem>
@@ -87,7 +87,7 @@ export function TeacherNavbarCustom() {
                 </NavigationMenu>
             </div>
 
-            {/* Mobile Navigation */}
+
             <div className="lg:hidden sticky top-0 left-0 w-full z-50 bg-card border-b p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-lg font-semibold">ระบบอาจารย์</h1>
@@ -104,7 +104,7 @@ export function TeacherNavbarCustom() {
                                     <SheetTitle>เมนู</SheetTitle>
                                 </SheetHeader>
                                 <div className="flex flex-col space-y-4 mt-6">
-                                    {/* User Info */}
+
                                     <div className="px-3 py-2 border-b border-border">
                                         <div className="font-medium text-foreground flex items-center">
                                             <CircleUser className="mr-2 h-4 w-4" />
@@ -118,7 +118,7 @@ export function TeacherNavbarCustom() {
                                         </div>
                                     </div>
 
-                                    {/* Menu Items */}
+
                                     <Link
                                         href="/teacher-use/time-table"
                                         onClick={() => setIsOpen(false)}
@@ -135,7 +135,7 @@ export function TeacherNavbarCustom() {
                                         คำขอใช้ห้อง
                                     </Link>
 
-                                    {/* Sign Out */}
+
                                     <button
                                         onClick={handleSignOut}
                                         className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950 rounded-md transition-colors mt-4"

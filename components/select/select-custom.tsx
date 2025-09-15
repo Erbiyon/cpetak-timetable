@@ -17,13 +17,13 @@ interface SelectCustomProps {
 }
 
 export function SelectCustom({ currentYear, onYearChange, planType = "TRANSFER" }: SelectCustomProps) {
-    // สร้างรายการปีการศึกษา ตาม planType
+
     const generateYearOptions = () => {
         const currentBuddhistYear = new Date().getFullYear() + 543
         const years = []
 
-        // กำหนดจำนวนปีตาม planType
-        let yearsToShow = 3 // default สำหรับ TRANSFER
+
+        let yearsToShow = 3
 
         switch (planType) {
             case "FOUR_YEAR":
@@ -34,7 +34,7 @@ export function SelectCustom({ currentYear, onYearChange, planType = "TRANSFER" 
                 yearsToShow = 2
                 break
             default:
-                yearsToShow = 3 // TRANSFER
+                yearsToShow = 3
         }
 
         for (let i = 0; i < yearsToShow; i++) {

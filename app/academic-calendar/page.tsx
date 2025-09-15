@@ -10,7 +10,7 @@ export default function AcademicCalendar() {
     const [term1, setTerm1] = React.useState<{ start?: Date; end?: Date }>({})
     const [term2, setTerm2] = React.useState<{ start?: Date; end?: Date }>({})
     const [term3, setTerm3] = React.useState<{ start?: Date; end?: Date }>({})
-    const [savedTerm, setSavedTerm] = React.useState<any>(null)
+    const [_savedTerm, setSavedTerm] = React.useState<any>(null)
     const [loading, setLoading] = React.useState(true)
 
     const terms = [
@@ -36,7 +36,7 @@ export default function AcademicCalendar() {
                     setSavedTerm(data)
                 }
             } catch (error) {
-                console.error("Error saving term:", error)
+                console.error("ผิดพลาดในการบันทึกเทอม:", error)
             }
         }
     }
@@ -44,7 +44,7 @@ export default function AcademicCalendar() {
     React.useEffect(() => {
         async function fetchTerms() {
             try {
-                setLoading(true) // เริ่ม loading
+                setLoading(true)
                 const res = await fetch("/api/term")
                 if (res.ok) {
                     const data = await res.json()
@@ -55,9 +55,9 @@ export default function AcademicCalendar() {
                     })
                 }
             } catch (error) {
-                console.error("Error fetching terms:", error)
+                console.error("ผิดพลาดในการดึงข้อมูลเทอม:", error)
             } finally {
-                setLoading(false) // หยุด loading
+                setLoading(false)
             }
         }
         fetchTerms()
@@ -92,43 +92,6 @@ export default function AcademicCalendar() {
         if (term3.start && term3.end) saveTerm("ภาคเรียนที่ 3", term3.start, term3.end)
     }, [term3.start, term3.end])
 
-    // เพิ่มฟังก์ชันตรวจสอบวันซ้ำ
-    function isDateOverlap(date: Date | undefined, otherTerms: { start?: Date; end?: Date }[]) {
-        if (!date) return false
-        return otherTerms.some(term =>
-            (term.start && date.getTime() === term.start.getTime()) ||
-            (term.end && date.getTime() === term.end.getTime())
-        )
-    }
-
-    // ฟังก์ชันตรวจสอบช่วงเวลาซ้อนกัน
-    function isRangeOverlap(
-        start: Date | undefined, end: Date | undefined,
-        otherTerms: { start?: Date; end?: Date }[]
-    ) {
-        if (!start || !end) return false
-        return otherTerms.some(term => {
-            if (!term.start || !term.end) return false
-            // ถ้าช่วงเวลาใดๆ ซ้อนกัน
-            return (
-                (start <= term.end && end >= term.start)
-            )
-        })
-    }
-
-    // ฟังก์ชันตรวจสอบช่วงเวลาซ้อนกันและคืนชื่อเทอมที่ซ้ำ
-    function getOverlapTermName(
-        start: Date | undefined, end: Date | undefined,
-        otherTerms: { name: string; start?: Date; end?: Date }[]
-    ): string | null {
-        if (!start || !end) return null
-        const found = otherTerms.find(term => {
-            if (!term.start || !term.end) return false
-            return (start <= term.end && end >= term.start)
-        })
-        return found ? found.name : null
-    }
-
     function getAllOverlapTermNames(
         start: Date | undefined, end: Date | undefined,
         otherTerms: { name: string; start?: Date; end?: Date }[]
@@ -139,7 +102,6 @@ export default function AcademicCalendar() {
             .map(term => term.name)
     }
 
-    // แสดง loading หากยังโหลดข้อมูลอยู่
     if (loading) {
         return (
             <div className="flex justify-center w-full">
@@ -165,7 +127,6 @@ export default function AcademicCalendar() {
                 <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border mb-4 lg:mb-5 p-4 lg:p-5 shadow-sm mx-4">
                     <div className="w-full">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
-                            {/* ภาคเรียนที่ 1 */}
                             <div className="flex flex-col space-y-3">
                                 <Label htmlFor="term1" className="px-1 text-sm lg:text-base font-medium">
                                     ภาคเรียนที่ 1
@@ -218,7 +179,6 @@ export default function AcademicCalendar() {
                                 </div>
                             </div>
 
-                            {/* ภาคเรียนที่ 2 */}
                             <div className="flex flex-col space-y-3">
                                 <Label htmlFor="term2" className="px-1 text-sm lg:text-base font-medium">
                                     ภาคเรียนที่ 2
@@ -271,7 +231,6 @@ export default function AcademicCalendar() {
                                 </div>
                             </div>
 
-                            {/* ภาคเรียนที่ 3 */}
                             <div className="flex flex-col space-y-3">
                                 <Label htmlFor="term3" className="px-1 text-sm lg:text-base font-medium">
                                     ภาคเรียนที่ 3

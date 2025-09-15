@@ -19,9 +19,9 @@ export async function GET() {
 
         return NextResponse.json(rooms);
     } catch (error) {
-        console.error("Error fetching rooms:", error);
+        console.error("ผิดพลาดในการดึงข้อมูลห้อง:", error);
         return NextResponse.json(
-            { error: "Failed to fetch rooms" },
+            { error: "เกิดข้อผิดพลาดในการดึงข้อมูลห้อง" },
             { status: 500 }
         );
     }
@@ -32,11 +32,11 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { roomCode, roomType, roomCate } = body;
 
-        console.log("Received data:", { roomCode, roomType, roomCate }); // เพิ่ม log เพื่อ debug
+        console.log("ข้อมูลที่ได้รับ:", { roomCode, roomType, roomCate });
 
         if (!roomCode || !roomType) {
             return NextResponse.json(
-                { error: "roomCode and roomType are required" },
+                { error: "roomCode และ roomType เป็นข้อมูลที่จำเป็น" },
                 { status: 400 }
             );
         }
@@ -45,17 +45,17 @@ export async function POST(request: NextRequest) {
             data: {
                 roomCode: roomCode.trim(),
                 roomType: roomType.trim(),
-                roomCate: roomCate || null, // ใช้ null หากไม่มีค่า
+                roomCate: roomCate || null,
             },
         });
 
-        console.log("Created room:", room); // เพิ่ม log เพื่อ debug
+        console.log("สร้างห้อง:", room);
 
         return NextResponse.json(room, { status: 201 });
     } catch (error) {
-        console.error("Error creating room:", error);
+        console.error("ผิดพลาดในการสร้างห้อง:", error);
         return NextResponse.json(
-            { error: "Failed to create room" },
+            { error: "เกิดข้อผิดพลาดในการสร้างห้อง" },
             { status: 500 }
         );
     } finally {

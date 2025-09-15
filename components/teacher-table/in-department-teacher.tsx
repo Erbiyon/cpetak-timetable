@@ -29,7 +29,7 @@ export default function IndepartmentTeacher() {
     const fetchTeachers = async () => {
         try {
             setLoading(true)
-            // ปรับปรุง API endpoint ให้ดึงเฉพาะอาจารย์ภายในสาขา
+
             const res = await fetch("/api/teacher?inDepartment=true")
             if (res.ok) {
                 const data = await res.json()

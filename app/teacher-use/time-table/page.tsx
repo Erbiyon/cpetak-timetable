@@ -3,7 +3,6 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Tooltip,
@@ -27,7 +26,6 @@ export default function TimeTablePage() {
         }
     }, [status, router]);
 
-    // โหลดข้อมูลเริ่มต้น
     useEffect(() => {
         const fetchInitialData = async () => {
             if (!session?.user?.teacherId) return;
@@ -35,13 +33,11 @@ export default function TimeTablePage() {
             try {
                 setLoading(true);
 
-                // โหลดข้อมูลภาคเรียนปัจจุบัน
                 const termYearResponse = await fetch('/api/current-term-year');
                 if (termYearResponse.ok) {
                     const termYearData = await termYearResponse.json();
                     setCurrentTermYear(termYearData.termYear);
 
-                    // โหลดตารางสอนของอาจารย์
                     await fetchMyTimetable(session.user.id, termYearData.termYear);
                 }
             } catch (error) {
@@ -56,7 +52,6 @@ export default function TimeTablePage() {
         }
     }, [session]);
 
-    // โหลดข้อมูลตารางสอนของอาจารย์ที่ login
     const fetchMyTimetable = async (teacherId: string, termYear: string) => {
         try {
             console.log("Fetching my timetable for teacher ID:", teacherId, "Term Year:", termYear);
@@ -73,20 +68,17 @@ export default function TimeTablePage() {
         }
     };
 
-    // สร้างข้อมูลตารางเวลาในรูปแบบที่ต้องการ
     const { cellToSubject, cellColspan, cellSkip } = useMemo(() => {
         const cellToSubject: { [cellKey: string]: any } = {};
         const cellColspan: { [cellKey: string]: number } = {};
         const cellSkip: Set<string> = new Set();
 
-        // ตรวจสอบว่ามีข้อมูลตารางหรือไม่
         if (!timetables || timetables.length === 0 || !currentTermYear || !session?.user?.id) {
             return { cellToSubject, cellColspan, cellSkip };
         }
 
         console.log(`Processing ${timetables.length} timetable entries for teacher ID: ${session.user.id}`);
 
-        // กรองเฉพาะข้อมูลตารางของอาจารย์ที่ login
         const filteredTimetables = timetables.filter(item => {
             const teacherMatch = String(item.teacherId) === session.user.id;
             const termYearMatch = item.termYear === currentTermYear;
@@ -95,7 +87,6 @@ export default function TimeTablePage() {
 
         console.log(`Filtered timetable entries: ${filteredTimetables.length}`);
 
-        // แปลงข้อมูลตารางเวลาให้เป็นรูปแบบที่ต้องการ
         filteredTimetables.forEach(item => {
             const { day, startPeriod, endPeriod, plan } = item;
 
@@ -118,7 +109,6 @@ export default function TimeTablePage() {
             const colspan = endPeriod - startPeriod + 1;
             cellColspan[cellKey] = colspan;
 
-            // เพิ่มเซลล์ที่ต้องข้าม
             for (let p = startPeriod + 1; p <= endPeriod; p++) {
                 cellSkip.add(`${day}-${p}`);
             }
@@ -127,12 +117,6 @@ export default function TimeTablePage() {
         return { cellToSubject, cellColspan, cellSkip };
     }, [timetables, session?.user?.id, currentTermYear]);
 
-    const handleDownload = () => {
-        // TODO: ใช้สำหรับดาวน์โหลดตารางในอนาคต
-        console.log("Download timetable - will be implemented later");
-    };
-
-    // สร้างข้อมูลอาจารย์สำหรับส่งไปยัง DownloadTeacherButton
     const selectedTeacher = session?.user ? {
         id: parseInt(session.user.id),
         tName: session.user.name?.split(' ')[0] || '',
@@ -158,7 +142,6 @@ export default function TimeTablePage() {
 
     return (
         <div className="container mx-auto p-6">
-            {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-3xl font-bold">ตารางสอน</h1>
@@ -181,7 +164,6 @@ export default function TimeTablePage() {
                 />
             </div>
 
-            {/* ตารางสอน */}
             {loading ? (
                 <Card>
                     <CardContent className="flex justify-center items-center p-8">
@@ -231,7 +213,6 @@ export default function TimeTablePage() {
     );
 }
 
-// คอมโพเนนต์แสดงตารางสอนส่วนตัว
 function MyTimetable({
     cellToSubject,
     cellColspan,
@@ -263,7 +244,6 @@ function MyTimetable({
                             {Array.from({ length: 25 }, (_, colIdx) => {
                                 const period = colIdx;
 
-                                // เฉพาะวันพุธ (dayIndex === 2) คาบ 15-18 (14-17 ใน database)
                                 if (dayIndex === 2 && period === 14) {
                                     return (
                                         <td
@@ -282,12 +262,10 @@ function MyTimetable({
 
                                 const cellKey = `${dayIndex}-${period}`;
 
-                                // ตรวจสอบการข้ามเซลล์
                                 if (cellSkip.has(cellKey)) {
                                     return null;
                                 }
 
-                                // เช็คว่าเซลล์นี้มีวิชาหรือไม่
                                 const subject = cellToSubject[cellKey];
                                 const colspan = cellColspan[cellKey] || 1;
 
@@ -321,7 +299,6 @@ function MyTimetable({
     );
 }
 
-// แสดงวิชาในตาราง
 function SubjectInCell({
     subject,
     colspan = 1
@@ -360,7 +337,6 @@ function SubjectInCell({
                                     </span>
                                 )}
                             </div>
-                            {/* แสดงข้อมูลห้องเรียน */}
                             {subject.room && (
                                 <div className="text-[8px] mt-1">
                                     <span className="bg-green-200/50 dark:bg-green-700/50 px-1 rounded font-medium">
@@ -387,7 +363,6 @@ function SubjectInCell({
                             <div className="font-medium">รวม:</div>
                             <div className="text-right font-medium">{totalHours} ชม.</div>
 
-                            {/* แสดงข้อมูลหลักสูตรและชั้นปี */}
                             {(subject.planType || subject.yearLevel) && (
                                 <>
                                     <div className="col-span-2 border-t border-gray-600 mt-2 pt-2">
@@ -413,7 +388,6 @@ function SubjectInCell({
                                 </>
                             )}
 
-                            {/* แสดงข้อมูลห้องเรียน */}
                             {subject.room && (
                                 <>
                                     <div className="col-span-2 border-t border-gray-600 mt-2 pt-2">

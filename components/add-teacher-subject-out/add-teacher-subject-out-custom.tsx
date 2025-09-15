@@ -56,16 +56,16 @@ export function AddTeacherSubjectOutCustom({
     const [coTeaching, setCoTeaching] = useState(false)
     const [otherPlan, setOtherPlan] = useState<any | null>(null)
     const [showDuplicate, setShowDuplicate] = useState(false)
-    const [duplicatePlans, setDuplicatePlans] = useState<any[]>([])
+    const [_duplicatePlans, setDuplicatePlans] = useState<any[]>([])
 
-    // โหลดรายชื่ออาจารย์ภายนอกสาขา
+
     useEffect(() => {
         const fetchTeachers = async () => {
             try {
                 const res = await fetch("/api/teacher?inDepartment=false")
                 if (res.ok) {
                     const data = await res.json()
-                    // กรองเฉพาะอาจารย์ภายนอกสาขา
+
                     const filteredTeachers = data.filter((teacher: Teacher) =>
                         teacher.teacherType === "อาจารย์ภายนอกสาขา"
                     )
@@ -81,7 +81,7 @@ export function AddTeacherSubjectOutCustom({
         }
     }, [open])
 
-    // ตรวจสอบวิชาซ้ำข้ามแผน
+
     useEffect(() => {
         const checkDuplicateSubject = async () => {
             if (!subjectCode || !planType || !termYear) return
@@ -110,7 +110,7 @@ export function AddTeacherSubjectOutCustom({
         }
     }, [open, subjectCode, planType, termYear])
 
-    // เช็คสถานะ co-teaching เมื่อเปิด Dialog
+
     useEffect(() => {
         const checkCoTeaching = async () => {
             if (!open || !subjectId) return;
@@ -149,7 +149,7 @@ export function AddTeacherSubjectOutCustom({
         try {
             let patchRequests: Promise<Response>[] = []
 
-            // PATCH วิชาหลัก
+
             patchRequests.push(
                 fetch(`/api/subject/${subjectId}`, {
                     method: "PATCH",
@@ -159,7 +159,7 @@ export function AddTeacherSubjectOutCustom({
                     })
                 })
             )
-            // ถ้าเลือกสอนร่วมและมี otherPlan ให้ PATCH อีกแผนด้วย
+
             if (coTeaching && otherPlan) {
                 patchRequests.push(
                     fetch(`/api/subject/${otherPlan.id}`, {
@@ -170,8 +170,8 @@ export function AddTeacherSubjectOutCustom({
                         })
                     })
                 )
-                // === เพิ่มส่วนนี้ ===
-                // สร้าง/อัปเดตกลุ่มสอนร่วมใน CoTeaching_tb
+
+
                 const groupKey = `${subjectCode}-${termYear}`
                 await fetch("/api/subject/co-teaching/merge", {
                     method: "POST",
@@ -184,7 +184,7 @@ export function AddTeacherSubjectOutCustom({
             }
 
             if (!coTeaching && otherPlan) {
-                // ยกเลิกกลุ่มสอนร่วม
+
                 const groupKey = `${subjectCode}-${termYear}`;
                 await fetch("/api/subject/co-teaching/merge", {
                     method: "DELETE",

@@ -88,7 +88,6 @@ export async function GET(req: NextRequest) {
     const dep = url.searchParams.get('dep') || undefined; // เพิ่มพารามิเตอร์ dep
 
     try {
-        // สร้างเงื่อนไขการค้นหา
         const where: any = {};
 
         if (termYear) {
@@ -104,13 +103,12 @@ export async function GET(req: NextRequest) {
         }
 
         if (dep) {
-            where.dep = { contains: dep }; // เพิ่มการกรองตาม dep
+            where.dep = { contains: dep };
         }
 
-        console.log('Subject API - Query params:', { yearLevel, termYear, planType, dep });
-        console.log('Subject API - Where clause:', where);
+        console.log('Subject API - สิ่งที่ส่งไป:', { yearLevel, termYear, planType, dep });
+        console.log('Subject API - เงื่อนไขการค้นหา:', where);
 
-        // ดึงข้อมูลจาก database ด้วย Prisma
         const plans = await prisma.plans_tb.findMany({
             where,
             include: {
@@ -135,19 +133,17 @@ export async function GET(req: NextRequest) {
             }
         });
 
-        console.log(`Subject API - Found ${plans.length} subjects`);
+        console.log(`Subject API - พบ ${plans.length} วิชา`);
 
-        // ส่งข้อมูลกลับไป
         return NextResponse.json(plans);
     } catch (error) {
-        console.error("Error fetching plans:", error);
-        return NextResponse.json({ error: "Failed to fetch plans" }, { status: 500 });
+        console.error("ผิดพลาดในการดึงข้อมูลวิชา:", error);
+        return NextResponse.json({ error: "เกิดข้อผิดพลาดในการดึงข้อมูลวิชา" }, { status: 500 });
     } finally {
         await prisma.$disconnect();
     }
 }
 
-// เพิ่ม PUT method สำหรับการอัปเดตวิชา
 export async function PUT(req: NextRequest) {
     try {
         const body = await req.json();
@@ -174,7 +170,6 @@ export async function PUT(req: NextRequest) {
             );
         }
 
-        // สร้าง object สำหรับข้อมูลที่จะอัปเดต
         const updateData: any = {};
 
         if (subjectCode !== undefined) updateData.subjectCode = subjectCode;
@@ -211,12 +206,12 @@ export async function PUT(req: NextRequest) {
             }
         });
 
-        console.log(`Subject API - Updated subject ${id}`);
+        console.log(`Subject API - อัปเดตวิชา ${id}`);
 
         return NextResponse.json(updatedSubject);
     } catch (error) {
-        console.error("Error updating subject:", error);
-        return NextResponse.json({ error: "Failed to update subject" }, { status: 500 });
+        console.error("ผิดพลาดในการอัปเดตวิชา:", error);
+        return NextResponse.json({ error: "เกิดข้อผิดพลาดในการอัปเดตวิชา" }, { status: 500 });
     } finally {
         await prisma.$disconnect();
     }

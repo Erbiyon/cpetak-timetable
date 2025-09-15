@@ -30,7 +30,7 @@ export default function AutoTimetableButton({
         try {
             console.log('🚀 เริ่มการจัดตารางอัตโนมัติ');
 
-            // Find unassigned subjects
+
             const unassignedPlans = plans.filter(plan => !currentAssignments[plan.id]);
 
             if (unassignedPlans.length === 0) {
@@ -40,33 +40,29 @@ export default function AutoTimetableButton({
 
             console.log(`จำนวนวิชาที่ต้องจัด: ${unassignedPlans.length}`);
 
-            // Sort subjects by total hours (descending) to schedule larger subjects first
+
             const sortedPlans = [...unassignedPlans].sort((a, b) => {
                 const totalHoursA = (a.lectureHour || 0) + (a.labHour || 0);
                 const totalHoursB = (b.lectureHour || 0) + (b.labHour || 0);
                 return totalHoursB - totalHoursA;
             });
 
-            // Clone current assignments to build upon
+
             const newAssignments = { ...currentAssignments };
 
-            // Activity periods to avoid (Wednesday periods 14-17)
+
             const activityPeriods = [14, 15, 16, 17];
 
-            // Define day and period limits
-            const MAX_DAYS = 7;  // Monday to Sunday (0-6)
-            const MAX_PERIODS = 25;  // Maximum periods per day
 
-            // Required gap between subjects (in periods)
-            const REQUIRED_GAP = 2;
+            const MAX_DAYS = 7;
+            const MAX_PERIODS = 25;
 
-            // Day names for debugging
             const dayNames = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
 
             let successCount = 0;
             let failCount = 0;
 
-            // For each subject, find an available slot
+
             for (const subject of sortedPlans) {
                 const totalHours = (subject.lectureHour || 0) + (subject.labHour || 0);
                 const totalPeriods = totalHours * 2;
@@ -82,22 +78,22 @@ export default function AutoTimetableButton({
 
                 let scheduled = false;
 
-                // Try each day
+
                 for (let day = 0; day < MAX_DAYS && !scheduled; day++) {
                     console.log(`   ลองวัน ${dayNames[day]}`);
 
-                    // Start from period 0 and try each possible starting period
+
                     for (let startPeriod = 0; startPeriod < MAX_PERIODS - totalPeriods + 1 && !scheduled; startPeriod++) {
                         const isWednesday = day === 2;
 
-                        // Calculate periods needed for this subject
+
                         const neededPeriods: number[] = [];
                         let canScheduleHere = true;
 
                         for (let i = 0; i < totalPeriods; i++) {
                             const currentPeriod = startPeriod + i;
 
-                            // Skip if this would overlap with Wednesday activities
+
                             if (isWednesday && activityPeriods.includes(currentPeriod)) {
                                 canScheduleHere = false;
                                 break;
@@ -106,19 +102,19 @@ export default function AutoTimetableButton({
                             neededPeriods.push(currentPeriod);
                         }
 
-                        // Skip if can't schedule due to activity periods
+
                         if (!canScheduleHere) {
                             continue;
                         }
 
-                        // Simple conflict check - check period overlap and required gap
+
                         let hasSimpleConflict = false;
                         let conflictReason = "";
 
-                        // Check against current assignments (this session)
+
                         for (const [existingId, assignment] of Object.entries(newAssignments)) {
                             if (assignment && assignment.day === day && Number(existingId) !== subject.id) {
-                                // Check direct period overlap
+
                                 const overlap = neededPeriods.some(p => assignment.periods.includes(p));
                                 if (overlap) {
                                     hasSimpleConflict = true;
@@ -126,20 +122,20 @@ export default function AutoTimetableButton({
                                     break;
                                 }
 
-                                // Check 1-hour gap (2 periods) requirement
+
                                 const minNew = Math.min(...neededPeriods);
                                 const maxNew = Math.max(...neededPeriods);
                                 const minExisting = Math.min(...assignment.periods);
                                 const maxExisting = Math.max(...assignment.periods);
 
-                                // If new subject ends less than 2 periods before existing subject starts
+
                                 if (maxNew + 2 >= minExisting && maxNew < minExisting) {
                                     hasSimpleConflict = true;
                                     conflictReason = `ต้องเว้นระยะห่าง 2 คาบกับวิชา ID ${existingId}`;
                                     break;
                                 }
 
-                                // If new subject starts less than 2 periods after existing subject ends
+
                                 if (minNew <= maxExisting + 2 && minNew > maxExisting) {
                                     hasSimpleConflict = true;
                                     conflictReason = `ต้องเว้นระยะห่าง 2 คาบกับวิชา ID ${existingId}`;
@@ -149,16 +145,16 @@ export default function AutoTimetableButton({
                         }
 
                         if (!hasSimpleConflict) {
-                            // We found a suitable slot - try to save it
+
                             const tentativeAssignment = {
                                 day,
                                 periods: neededPeriods
                             };
 
-                            // Add to assignments
+
                             newAssignments[subject.id] = tentativeAssignment;
 
-                            // Try to save to database immediately
+
                             try {
                                 const startPeriodSave = Math.min(...neededPeriods);
                                 const endPeriodSave = Math.max(...neededPeriods);
@@ -185,17 +181,17 @@ export default function AutoTimetableButton({
                                 });
 
                                 if (response.ok) {
-                                    console.log(`     บันทึกสำเร็จ: ${subject.subjectCode} ในวัน${dayNames[day]} คาบ ${neededPeriods.join(',')}`);
+                                    console.log(`บันทึกสำเร็จ: ${subject.subjectCode} ในวัน${dayNames[day]} คาบ ${neededPeriods.join(',')}`);
                                     scheduled = true;
                                     successCount++;
 
-                                    // ซิ๊งค์ไปยังอีกหลักสูตรสำหรับ DVE planTypes
+
                                     const isDVEPlan = planType === "DVE-MSIX" || planType === "DVE-LVC";
                                     if (isDVEPlan) {
                                         const targetPlanType = planType === "DVE-MSIX" ? "DVE-LVC" : "DVE-MSIX";
 
                                         try {
-                                            // ค้นหาวิชาในอีกหลักสูตรที่มี subjectCode เดียวกัน
+
                                             const searchResponse = await fetch(`/api/subject?subjectCode=${encodeURIComponent(subject.subjectCode)}&termYear=${encodeURIComponent(termYear)}&yearLevel=${encodeURIComponent(yearLevel)}&planType=${targetPlanType}`);
 
                                             if (searchResponse.ok) {
@@ -236,22 +232,22 @@ export default function AutoTimetableButton({
                                         }
                                     }
                                 } else {
-                                    // Remove from assignments if save failed
+
                                     delete newAssignments[subject.id];
                                     const errorText = await response.text();
                                     console.log(`     บันทึกไม่สำเร็จ: ${response.status} - ${errorText}`);
 
-                                    // ถ้าเจอ section conflict ให้ข้ามวิชานี้ทันที
+
                                     if (response.status === 409 && errorText.includes("Section")) {
                                         scheduled = false;
-                                        break; // ออกจากลูป startPeriod
+                                        break;
                                     }
 
-                                    // Try next position
+
                                     continue;
                                 }
                             } catch (error) {
-                                // Remove from assignments if error occurred
+
                                 delete newAssignments[subject.id];
                                 console.log(`     เกิดข้อผิดพลาด: ${error}`);
                                 continue;
@@ -270,7 +266,7 @@ export default function AutoTimetableButton({
 
             console.log(`\nสรุปผล: สำเร็จ ${successCount} วิชา, ไม่สำเร็จ ${failCount} วิชา`);
 
-            // Call the callback with the new assignments
+
             if (onScheduleComplete) {
                 const validAssignments = Object.fromEntries(
                     Object.entries(newAssignments).filter(([_, assignment]) => assignment !== null)

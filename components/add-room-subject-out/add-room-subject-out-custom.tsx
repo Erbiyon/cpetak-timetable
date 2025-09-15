@@ -43,7 +43,7 @@ export default function AddRoomSubjectOutCustom({
 
     const isDVE = planType === "DVE-MSIX" || planType === "DVE-LVC"
 
-    // ฟังก์ชันกำหนดประเภทห้องตามเลขห้อง
+
     const getRoomType = (roomCode: string): string => {
         const trimmedCode = roomCode.trim().toUpperCase();
 
@@ -54,7 +54,7 @@ export default function AddRoomSubjectOutCustom({
         return "ไม่ได้กำหนดประเภทห้อง";
     };
 
-    // เมื่อเปิด Dialog ให้เซ็ตค่าห้องที่เลือกไว้ (ถ้ามี)
+
     useEffect(() => {
         if (open) {
             setInputRoomCode(roomCode || "")
@@ -69,12 +69,12 @@ export default function AddRoomSubjectOutCustom({
                 const res = await fetch("/api/subject")
                 if (res.ok) {
                     const plans = await res.json()
-                    // filter เฉพาะ DVE ที่รหัสวิชาและ termYear เดียวกัน
+
                     const filtered = plans.filter(
                         (p: any) =>
                             (p.planType === "DVE-MSIX" || p.planType === "DVE-LVC") &&
                             p.subjectCode === subjectCode &&
-                            p.termYear === termYear // หรือ `ภาคเรียนที่ ${termYear}` // ถ้าข้อมูลใน db เป็นแบบนี้
+                            p.termYear === termYear
                     )
                     setDuplicatePlans(filtered)
                 }
@@ -96,7 +96,7 @@ export default function AddRoomSubjectOutCustom({
             let roomId = null
 
             if (roomCodeValue) {
-                // ค้นหาห้องจากเลขห้อง
+
                 const res = await fetch(`/api/room/code?roomCode=${encodeURIComponent(roomCodeValue)}`)
 
                 if (res.ok) {
@@ -105,7 +105,7 @@ export default function AddRoomSubjectOutCustom({
                     if (room && room.id) {
                         roomId = room.id
                     } else {
-                        // ถ้าไม่พบห้อง ให้สร้างห้องใหม่ โดยตรวจสอบประเภทห้องจากเลขห้อง
+
                         const roomType = getRoomType(roomCodeValue)
 
                         const createRes = await fetch("/api/room", {
@@ -133,7 +133,7 @@ export default function AddRoomSubjectOutCustom({
             }
 
             let patchRequests: Promise<Response>[] = []
-            // PATCH ทุกแผน DVE ที่รหัสวิชาและ termYear เดียวกัน
+
             if (isDVE && duplicatePlans.length > 0) {
                 patchRequests = duplicatePlans.map((plan) =>
                     fetch(`/api/subject/${plan.id}`, {
@@ -170,25 +170,10 @@ export default function AddRoomSubjectOutCustom({
         }
     }
 
-    // แสดงข้อมูลประเภทห้องที่จะถูกสร้าง
+
     const getDisplayRoomType = (roomCode: string): string => {
         if (!roomCode.trim()) return ""
         return getRoomType(roomCode.trim())
-    }
-
-    // ฟังก์ชันสำหรับแสดงคำอธิบายกฎการตั้งชื่อ
-    const getRoomTypeExplanation = (roomCode: string): string => {
-        const trimmedCode = roomCode.trim().toUpperCase();
-
-        if (trimmedCode.startsWith("ENG")) {
-            return 'ห้องขึ้นต้นด้วย "ENG" จะเป็นตึกวิศวกรรมศาสตร์';
-        }
-
-        if (/^6\d*$/.test(trimmedCode)) {
-            return 'ห้องขึ้นต้นด้วย "6" จะเป็นอาคารสาขาวิศวกรรมคอมพิวเตอร์';
-        }
-
-        return 'เป็นห้องเรียนนอกสาขา';
     }
 
     const getPlanTypeText = (planType: string) => {
@@ -231,7 +216,7 @@ export default function AddRoomSubjectOutCustom({
                         />
                     </div>
 
-                    {/* แสดงประเภทห้องที่จะถูกสร้าง */}
+
                     {inputRoomCode.trim() && (
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right text-sm text-muted-foreground">

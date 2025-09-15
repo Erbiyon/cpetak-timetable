@@ -29,11 +29,11 @@ export default function OutTeacher() {
     const fetchTeachers = async () => {
         try {
             setLoading(true);
-            // ปรับปรุง API endpoint ให้ดึงเฉพาะอาจารย์ภายนอกสาขา
+
             const res = await fetch("/api/teacher?inDepartment=false");
             if (res.ok) {
                 const data = await res.json();
-                // เพิ่มการกรองข้อมูลใน client-side เพื่อให้แน่ใจว่าได้เฉพาะอาจารย์ภายนอกสาขา
+
                 const filteredTeachers = data.filter((teacher: Teacher) =>
                     teacher.teacherType === "อาจารย์ภายนอกสาขา"
                 );

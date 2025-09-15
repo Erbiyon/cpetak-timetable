@@ -35,8 +35,7 @@ function formatThaiDate(date: Date) {
 export default function CalendarCustom({
     selectDate,
     date,
-    onChange,
-    terms
+    onChange
 }: CalendarCustomProps) {
     const [open, setOpen] = React.useState(false)
 

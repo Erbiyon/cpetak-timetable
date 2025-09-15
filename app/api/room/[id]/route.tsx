@@ -4,7 +4,6 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function DELETE(
-    request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
     const { id } = await context.params;
@@ -12,7 +11,7 @@ export async function DELETE(
         const numId = Number(id);
 
         if (isNaN(numId)) {
-            return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+            return NextResponse.json({ error: "ID ไม่ถูกต้อง" }, { status: 400 });
         }
 
         const deleted = await prisma.room_tb.delete({
@@ -40,7 +39,7 @@ export async function PUT(
 
         if (!roomCode || !roomType) {
             return NextResponse.json(
-                { error: "roomCode and roomType are required" },
+                { error: "roomCode และ roomType เป็นข้อมูลที่จำเป็น" },
                 { status: 400 }
             );
         }
@@ -56,9 +55,9 @@ export async function PUT(
 
         return NextResponse.json(updatedRoom);
     } catch (error) {
-        console.error("Error updating room:", error);
+        console.error("ผิดพลาดในการอัปเดตห้อง:", error);
         return NextResponse.json(
-            { error: "Failed to update room" },
+            { error: "เกิดข้อผิดพลาดในการอัปเดตห้อง" },
             { status: 500 }
         );
     } finally {

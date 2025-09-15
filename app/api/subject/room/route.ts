@@ -14,7 +14,7 @@ export async function PUT(request: NextRequest) {
             );
         }
 
-        // อัปเดตข้อมูล roomId ของวิชา
+
         const updatedSubject = await prisma.plans_tb.update({
             where: { id: Number(subjectId) },
             data: {
@@ -38,7 +38,7 @@ export async function GET() {
     try {
         const subjects = await prisma.plans_tb.findMany({
             include: {
-                room: true // รวมข้อมูลห้องเรียนด้วย
+                room: true
             },
             orderBy: {
                 id: "asc"
@@ -48,7 +48,7 @@ export async function GET() {
         return NextResponse.json(subjects);
     } catch (error) {
         return NextResponse.json(
-            { error: "Failed to fetch subjects" },
+            { error: "ดึงข้อมูลวิชาไม่สำเร็จ" },
             { status: 500 }
         );
     }

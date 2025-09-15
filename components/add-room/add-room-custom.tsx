@@ -22,7 +22,7 @@ interface AddRoomCustomProps {
 export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps) {
     const [open, setOpen] = useState(false);
     const [roomNumber, setRoomNumber] = useState("");
-    const [roomCategory, setRoomCategory] = useState("บรรยาย"); // ประเภทห้อง (บรรยาย/ปฏิบัติ)
+    const [roomCategory, setRoomCategory] = useState("บรรยาย");
     const [adding, setAdding] = useState(false);
 
     const handleSubmit = async () => {
@@ -38,18 +38,18 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     roomCode: roomNumber.trim(),
-                    roomType: title || "ทั่วไป", // ชื่อตึก/อาคาร
-                    roomCate: roomCategory, // แก้จาก roomCath เป็น roomCate
+                    roomType: title || "ทั่วไป",
+                    roomCate: roomCategory,
                 }),
             });
 
             if (res.ok) {
-                // รีเซ็ตค่าและปิด dialog
+
                 setRoomNumber("");
                 setRoomCategory("บรรยาย");
                 setOpen(false);
 
-                // เรียก callback เพื่อ refresh ข้อมูล
+
                 if (onRoomAdded) {
                     onRoomAdded();
                 }

@@ -26,10 +26,8 @@ export default function ClassSchedule() {
     const [timetables, setTimetables] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState<string>("internal");
 
-    // เพิ่มสำหรับภาคเรียนปัจจุบัน
     const [currentTermYear, setCurrentTermYear] = useState<string>("");
 
-    // กลุ่มอาจารย์ตามประเภท
     const teacherGroups = useMemo(() => {
         const internal: any[] = [];
         const external: any[] = [];
@@ -45,20 +43,17 @@ export default function ClassSchedule() {
         return { internal, external };
     }, [teachers]);
 
-    // โหลดข้อมูลเริ่มต้น
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
                 setLoading(true);
 
-                // โหลดข้อมูลอาจารย์ทั้งหมด - ใช้ API ที่มีอยู่
                 const teachersResponse = await fetch('/api/teacher');
                 if (teachersResponse.ok) {
                     const teachersData = await teachersResponse.json();
                     setTeachers(teachersData);
                 }
 
-                // โหลดข้อมูลภาคเรียนปัจจุบันจาก TermYear_tb
                 const termYearResponse = await fetch('/api/current-term-year');
                 if (termYearResponse.ok) {
                     const termYearData = await termYearResponse.json();
@@ -74,9 +69,8 @@ export default function ClassSchedule() {
         fetchInitialData();
     }, []);
 
-    // เมื่อเปลี่ยน tab ให้เลือกอาจารย์แรกของแต่ละกลุ่มโดยอัตโนมัติ
     useEffect(() => {
-        if (!currentTermYear) return; // รอให้โหลดภาคเรียนก่อน
+        if (!currentTermYear) return;
 
         if (activeTab === "internal") {
             if (teacherGroups.internal.length > 0) {
@@ -99,7 +93,6 @@ export default function ClassSchedule() {
         }
     }, [activeTab, teacherGroups, currentTermYear]);
 
-    // โหลดข้อมูลตารางสอนตามอาจารย์และภาคเรียนปัจจุบัน
     const fetchTimetableByTeacher = async (teacherId: number, termYear: string) => {
         try {
             setLoading(true);
@@ -119,7 +112,6 @@ export default function ClassSchedule() {
         }
     };
 
-    // เมื่อเลือกอาจารย์ให้โหลดข้อมูลตารางสอนใหม่
     const handleTeacherChange = (value: string) => {
         console.log("Teacher selected:", value);
         setSelectedTeacherId(value);
@@ -128,13 +120,11 @@ export default function ClassSchedule() {
         }
     };
 
-    // สร้างข้อมูลตารางเวลาในรูปแบบที่ต้องการ
     const { cellToSubject, cellColspan, cellSkip } = useMemo(() => {
         const cellToSubject: { [cellKey: string]: any } = {};
         const cellColspan: { [cellKey: string]: number } = {};
         const cellSkip: Set<string> = new Set();
 
-        // ตรวจสอบว่ามีข้อมูลตารางหรือไม่
         if (!timetables || timetables.length === 0 || !currentTermYear) {
             console.log("No timetable data available or no term year");
             return { cellToSubject, cellColspan, cellSkip };
@@ -142,7 +132,6 @@ export default function ClassSchedule() {
 
         console.log(`Total timetable entries: ${timetables.length}, filtering for teacher ID: ${selectedTeacherId}, Term Year: ${currentTermYear}`);
 
-        // กรองเฉพาะข้อมูลตารางของอาจารย์และภาคเรียนปัจจุบัน
         const filteredTimetables = timetables.filter(item => {
             const teacherMatch = String(item.teacherId) === selectedTeacherId;
             const termYearMatch = item.termYear === currentTermYear;
@@ -151,7 +140,6 @@ export default function ClassSchedule() {
 
         console.log(`Filtered timetable entries: ${filteredTimetables.length}`);
 
-        // แปลงข้อมูลตารางเวลาให้เป็นรูปแบบที่ต้องการ
         filteredTimetables.forEach(item => {
             const { day, startPeriod, endPeriod, plan } = item;
 
@@ -174,7 +162,6 @@ export default function ClassSchedule() {
             const colspan = endPeriod - startPeriod + 1;
             cellColspan[cellKey] = colspan;
 
-            // เพิ่มเซลล์ที่ต้องข้าม
             for (let p = startPeriod + 1; p <= endPeriod; p++) {
                 cellSkip.add(`${day}-${p}`);
             }
@@ -183,7 +170,6 @@ export default function ClassSchedule() {
         return { cellToSubject, cellColspan, cellSkip };
     }, [timetables, selectedTeacherId, currentTermYear]);
 
-    // สร้าง UI
     return (
         <div className="container mx-auto px-6">
             <h2 className="text-2xl font-bold mb-2">ตารางสอน</h2>
@@ -356,7 +342,6 @@ export default function ClassSchedule() {
     );
 }
 
-// คอมโพเนนต์แสดงตารางสอนของอาจารย์
 function TeacherTimetable({
     cellToSubject,
     cellColspan,
@@ -392,9 +377,8 @@ function TeacherTimetable({
                         <tr key={dayIndex}>
                             <td className="border text-center text-xs w-[72px]">{day}</td>
                             {Array.from({ length: 25 }, (_, colIdx) => {
-                                const period = colIdx;  // ไม่ต้อง +1 เพื่อให้ตรงกับ API
+                                const period = colIdx;
 
-                                // เฉพาะวันพุธ (dayIndex === 2) คาบ 15-18 (14-17 ใน database)
                                 if (dayIndex === 2 && period === 14) {
                                     return (
                                         <td
@@ -413,16 +397,13 @@ function TeacherTimetable({
 
                                 const cellKey = `${dayIndex}-${period}`;
 
-                                // ตรวจสอบการข้ามเซลล์
                                 if (cellSkip.has(cellKey)) {
                                     return null;
                                 }
 
-                                // เช็คว่าเซลล์นี้มีวิชาหรือไม่
                                 const subject = cellToSubject[cellKey];
                                 const colspan = cellColspan[cellKey] || 1;
 
-                                // แสดงเลขคาบเรียนที่ถูกต้องใน UI (เริ่มที่ 1)
                                 const displayPeriod = period + 1;
 
                                 return (
@@ -455,7 +436,6 @@ function TeacherTimetable({
     );
 }
 
-// แสดงวิชาในตาราง
 function SubjectInCell({
     subject,
     colspan = 1
@@ -494,7 +474,7 @@ function SubjectInCell({
                                     </span>
                                 )}
                             </div>
-                            {/* แสดงข้อมูลห้องเรียน */}
+
                             {subject.room && (
                                 <div className="text-[8px] mt-1">
                                     <span className="bg-blue-200/30 dark:bg-blue-700/30 px-1 rounded">
@@ -522,7 +502,6 @@ function SubjectInCell({
                             <div>รวม:</div>
                             <div className="text-right">{totalHours} ชม. ({totalHours * 2} คาบ)</div>
 
-                            {/* แสดงข้อมูลห้องเรียน */}
                             {subject.room && (
                                 <>
                                     <div>ห้องเรียน:</div>

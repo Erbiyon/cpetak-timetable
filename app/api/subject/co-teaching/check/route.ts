@@ -8,10 +8,10 @@ export async function GET(req: Request) {
     const subjectId = Number(searchParams.get("subjectId"));
 
     if (!subjectId) {
-        return NextResponse.json({ error: "subjectId is required" }, { status: 400 });
+        return NextResponse.json({ error: "กรุณาระบุ subjectId" }, { status: 400 });
     }
 
-    // หา group ที่ subjectId นี้อยู่
+
     const group = await prisma.coTeaching_tb.findFirst({
         where: {
             plans: {
