@@ -4,12 +4,10 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function DELETE(
-    request: NextRequest,
-    context: { params: Promise<{ id: string }> }
+    { params }: { params: { id: string } }
 ) {
-    const { id } = await context.params;
     try {
-        const numId = Number(id);
+        const numId = Number(params.id);
 
         if (isNaN(numId)) {
             return NextResponse.json({ error: "ID ไม่ถูกต้อง" }, { status: 400 });
