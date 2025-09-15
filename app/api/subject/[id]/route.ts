@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 
 
 export async function PATCH(
-    request: Request,
+    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -50,6 +50,7 @@ export async function PATCH(
 
 
 export async function GET(
+    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -97,6 +98,7 @@ export async function GET(
 
 
 export async function DELETE(
+    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -130,12 +132,13 @@ export async function DELETE(
 }
 
 export async function PUT(
-    req: NextRequest,
-    context: { params: Promise<{ id: string }> }
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await context.params;
-        const body = await req.json();
+        const resolvedParams = await params;
+        const id = resolvedParams.id;
+        const body = await request.json();
         const {
             subjectCode,
             subjectName,
@@ -152,8 +155,6 @@ export async function PUT(
             !subjectCode ||
             !subjectName ||
             !credit ||
-
-
             !termYear ||
             !yearLevel ||
             !planType ||
