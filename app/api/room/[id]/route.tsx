@@ -5,8 +5,9 @@ const prisma = new PrismaClient();
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
+    const params = await context.params;
     try {
         const numId = Number(params.id);
 
@@ -29,8 +30,9 @@ export async function DELETE(
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
+    const params = await context.params;
     const { id } = params;
     try {
         const body = await request.json();
