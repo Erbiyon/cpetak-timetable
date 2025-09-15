@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function DELETE(
+    request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
@@ -28,9 +29,9 @@ export async function DELETE(
 
 export async function PUT(
     request: NextRequest,
-    context: { params: Promise<{ id: string }> }
+    { params }: { params: { id: string } }
 ) {
-    const { id } = await context.params;
+    const { id } = params;
     try {
         const body = await request.json();
         const { roomCode, roomType, roomCate } = body;
