@@ -3,19 +3,14 @@ import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
-interface RouteContext {
-    params: Promise<{ id: string }>
-}
-
 export async function PATCH(
     request: NextRequest,
-    context: RouteContext
+    context: { params: Promise<{ id: string }> }
 ) {
+    const params = await context.params;
     try {
-        const resolvedParams = await context.params
-        const id = parseInt(resolvedParams.id)
+        const id = parseInt(params.id)
         const body = await request.json()
-
 
         const existingSubject = await prisma.plans_tb.findUnique({
             where: { id },
@@ -28,7 +23,6 @@ export async function PATCH(
                 { status: 404 }
             )
         }
-
 
         const updatedSubject = await prisma.plans_tb.update({
             where: { id },
@@ -51,14 +45,13 @@ export async function PATCH(
     }
 }
 
-
 export async function GET(
     request: NextRequest,
-    context: RouteContext
+    context: { params: Promise<{ id: string }> }
 ) {
+    const params = await context.params;
     try {
-        const resolvedParams = await context.params
-        const id = parseInt(resolvedParams.id)
+        const id = parseInt(params.id)
 
         console.log("GET - ดึงข้อมูลวิชา:", id)
 
@@ -99,22 +92,19 @@ export async function GET(
     }
 }
 
-
 export async function DELETE(
     request: NextRequest,
-    context: RouteContext
+    context: { params: Promise<{ id: string }> }
 ) {
+    const params = await context.params;
     try {
-        const resolvedParams = await context.params
-        const id = parseInt(resolvedParams.id)
+        const id = parseInt(params.id)
 
         console.log("DELETE - ลบวิชา:", id)
-
 
         await prisma.timetable_tb.deleteMany({
             where: { planId: id },
         })
-
 
         const deletedSubject = await prisma.plans_tb.delete({
             where: { id },
@@ -136,11 +126,11 @@ export async function DELETE(
 
 export async function PUT(
     request: NextRequest,
-    context: RouteContext
+    context: { params: Promise<{ id: string }> }
 ) {
+    const params = await context.params;
+    const { id } = params;
     try {
-        const resolvedParams = await context.params
-        const id = resolvedParams.id
         const body = await request.json()
         const {
             subjectCode,
