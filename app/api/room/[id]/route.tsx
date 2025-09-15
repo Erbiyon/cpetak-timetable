@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function DELETE(
-    request: NextRequest,
+    _request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
     const params = await context.params;
@@ -25,6 +25,8 @@ export async function DELETE(
             { error: error.message || "ไม่พบห้องหรือเกิดข้อผิดพลาด" },
             { status: 500 }
         );
+    } finally {
+        await prisma.$disconnect();
     }
 }
 

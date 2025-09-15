@@ -4,7 +4,6 @@ import { AddSubjectCustom } from "@/components/add-subject/add-subject-custom";
 import CardStudyPlansCustom from "@/components/card-study-plans-table/card-study-plans-custom";
 import { SelectCustom } from "@/components/select/select-custom";
 import { useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
 
 export default function FourYearPlan() {
     const [year, setYear] = useState<string>("")

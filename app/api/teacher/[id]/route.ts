@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function GET(
+    _request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -85,6 +86,7 @@ export async function PUT(
 }
 
 export async function DELETE(
+    _request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
     try {
