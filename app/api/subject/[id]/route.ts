@@ -3,10 +3,13 @@ import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
+interface RouteContext {
+    params: Promise<{ id: string }>
+}
 
 export async function PATCH(
     request: NextRequest,
-    context: any
+    context: RouteContext
 ) {
     try {
         const resolvedParams = await context.params
@@ -51,7 +54,7 @@ export async function PATCH(
 
 export async function GET(
     request: NextRequest,
-    context: any
+    context: RouteContext
 ) {
     try {
         const resolvedParams = await context.params
@@ -99,7 +102,7 @@ export async function GET(
 
 export async function DELETE(
     request: NextRequest,
-    context: any
+    context: RouteContext
 ) {
     try {
         const resolvedParams = await context.params
@@ -133,7 +136,7 @@ export async function DELETE(
 
 export async function PUT(
     request: NextRequest,
-    context: any
+    context: RouteContext
 ) {
     try {
         const resolvedParams = await context.params
