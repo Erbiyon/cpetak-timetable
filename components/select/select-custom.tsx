@@ -19,7 +19,7 @@ interface SelectCustomProps {
 export function SelectCustom({ currentYear, onYearChange, planType = "TRANSFER" }: SelectCustomProps) {
 
     const generateYearOptions = () => {
-        const currentBuddhistYear = new Date(2026, 0, 1).getFullYear() + 543
+        const currentBuddhistYear = new Date().getFullYear() + 543
         const years = []
 
 
