@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function GET(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -39,7 +39,7 @@ export async function GET(
 }
 
 export async function DELETE(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -93,7 +93,8 @@ export async function DELETE(
                     }
                 }
             });
-            isCoTeaching = coTeachingGroup && coTeachingGroup.plans.length > 1;
+            // แก้ไขการกำหนดค่า isCoTeaching
+            isCoTeaching = coTeachingGroup !== null && coTeachingGroup.plans.length > 1;
         }
 
         console.log("Delete analysis:", {
@@ -104,7 +105,7 @@ export async function DELETE(
             planType: currentPlan.planType
         });
 
-        let deletedPlans = [];
+        let deletedPlans: number[] = [];
 
         if (isDVE) {
             // DVE: ลบทุกวิชาที่มีรหัสเหมือนกันในภาคเรียนเดียวกัน
@@ -138,7 +139,7 @@ export async function DELETE(
                 deletedCount: deleteResult.count
             });
 
-        } else if (isCoTeaching && isTransferOrFourYear) {
+        } else if (isCoTeaching && isTransferOrFourYear && coTeachingGroup) {
             // Transfer/Four Year Co-Teaching: ลบทุกวิชาใน Co-Teaching group
             const planIds = coTeachingGroup.plans.map(p => p.id);
 
