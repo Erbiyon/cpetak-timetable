@@ -3,6 +3,16 @@ import { useEffect, useState } from "react";
 export default function CoTeachingInfo({ subjectId }: { subjectId: number }) {
     const [info, setInfo] = useState<string | null>(null);
 
+    function getPlanTypeText(planType: string) {
+        switch (planType) {
+            case "TRANSFER": return "เทียบโอน";
+            case "FOUR_YEAR": return "4 ปี";
+            case "DVE-MSIX": return "ปวส. (ม.6)";
+            case "DVE-LVC": return "ปวส. (ปวช.)";
+            default: return planType;
+        }
+    }
+
     useEffect(() => {
         const fetchCoTeaching = async () => {
             const res = await fetch(`/api/subject/co-teaching/check?subjectId=${subjectId}`);
@@ -30,15 +40,4 @@ export default function CoTeachingInfo({ subjectId }: { subjectId: number }) {
 
     if (!info) return <div> </div>;
     return <div className="text-green-700 dark:text-green-300">สอนร่วมกับ {info}</div>;
-}
-
-
-function getPlanTypeText(planType: string) {
-    switch (planType) {
-        case "TRANSFER": return "เทียบโอน";
-        case "FOUR_YEAR": return "4 ปี";
-        case "DVE-MSIX": return "ม.6 ขึ้น ปวส.";
-        case "DVE-LVC": return "ปวช. ขึ้น ปวส.";
-        default: return planType;
-    }
 }
