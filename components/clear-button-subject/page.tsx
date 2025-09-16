@@ -22,6 +22,20 @@ interface ClearButtonSubjectProps {
     onClearComplete?: () => void;
 }
 
+// ใช้ API ที่มีอยู่แล้ว
+async function checkCoTeaching(subjectId: number): Promise<boolean> {
+    try {
+        const response = await fetch(`/api/subject/co-teaching/check?subjectId=${subjectId}`);
+        if (response.ok) {
+            const data = await response.json();
+            return data.planIds && data.planIds.length > 1;
+        }
+    } catch (error) {
+        console.error("Error checking co-teaching:", error);
+    }
+    return false;
+}
+
 export default function ClearButtonSubject({
     termYear = "",
     yearLevel = "",
@@ -33,28 +47,80 @@ export default function ClearButtonSubject({
     const handleClearSubjects = async () => {
         setIsClearing(true);
         try {
-            console.log('🗑️ เริ่มการล้างตารางเรียน');
+            console.log('🗑️ เริ่มการล้างตารางเรียนพร้อมตรวจสอบ Co-Teaching');
 
+            // ดึงข้อมูลตารางเรียนที่มีอยู่
+            const timetableResponse = await fetch(`/api/timetable?termYear=${termYear}&yearLevel=${yearLevel}&planType=${planType}`);
 
-            const response = await fetch('/api/timetable/clear', {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    termYear: termYear || '1',
-                    yearLevel: yearLevel || 'ปี 1',
-                    planType: planType || 'TRANSFER',
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to clear timetable');
+            if (!timetableResponse.ok) {
+                throw new Error('Failed to fetch timetable data');
             }
 
-            console.log(`✅ ล้างตาราง ${planType} สำเร็จ`);
+            const timetableData = await timetableResponse.json();
+            console.log('📊 ข้อมูลตารางเรียนที่ได้:', timetableData);
+            console.log('📊 ข้อมูลตารางเรียนที่จะลบ:', timetableData.length);
 
+            if (timetableData.length === 0) {
+                console.log('ℹ️ ไม่มีตารางเรียนที่ต้องลบ');
 
+                if (onClearComplete) {
+                    onClearComplete();
+                }
+
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+
+                return;
+            }
+
+            // ลบทีละรายการพร้อมตรวจสอบ Co-Teaching
+            for (const timetable of timetableData) {
+                try {
+                    // ตรวจสอบโครงสร้างข้อมูล
+                    console.log('🔍 ข้อมูลตาราง:', timetable);
+
+                    // หา subjectId จากโครงสร้างข้อมูลที่แตกต่างกัน
+                    let subjectId = timetable.subjectId || timetable.planId || timetable.id;
+
+                    // ถ้ายังไม่มี ลองหาจาก nested object
+                    if (!subjectId && timetable.plan) {
+                        subjectId = timetable.plan.id;
+                    }
+
+                    if (!subjectId) {
+                        console.error('❌ ไม่พบ subjectId ในข้อมูล:', timetable);
+                        continue;
+                    }
+
+                    console.log(`🔍 ตรวจสอบ Co-Teaching สำหรับวิชา ID: ${subjectId}`);
+
+                    // ใช้ API ที่มีอยู่แล้วตรวจสอบ Co-Teaching
+                    const isCoTeaching = await checkCoTeaching(subjectId);
+
+                    if (isCoTeaching) {
+                        console.log(`📚 วิชา ID ${subjectId} เป็น Co-Teaching`);
+                    }
+
+                    // ลบด้วย API เดิม (จะจัดการ Co-Teaching อัตโนมัติ)
+                    const response = await fetch(`/api/timetable/${subjectId}`, {
+                        method: 'DELETE',
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log(`✅ ลบวิชา ID ${subjectId} สำเร็จ:`, result);
+                    } else {
+                        console.error(`❌ ลบวิชา ID ${subjectId} ไม่สำเร็จ`);
+                    }
+                } catch (error) {
+                    console.error(`❌ เกิดข้อผิดพลาดในการลบวิชา:`, error);
+                }
+            }
+
+            console.log('✅ ล้างตารางเรียนทั้งหมดเสร็จสิ้น');
+
+            // ส่วนซิ๊งค์ DVE เหมือนเดิม
             const isDVEPlan = planType === "DVE-MSIX" || planType === "DVE-LVC";
             if (isDVEPlan) {
                 const targetPlanType = planType === "DVE-MSIX" ? "DVE-LVC" : "DVE-MSIX";
@@ -84,11 +150,9 @@ export default function ClearButtonSubject({
                 }
             }
 
-
             if (onClearComplete) {
                 onClearComplete();
             }
-
 
             setTimeout(() => {
                 window.location.reload();
@@ -124,6 +188,10 @@ export default function ClearButtonSubject({
                                 <AlertDialogTitle>ยืนยันการล้างข้อมูลทั้งหมด</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     คุณต้องการล้างวิชาทั้งหมดในตารางนี้หรือไม่?
+                                    <br />
+                                    <span className="text-orange-600 font-medium">
+                                        หมายเหตุ: หากมีวิชาสอนร่วม (Co-Teaching) จะถูกลบออกจากแผนการเรียนอื่นๆ ด้วย
+                                    </span>
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -139,7 +207,7 @@ export default function ClearButtonSubject({
                     </AlertDialog>
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p>ล้างวิชาทั้งหมดในตาราง</p>
+                    <p>ล้างวิชาทั้งหมดในตาราง (รวม Co-Teaching)</p>
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>
