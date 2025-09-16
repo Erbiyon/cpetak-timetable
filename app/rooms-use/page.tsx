@@ -201,7 +201,7 @@ export default function RoomsUse() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <Tabs value={activeTab} onValueChange={setActiveTab}>
-                                <TabsList className="w-full grid grid-cols-1 sm:grid-cols-3 h-auto gap-1 p-1">
+                                <TabsList className="w-full grid grid-cols-1 sm:grid-cols-2 h-auto gap-1 p-1">
                                     <TabsTrigger
                                         value="in-department"
                                         className="text-xs sm:text-sm px-2 py-2 h-auto whitespace-normal text-center"
@@ -214,12 +214,12 @@ export default function RoomsUse() {
                                     >
                                         ตึกวิศวกรรมศาสตร์
                                     </TabsTrigger>
-                                    <TabsTrigger
+                                    {/* <TabsTrigger
                                         value="out-department"
                                         className="text-xs sm:text-sm px-2 py-2 h-auto whitespace-normal text-center"
                                     >
                                         ห้องเรียนนอกสาขา
-                                    </TabsTrigger>
+                                    </TabsTrigger> */}
                                 </TabsList>
 
                                 <TabsContent value="in-department">
@@ -274,7 +274,7 @@ export default function RoomsUse() {
                                     )}
                                 </TabsContent>
 
-                                <TabsContent value="out-department">
+                                {/* <TabsContent value="out-department">
                                     <Select key={`out-${activeTab}`} value={selectedRoomId} onValueChange={handleRoomChange}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="เลือกห้องเรียนนอกสาขา" />
@@ -298,7 +298,7 @@ export default function RoomsUse() {
                                             ยังไม่มีการเพิ่มห้องเรียนนอกสาขา
                                         </p>
                                     )}
-                                </TabsContent>
+                                </TabsContent> */}
                             </Tabs>
                         </div>
 

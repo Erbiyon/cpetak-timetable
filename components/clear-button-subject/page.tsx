@@ -189,9 +189,6 @@ export default function ClearButtonSubject({
                                 <AlertDialogDescription>
                                     คุณต้องการล้างวิชาทั้งหมดในตารางนี้หรือไม่?
                                     <br />
-                                    <span className="text-orange-600 font-medium">
-                                        หมายเหตุ: หากมีวิชาสอนร่วม (Co-Teaching) จะถูกลบออกจากแผนการเรียนอื่นๆ ด้วย
-                                    </span>
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

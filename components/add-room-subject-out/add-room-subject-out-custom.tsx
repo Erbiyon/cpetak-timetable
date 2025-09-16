@@ -47,9 +47,13 @@ export default function AddRoomSubjectOutCustom({
     const getRoomType = (roomCode: string): string => {
         const trimmedCode = roomCode.trim().toUpperCase();
 
-        if (trimmedCode.includes("สนง.คณะวิทย์".toUpperCase())) return "สนง.คณะวิทย์";
+        if (trimmedCode.includes("สนง.คณะวิทย์")) return "สนง.คณะวิทย์";
         if (trimmedCode.startsWith("ENG")) return "ตึกวิศวกรรมศาสตร์";
+        if (trimmedCode.startsWith("SC")) return "อาคารปฏิบัติการวิทยาศาสตร์และนวัตกรรม";
         if (/^6\d*$/.test(trimmedCode)) return "อาคารสาขาวิศวกรรมคอมพิวเตอร์";
+        if (/^7\d*$/.test(trimmedCode)) return " อาคารเรียน 7";
+        if (/^3\d*$/.test(trimmedCode)) return " อาคารเรียน 3";
+        if (trimmedCode.includes("โรงฝึก")) return "โรงฝึกงานทางวิศวกรรม"; // แก้ไขที่นี่
 
         return "ไม่ได้กำหนดประเภทห้อง";
     };
@@ -180,8 +184,8 @@ export default function AddRoomSubjectOutCustom({
         switch (planType) {
             case "TRANSFER": return "เทียบโอน";
             case "FOUR_YEAR": return "4 ปี";
-            case "DVE-MSIX": return "ม.6 ขึ้น ปวส.";
-            case "DVE-LVC": return "ปวช. ขึ้น ปวส.";
+            case "DVE-MSIX": return "ปวส. (ม.6)";
+            case "DVE-LVC": return "ปวส. (ปวช.)";
             default: return planType;
         }
     };

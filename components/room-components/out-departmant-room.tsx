@@ -202,7 +202,7 @@ export default function OutdepartmentRoom() {
                                                 <TableHeader>
                                                     <TableRow>
                                                         <TableHead className="w-[220px]">เลขห้อง</TableHead>
-                                                        <TableHead className="w-[100px]">ประเภท</TableHead>
+                                                        {/* <TableHead className="w-[100px]">ประเภท</TableHead> */}
                                                         <TableHead className="w-[100px]">รหัสวิชา</TableHead>
                                                         <TableHead>ชื่อวิชา</TableHead>
                                                         <TableHead className="text-center w-[100px]">ดำเนินการ</TableHead>
@@ -214,7 +214,7 @@ export default function OutdepartmentRoom() {
                                                             <TableCell className="font-medium">
                                                                 {subject.room?.roomCode || "-"}
                                                             </TableCell>
-                                                            <TableCell className="text-xs">
+                                                            {/* <TableCell className="text-xs">
                                                                 {subject.room?.roomType ? (
                                                                     <span className={
                                                                         subject.room.roomType === "ห้องปฏิบัติการ"
@@ -226,7 +226,7 @@ export default function OutdepartmentRoom() {
                                                                         {subject.room.roomType}
                                                                     </span>
                                                                 ) : "-"}
-                                                            </TableCell>
+                                                            </TableCell> */}
                                                             <TableCell className="font-mono text-sm">
                                                                 {subject.subjectCode}
                                                             </TableCell>
