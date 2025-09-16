@@ -242,20 +242,16 @@ export default function TransferOneYear() {
     async function handleDragEnd(event: any) {
         const { active, over } = event;
 
-
         setDragOverCell(null);
 
         if (!over) {
-
             if (activeSubject?.fromTable) {
                 handleRemoveAssignment(activeSubject.id);
             }
-
             setConflicts([]);
             setActiveSubject(null);
             return;
         }
-
 
         let subjectId;
         if (active.id.startsWith('table-subject-')) {
@@ -264,28 +260,24 @@ export default function TransferOneYear() {
             subjectId = parseInt(active.id.replace('subject-', ''));
         }
 
-
         if (over.id.startsWith('cell-')) {
             const [_, day, period] = over.id.split('-').map(Number);
-
-
             const subject = plans.find(plan => plan.id === subjectId);
 
             if (subject) {
+                // ตรวจสอบว่าเป็น Co-Teaching หรือไม่
+                const isCoTeaching = await checkCoTeaching(subjectId);
 
                 console.log("กำลังวางวิชา:", {
                     subjectCode: subject.subjectCode,
                     subjectName: subject.subjectName,
-                    room: subject.room,
-                    teacher: subject.teacher,
-                    section: subject.section,
+                    isCoTeaching: isCoTeaching
                 });
-
 
                 const totalHours = (subject.lectureHour || 0) + (subject.labHour || 0);
                 const totalPeriods = totalHours * 2;
 
-
+                // ตรวจสอบขอบเขตตาราง
                 const lastPeriod = period + totalPeriods - 1;
                 if (lastPeriod >= 25) {
                     console.warn("ไม่สามารถวางวิชาได้: เกินขอบตาราง");
@@ -295,7 +287,7 @@ export default function TransferOneYear() {
                     return;
                 }
 
-
+                // ตรวจสอบช่วงกิจกรรม
                 const isWednesday = day === 2;
                 const activityPeriods = [14, 15, 16, 17];
                 const wouldOverlapActivity = isWednesday && activityPeriods.some(actPeriod => {
@@ -310,10 +302,8 @@ export default function TransferOneYear() {
                     return;
                 }
 
-
                 const periods: number[] = [];
                 for (let i = 0; i < totalPeriods; i++) {
-
                     let currentPeriod = period + i;
                     if (isWednesday && activityPeriods.includes(currentPeriod)) {
                         continue;
@@ -321,36 +311,35 @@ export default function TransferOneYear() {
                     periods.push(currentPeriod);
                 }
 
+                // ตรวจสอบการทับกับวิชาอื่น (ยกเว้น Co-Teaching)
+                if (!isCoTeaching) {
+                    let hasOverlap = false;
+                    Object.entries(tableAssignments).forEach(([existingSubjectId, assignment]) => {
+                        if (parseInt(existingSubjectId) === subjectId) return;
 
-                let hasOverlap = false;
-                Object.entries(tableAssignments).forEach(([existingSubjectId, assignment]) => {
-
-                    if (parseInt(existingSubjectId) === subjectId) return;
-
-                    if (assignment && assignment.day === day) {
-
-                        const overlap = periods.some(p => assignment.periods.includes(p));
-                        if (overlap) {
-                            hasOverlap = true;
+                        if (assignment && assignment.day === day) {
+                            const overlap = periods.some(p => assignment.periods.includes(p));
+                            if (overlap) {
+                                hasOverlap = true;
+                            }
                         }
-                    }
-                });
+                    });
 
-                if (hasOverlap) {
-                    console.warn("ไม่สามารถวางวิชาได้: ทับคาบวิชาอื่น");
-                    setDragFailedSubjectId(subjectId);
-                    setConflicts([]);
-                    setActiveSubject(null);
-                    return;
+                    if (hasOverlap) {
+                        console.warn("ไม่สามารถวางวิชาได้: ทับคาบวิชาอื่น");
+                        setDragFailedSubjectId(subjectId);
+                        setConflicts([]);
+                        setActiveSubject(null);
+                        return;
+                    }
                 }
 
-
+                // อัพเดท state
                 const newAssignment = { day, periods };
                 setTableAssignments(prev => ({
                     ...prev,
                     [subjectId]: newAssignment
                 }));
-
 
                 try {
                     const startPeriod = Math.min(...periods);
@@ -364,8 +353,8 @@ export default function TransferOneYear() {
                         body: JSON.stringify({
                             planId: subjectId,
                             termYear: termYear || '1',
-                            yearLevel: 'ปี 1',
-                            planType: 'TRANSFER',
+                            yearLevel: 'ปี 1', // เปลี่ยนตามแต่ละไฟล์
+                            planType: 'TRANSFER', // เปลี่ยนตามแต่ละไฟล์
                             day,
                             startPeriod,
                             endPeriod,
@@ -377,30 +366,22 @@ export default function TransferOneYear() {
 
                     const data = await response.json();
 
-
                     if (response.status === 409 && data.conflicts) {
                         console.log("พบการชนกัน - กำลังคืนสถานะ");
-
-
                         setTableAssignments(prev => {
                             const newState = { ...prev };
                             if (activeSubject?.fromTable && activeSubject.originalAssignment) {
-
                                 newState[subjectId] = activeSubject.originalAssignment;
                             } else {
-
                                 delete newState[subjectId];
                             }
                             return newState;
                         });
 
-
                         setConflicts(data.conflicts);
                         setDragFailedSubjectId(subjectId);
                     } else if (!response.ok) {
                         console.error("เกิดข้อผิดพลาดในการบันทึก");
-
-
                         setTableAssignments(prev => {
                             const newState = { ...prev };
                             if (activeSubject?.fromTable && activeSubject.originalAssignment) {
@@ -415,15 +396,18 @@ export default function TransferOneYear() {
                         setConflicts([]);
                         throw new Error(data.error || 'เกิดข้อผิดพลาดในการบันทึกตาราง');
                     } else {
-
                         console.log("บันทึกตารางเรียนสำเร็จ", data);
                         setConflicts([]);
                         setDragFailedSubjectId(null);
+
+                        // หาก Co-Teaching ให้รีเฟรชข้อมูลเพื่ออัพเดทตารางวิชาอื่นๆ
+                        if (isCoTeaching) {
+                            await handleSubjectUpdate();
+                        }
                     }
                 } catch (error) {
                     console.error("เกิดข้อผิดพลาดในการบันทึกตารางเรียน:", error);
-
-
+                    // คืนสถานะ
                     setTableAssignments(prev => {
                         const newState = { ...prev };
                         if (activeSubject?.fromTable && activeSubject.originalAssignment) {
@@ -439,38 +423,50 @@ export default function TransferOneYear() {
                 }
             }
         } else {
-
             setConflicts([]);
         }
 
         setActiveSubject(null);
     }
 
-
     async function handleRemoveAssignment(subjectId: number) {
         try {
+            // ตรวจสอบว่าเป็น Co-Teaching หรือไม่
+            const isCoTeaching = await checkCoTeaching(subjectId);
 
-            await fetch(`/api/timetable/${subjectId}`, {
+            const response = await fetch(`/api/timetable/${subjectId}`, {
                 method: 'DELETE',
             });
 
+            if (response.ok) {
+                const data = await response.json();
+                console.log("ลบตารางเรียนสำเร็จ:", data);
 
-            setTableAssignments(prev => {
-                const newAssignments = { ...prev };
-                delete newAssignments[subjectId];
-                return newAssignments;
-            });
+                if (isCoTeaching && data.deletedPlans) {
+                    // อัพเดท state สำหรับทุกวิชาที่ถูกลบ
+                    setTableAssignments(prev => {
+                        const newState = { ...prev };
+                        data.deletedPlans.forEach((planId: number) => {
+                            delete newState[planId];
+                        });
+                        return newState;
+                    });
+                } else {
+                    // ลบเฉพาะวิชาเดียว
+                    setTableAssignments(prev => {
+                        const newState = { ...prev };
+                        delete newState[subjectId];
+                        return newState;
+                    });
+                }
 
-
-            setConflicts(prev => prev.filter(conflict =>
-                !conflict.conflicts?.some((item: any) => item.planId === subjectId)
-            ));
-
-
-            setDragFailedSubjectId(prev => prev === subjectId ? null : prev);
-
+                // รีเฟรชข้อมูล
+                await handleSubjectUpdate();
+            } else {
+                console.error("เกิดข้อผิดพลาดในการลบตารางเรียน");
+            }
         } catch (error) {
-            console.error("เกิดข้อผิดพลาดในการลบข้อมูลตารางเรียน:", error);
+            console.error("เกิดข้อผิดพลาดในการลบตารางเรียน:", error);
         }
     }
 
@@ -885,4 +881,18 @@ export default function TransferOneYear() {
             </DragOverlay>
         </DndContext>
     );
+}
+
+// เพิ่มฟังก์ชันตรวจสอบ Co-Teaching
+async function checkCoTeaching(subjectId: number): Promise<boolean> {
+    try {
+        const response = await fetch(`/api/subject/co-teaching/check?subjectId=${subjectId}`);
+        if (response.ok) {
+            const data = await response.json();
+            return data.planIds && data.planIds.length > 1;
+        }
+    } catch (error) {
+        console.error("Error checking co-teaching:", error);
+    }
+    return false;
 }

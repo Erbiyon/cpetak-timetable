@@ -5,43 +5,83 @@ const prisma = new PrismaClient()
 
 export async function PATCH(
     request: NextRequest,
-    context: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    const params = await context.params;
     try {
-        const id = parseInt(params.id)
-        const body = await request.json()
+        const { id } = await params;
+        const planId = parseInt(id);
+        const body = await request.json();
 
-        const existingSubject = await prisma.plans_tb.findUnique({
-            where: { id },
-            include: { room: true, teacher: true },
-        })
+        // ตรวจสอบว่าเป็น Co-Teaching หรือไม่
+        const coTeachingGroup = await prisma.coTeaching_tb.findFirst({
+            where: {
+                plans: {
+                    some: {
+                        id: planId
+                    }
+                }
+            },
+            include: {
+                plans: true
+            }
+        });
 
-        if (!existingSubject) {
-            return NextResponse.json(
-                { error: "ไม่พบข้อมูลวิชาที่ระบุ" },
-                { status: 404 }
-            )
+        const isCoTeaching = coTeachingGroup && coTeachingGroup.plans.length > 1;
+
+        // ตรวจสอบว่าเป็น Transfer หรือ Four Year
+        const currentPlan = await prisma.plans_tb.findUnique({
+            where: { id: planId }
+        });
+
+        const isTransferOrFourYear = currentPlan &&
+            (currentPlan.planType === 'TRANSFER' || currentPlan.planType === 'FOUR_YEAR');
+
+        // อัพเดทข้อมูลหลัก
+        const updatedPlan = await prisma.plans_tb.update({
+            where: { id: planId },
+            data: body,
+            include: {
+                teacher: true,
+                room: true,
+                timetables: true
+            }
+        });
+
+        // หากเป็น Co-Teaching ของ Transfer/Four Year และมีการเปลี่ยน section
+        if (isCoTeaching && isTransferOrFourYear && body.section !== undefined) {
+            const otherPlans = coTeachingGroup.plans.filter(p => p.id !== planId);
+
+            // อัพเดท section ให้วิชาอื่นๆ ในกลุ่ม Co-Teaching
+            for (const otherPlan of otherPlans) {
+                await prisma.plans_tb.update({
+                    where: { id: otherPlan.id },
+                    data: { section: body.section }
+                });
+
+                // อัพเดทตารางเรียนด้วย (ถ้ามี)
+                await prisma.timetable_tb.updateMany({
+                    where: { planId: otherPlan.id },
+                    data: { section: body.section }
+                });
+            }
+
+            // อัพเดทตารางเรียนของวิชาหลักด้วย
+            if (updatedPlan.timetables.length > 0) {
+                await prisma.timetable_tb.updateMany({
+                    where: { planId: planId },
+                    data: { section: body.section }
+                });
+            }
         }
 
-        const updatedSubject = await prisma.plans_tb.update({
-            where: { id },
-            data: {
-                roomId: body.roomId === null || body.roomId === "null" ? null : body.roomId,
-                teacherId: body.teacherId === null || body.teacherId === "null" ? null : body.teacherId,
-                section: body.section === null || body.section === "" ? null : body.section,
-            },
-            include: { room: true, teacher: true },
-        })
+        return Response.json(updatedPlan);
 
-        return NextResponse.json(updatedSubject)
     } catch (error) {
-        return NextResponse.json(
-            { error: "ผิดพลาดในการอัปเดตวิชา" },
+        console.error("Error updating plan:", error);
+        return Response.json(
+            { error: "เกิดข้อผิดพลาดในการอัพเดทข้อมูล" },
             { status: 500 }
-        )
-    } finally {
-        await prisma.$disconnect()
+        );
     }
 }
 
