@@ -65,7 +65,10 @@ export default function TransferPlan() {
 
 
             <div className="mb-4 sm:mb-6 lg:mb-8">
-                <SelectCustom currentYear={year} onYearChange={handleYearChange} />
+                <SelectCustom
+                    currentYear={year}
+                    onYearChange={handleYearChange}
+                />
             </div>
 
 

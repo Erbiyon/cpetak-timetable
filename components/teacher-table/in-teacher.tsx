@@ -94,8 +94,8 @@ export default function InTeacher() {
         switch (planType) {
             case "TRANSFER": return "เทียบโอน";
             case "FOUR_YEAR": return "4 ปี";
-            case "DVE-MSIX": return "ม.6 ขึ้น ปวส.";
-            case "DVE-LVC": return "ปวช. ขึ้น ปวส.";
+            case "DVE-MSIX": return "ปวส. (ม.6)";
+            case "DVE-LVC": return "ปวส. (ปวช.)";
             default: return planType;
         }
     };

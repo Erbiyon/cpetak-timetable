@@ -56,8 +56,9 @@ export function AddTeacherSubjectOutCustom({
     const [coTeaching, setCoTeaching] = useState(false)
     const [otherPlan, setOtherPlan] = useState<any | null>(null)
     const [showDuplicate, setShowDuplicate] = useState(false)
-    const [_duplicatePlans, setDuplicatePlans] = useState<any[]>([])
+    const [duplicatePlans, setDuplicatePlans] = useState<any[]>([])
 
+    const isDVE = planType === "DVE-MSIX" || planType === "DVE-LVC"
 
     useEffect(() => {
         const fetchTeachers = async () => {
@@ -92,7 +93,7 @@ export function AddTeacherSubjectOutCustom({
                     const filtered = plans.filter(
                         (p: any) =>
                             p.subjectCode === subjectCode &&
-                            p.termYear === `${termYear}`
+                            p.termYear === `ภาคเรียนที่ ${termYear}`
                     )
                     setDuplicatePlans(filtered)
                     setShowDuplicate(filtered.length > 1)
@@ -149,20 +150,19 @@ export function AddTeacherSubjectOutCustom({
         try {
             let patchRequests: Promise<Response>[] = []
 
-
-            patchRequests.push(
-                fetch(`/api/subject/${subjectId}`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        teacherId: selectedTeacherId === "none" || selectedTeacherId === "" ? null : parseInt(selectedTeacherId)
+            if (isDVE && duplicatePlans.length > 0) {
+                patchRequests = duplicatePlans.map((plan) =>
+                    fetch(`/api/subject/${plan.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            teacherId: selectedTeacherId === "none" || selectedTeacherId === "" ? null : parseInt(selectedTeacherId)
+                        })
                     })
-                })
-            )
-
-            if (coTeaching && otherPlan) {
+                )
+            } else {
                 patchRequests.push(
-                    fetch(`/api/subject/${otherPlan.id}`, {
+                    fetch(`/api/subject/${subjectId}`, {
                         method: "PATCH",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -171,29 +171,39 @@ export function AddTeacherSubjectOutCustom({
                     })
                 )
 
+                if (coTeaching && otherPlan) {
+                    patchRequests.push(
+                        fetch(`/api/subject/${otherPlan.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                teacherId: selectedTeacherId === "none" || selectedTeacherId === "" ? null : parseInt(selectedTeacherId)
+                            })
+                        })
+                    )
 
-                const groupKey = `${subjectCode}-${termYear}`
-                await fetch("/api/subject/co-teaching/merge", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        groupKey,
-                        planIds: [subjectId, otherPlan.id]
+                    const groupKey = `${subjectCode}-${termYear}`
+                    await fetch("/api/subject/co-teaching/merge", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            groupKey,
+                            planIds: [subjectId, otherPlan.id]
+                        })
                     })
-                })
-            }
+                }
 
-            if (!coTeaching && otherPlan) {
-
-                const groupKey = `${subjectCode}-${termYear}`;
-                await fetch("/api/subject/co-teaching/merge", {
-                    method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        groupKey,
-                        planIds: [subjectId, otherPlan.id]
-                    })
-                });
+                if (!coTeaching && otherPlan) {
+                    const groupKey = `${subjectCode}-${termYear}`;
+                    await fetch("/api/subject/co-teaching/merge", {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            groupKey,
+                            planIds: [subjectId, otherPlan.id]
+                        })
+                    });
+                }
             }
 
             const responses = await Promise.all(patchRequests)
@@ -213,8 +223,8 @@ export function AddTeacherSubjectOutCustom({
         switch (planType) {
             case "TRANSFER": return "เทียบโอน";
             case "FOUR_YEAR": return "4 ปี";
-            case "DVE-MSIX": return "ม.6 ขึ้น ปวส.";
-            case "DVE-LVC": return "ปวช. ขึ้น ปวส.";
+            case "DVE-MSIX": return "ปวส. (ม.6)";
+            case "DVE-LVC": return "ปวส. (ปวช.)";
             default: return planType;
         }
     };
@@ -246,8 +256,8 @@ export function AddTeacherSubjectOutCustom({
                         {teacherName ? "แก้ไขอาจารย์ผู้สอน" : "เพิ่มอาจารย์ผู้สอน"}
                     </DialogTitle>
                     <DialogDescription>
-                        เลือกอาจารย์ภายนอกสาขาที่จะสอนวิชานี้ <br />
-                        รหัสวิชา: {subjectCode} {getPlanTypeText(planType || " ")} {yearLevel} {termYear} <br />
+                        เลือกอาจารย์ภายนอกสาขาที่จะสอนวิชานี้ {termYear} <br />
+                        รหัสวิชา: {subjectCode} {getPlanTypeText(planType || "")} {yearLevel} <br />
                         ชื่อวิชา: {subjectName}
                     </DialogDescription>
                 </DialogHeader>
@@ -270,7 +280,8 @@ export function AddTeacherSubjectOutCustom({
                         </Select>
                     </div>
 
-                    {showDuplicate && otherPlan && (
+                    {/* แก้ไขเงื่อนไขการแสดง duplicate warning */}
+                    {showDuplicate && otherPlan && !isDVE && (
                         <div>
                             มีวิชาที่มีรหัสเหมือนกัน {subjectCode} <br />
                             ในแผนการเรียน {getPlanTypeText(otherPlan.planType)} {otherPlan.yearLevel}

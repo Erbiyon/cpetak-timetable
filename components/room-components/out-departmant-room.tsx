@@ -120,11 +120,9 @@ export default function OutdepartmentRoom() {
         }
     };
 
-
     const handleRoomUpdated = () => {
         setRefreshKey(prev => prev + 1);
     };
-
 
     const groupedSubjects: GroupedSubjects = subjects.reduce((acc, subject) => {
         if (!acc[subject.planType]) {
