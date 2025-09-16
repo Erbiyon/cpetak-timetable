@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Sarabun } from "next/font/google";
 import "./globals.css";
 import ThemeProviderCustom from "@/components/theme-provider/theme-provider-custom";
-import HideNavbar from "@/components/hide-navbar/hide-navbar";
 import AuthSessionProvider from "@/components/providers/session-provider";
+import HideNavbarCustom from "@/components/hide-navbar/hide-navbar-custom";
 
 const sarabun = Sarabun({
     subsets: ["thai", "latin"],
@@ -12,7 +12,7 @@ const sarabun = Sarabun({
 
 export const metadata: Metadata = {
     title: "ระบบจัดตารางเรียน",
-    description: "Create by next app",
+    description: "จัดทำโดย DekCom",
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
             <body className={`${sarabun.className} antialiased`}>
                 <AuthSessionProvider>
                     <ThemeProviderCustom>
-                        <HideNavbar />
+                        <HideNavbarCustom />
                         {children}
                     </ThemeProviderCustom>
                 </AuthSessionProvider>
