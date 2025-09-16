@@ -4,6 +4,7 @@ type DisplayCalendarCustomProps = {
     termNumber?: number
     start?: Date
     end?: Date
+    academicYear?: number
 }
 
 const thaiMonths = [
@@ -18,9 +19,10 @@ function formatThaiDate(date: Date) {
 export default function DisplayCalendarCustom({
     termNumber,
     start,
-    end
+    end,
+    academicYear
 }: DisplayCalendarCustomProps) {
-    const year = start ? (start.getFullYear() + 543).toString() : "xxxx"
+    const year = academicYear ? academicYear.toString() : (start ? (start.getFullYear() + 543).toString() : "xxxx")
     const term = termNumber ?? "?"
 
 

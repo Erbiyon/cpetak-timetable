@@ -68,10 +68,13 @@ export default function AcademicCalendar() {
         for (let i = 0; i < terms.length; i++) {
             const t = terms[i]
             if (t.start && t.end && today >= t.start && today <= t.end) {
+                const academicYear = term1.start ? term1.start.getFullYear() + 543 : new Date().getFullYear() + 543
+
                 return {
                     termNumber: i + 1,
                     start: t.start,
-                    end: t.end
+                    end: t.end,
+                    academicYear: academicYear
                 }
             }
         }
@@ -290,6 +293,7 @@ export default function AcademicCalendar() {
                         termNumber={currentTerm.termNumber}
                         start={currentTerm.start}
                         end={currentTerm.end}
+                        academicYear={currentTerm.academicYear}
                     />
                 )}
             </div>

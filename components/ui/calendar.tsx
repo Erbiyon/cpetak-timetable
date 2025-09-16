@@ -38,6 +38,7 @@ function Calendar({
             formatters={{
                 formatMonthDropdown: (date) =>
                     date.toLocaleString("default", { month: "short" }),
+                formatYearDropdown: (date) => (date.getFullYear() + 543).toString(),
                 ...formatters,
             }}
             classNames={{
