@@ -9,11 +9,9 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { planId, termYear, yearLevel, planType, day, startPeriod, endPeriod, roomId, teacherId, section } = body;
 
-        // ตรวจสอบประเภทของแผนการเรียน
         const isDVE = planType === 'DVE-MSIX' || planType === 'DVE-LVC';
         const isTransferOrFourYear = planType === 'TRANSFER' || planType === 'FOUR_YEAR';
 
-        // ตรวจสอบ Co-Teaching (เฉพาะ Transfer และ Four Year)
         let coTeachingGroup = null;
         let isCoTeaching = false;
 
@@ -35,16 +33,15 @@ export async function POST(request: Request) {
                     }
                 }
             });
-            // แก้ไขการกำหนดค่า isCoTeaching
+
             isCoTeaching = coTeachingGroup !== null && coTeachingGroup.plans.length > 1;
         }
 
-        // ตรวจสอบการชนกัน (ยกเว้น DVE และ Co-Teaching ของ Transfer/Four Year)
         const shouldCheckConflicts = !isDVE && !(isCoTeaching && isTransferOrFourYear);
-        const conflicts: any[] = []; // เพิ่ม type annotation
+        const conflicts: any[] = [];
 
         if (shouldCheckConflicts) {
-            // ตรวจสอบการชนกันของเวลา
+
             const timeConflicts = await prisma.timetable_tb.findMany({
                 where: {
                     termYear,
@@ -99,7 +96,6 @@ export async function POST(request: Request) {
                 });
             }
 
-            // ตรวจสอบการชนกันของอาจารย์
             if (teacherId) {
                 const teacherConflicts = await prisma.timetable_tb.findMany({
                     where: {
@@ -155,7 +151,6 @@ export async function POST(request: Request) {
                 }
             }
 
-            // ตรวจสอบการชนกันของห้องเรียน
             if (roomId) {
                 const roomConflicts = await prisma.timetable_tb.findMany({
                     where: {
@@ -210,19 +205,119 @@ export async function POST(request: Request) {
                     });
                 }
             }
+
+            // ตรวจสอบ section ซ้ำกันในวิชาเดียวกันแต่ต่างแผนการเรียน
+            if (section) {
+                const currentPlan = await prisma.plans_tb.findUnique({
+                    where: { id: planId }
+                });
+
+                if (currentPlan) {
+                    const duplicateSectionPlans = await prisma.plans_tb.findMany({
+                        where: {
+                            subjectCode: currentPlan.subjectCode,
+                            termYear: currentPlan.termYear,
+                            section: section,
+                            planType: {
+                                not: currentPlan.planType
+                            }
+                        },
+                        include: {
+                            timetables: true
+                        }
+                    });
+
+                    if (duplicateSectionPlans.length > 0) {
+                        const conflictDetails = duplicateSectionPlans.map(plan => {
+                            const planTypeText = plan.planType === 'TRANSFER' ? 'เทียบโอน' :
+                                plan.planType === 'FOUR_YEAR' ? '4 ปี' :
+                                    plan.planType;
+                            return `${planTypeText} ${plan.yearLevel}`;
+                        }).join(', ');
+
+                        conflicts.push({
+                            type: "DUPLICATE_SECTION_CONFLICT",
+                            message: `วิชา ${currentPlan.subjectCode} section ${section} มีอยู่แล้วในแผนการเรียน: ${conflictDetails}`,
+                            conflicts: duplicateSectionPlans.map(plan => ({
+                                planId: plan.id,
+                                subjectCode: plan.subjectCode,
+                                planType: plan.planType,
+                                yearLevel: plan.yearLevel,
+                                section: plan.section,
+                                termYear: plan.termYear
+                            }))
+                        });
+                    }
+                }
+
+                // การตรวจสอบ section conflict เดิม (เวลาทับซ้อน)
+                const sectionConflicts = await prisma.timetable_tb.findMany({
+                    where: {
+                        section,
+                        termYear,
+                        yearLevel,
+                        planType,
+                        day,
+                        OR: [
+                            {
+                                AND: [
+                                    { startPeriod: { lte: startPeriod } },
+                                    { endPeriod: { gte: startPeriod } }
+                                ]
+                            },
+                            {
+                                AND: [
+                                    { startPeriod: { lte: endPeriod } },
+                                    { endPeriod: { gte: endPeriod } }
+                                ]
+                            },
+                            {
+                                AND: [
+                                    { startPeriod: { gte: startPeriod } },
+                                    { endPeriod: { lte: endPeriod } }
+                                ]
+                            }
+                        ],
+                        NOT: {
+                            planId: planId
+                        }
+                    },
+                    include: {
+                        plan: true,
+                        teacher: true,
+                        room: true
+                    }
+                });
+
+                if (sectionConflicts.length > 0) {
+                    conflicts.push({
+                        type: "SECTION_CONFLICT",
+                        message: "กลุ่มเรียนมีการเรียนในเวลาดังกล่าวแล้ว",
+                        conflicts: sectionConflicts.map(sc => ({
+                            planId: sc.planId,
+                            plan: sc.plan,
+                            day: sc.day,
+                            startPeriod: sc.startPeriod,
+                            endPeriod: sc.endPeriod,
+                            teacher: sc.teacher,
+                            room: sc.room,
+                            section: sc.section
+                        }))
+                    });
+                }
+            }
         }
 
-        // หากมีการชนกันและไม่ใช่ DVE หรือ Co-Teaching ของ Transfer/Four Year
+
         if (conflicts.length > 0) {
             return Response.json({ conflicts }, { status: 409 });
         }
 
-        // ลบข้อมูลเก่าก่อน
         await prisma.timetable_tb.deleteMany({
             where: { planId }
         });
 
-        // สร้างข้อมูลใหม่
+
         const timetable = await prisma.timetable_tb.create({
             data: {
                 planId,
@@ -249,7 +344,7 @@ export async function POST(request: Request) {
         });
 
         if (isDVE) {
-            // DVE: สร้างตารางเรียนเดียวกันสำหรับวิชาที่มีรหัสเหมือนกัน
+
             const currentPlan = await prisma.plans_tb.findUnique({
                 where: { id: planId }
             });
@@ -266,12 +361,12 @@ export async function POST(request: Request) {
                 });
 
                 for (const duplicatePlan of duplicatePlans) {
-                    // ลบข้อมูลเก่า
+
                     await prisma.timetable_tb.deleteMany({
                         where: { planId: duplicatePlan.id }
                     });
 
-                    // สร้างข้อมูลใหม่ในเวลาเดียวกัน
+
                     await prisma.timetable_tb.create({
                         data: {
                             planId: duplicatePlan.id,
@@ -290,16 +385,16 @@ export async function POST(request: Request) {
             }
 
         } else if (isCoTeaching && isTransferOrFourYear && coTeachingGroup) {
-            // Transfer/Four Year Co-Teaching: สร้างตารางเรียนเดียวกันสำหรับวิชาอื่นๆ ในกลุ่ม
+
             const otherPlans = coTeachingGroup.plans.filter(p => p.id !== planId);
 
             for (const otherPlan of otherPlans) {
-                // ลบข้อมูลเก่า
+
                 await prisma.timetable_tb.deleteMany({
                     where: { planId: otherPlan.id }
                 });
 
-                // สร้างข้อมูลใหม่ในเวลาเดียวกัน
+
                 await prisma.timetable_tb.create({
                     data: {
                         planId: otherPlan.id,
@@ -329,7 +424,6 @@ export async function POST(request: Request) {
         await prisma.$disconnect();
     }
 }
-
 
 export async function GET(request: NextRequest) {
     try {
