@@ -220,6 +220,10 @@ export async function POST(request: Request) {
                             section: section,
                             planType: {
                                 not: currentPlan.planType
+                            },
+                            // เพิ่มเงื่อนไขให้ไม่รวม planId ปัจจุบัน
+                            NOT: {
+                                id: planId
                             }
                         },
                         include: {
@@ -245,73 +249,6 @@ export async function POST(request: Request) {
                                 yearLevel: plan.yearLevel,
                                 section: plan.section,
                                 termYear: plan.termYear
-                            }))
-                        });
-                    }
-                }
-
-                // การตรวจสอบ section conflict (เวลาทับซ้อนใน timetable_tb เดียวกัน)
-                if (section) {
-                    const sectionConflicts = await prisma.timetable_tb.findMany({
-                        where: {
-                            section,
-                            termYear,
-                            day,
-                            OR: [
-                                {
-                                    AND: [
-                                        { startPeriod: { lte: startPeriod } },
-                                        { endPeriod: { gte: startPeriod } }
-                                    ]
-                                },
-                                {
-                                    AND: [
-                                        { startPeriod: { lte: endPeriod } },
-                                        { endPeriod: { gte: endPeriod } }
-                                    ]
-                                },
-                                {
-                                    AND: [
-                                        { startPeriod: { gte: startPeriod } },
-                                        { endPeriod: { lte: endPeriod } }
-                                    ]
-                                }
-                            ],
-                            NOT: {
-                                planId: planId
-                            }
-                        },
-                        include: {
-                            plan: true,
-                            teacher: true,
-                            room: true
-                        }
-                    });
-
-                    if (sectionConflicts.length > 0) {
-                        const conflictDetails = sectionConflicts.map(sc => {
-                            const planTypeText = sc.planType === 'TRANSFER' ? 'เทียบโอน' :
-                                sc.planType === 'FOUR_YEAR' ? '4 ปี' :
-                                    sc.planType === 'DVE-MSIX' ? 'DVE-MSIX' :
-                                        sc.planType === 'DVE-LVC' ? 'DVE-LVC' :
-                                            sc.planType;
-                            return `${planTypeText} ชั้นปี ${sc.yearLevel}`;
-                        }).join(', ');
-
-                        conflicts.push({
-                            type: "SECTION_CONFLICT",
-                            message: `กลุ่มเรียน ${section} มีการเรียนในเวลาดังกล่าวแล้วในแผนการเรียน: ${conflictDetails}`,
-                            conflicts: sectionConflicts.map(sc => ({
-                                planId: sc.planId,
-                                plan: sc.plan,
-                                day: sc.day,
-                                startPeriod: sc.startPeriod,
-                                endPeriod: sc.endPeriod,
-                                teacher: sc.teacher,
-                                room: sc.room,
-                                section: sc.section,
-                                planType: sc.planType,
-                                yearLevel: sc.yearLevel
                             }))
                         });
                     }
