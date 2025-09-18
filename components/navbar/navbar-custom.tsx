@@ -45,7 +45,7 @@ export function NavigationMenuCustom() {
     }, [])
 
     const handleSignOut = async () => {
-        await signOut({ callbackUrl: "/login" })
+        await signOut({ callbackUrl: "/" })
     }
 
     const menuItems = [
