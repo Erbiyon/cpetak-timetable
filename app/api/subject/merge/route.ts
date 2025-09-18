@@ -8,10 +8,7 @@ export async function POST(
 ) {
     try {
 
-
-
         const { subjectId } = await request.json()
-
 
         const subjectToMerge = await prisma.plans_tb.findUnique({
             where: { id: subjectId },

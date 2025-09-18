@@ -96,58 +96,66 @@ export async function POST(request: Request) {
                 });
             }
 
+            // ตรวจสอบ teacher conflict ยกเว้นภาคเรียนที่ 3 ของ DVE และ TRANSFER
             if (teacherId) {
-                const teacherConflicts = await prisma.timetable_tb.findMany({
-                    where: {
-                        teacherId,
-                        termYear,
-                        day,
-                        OR: [
-                            {
-                                AND: [
-                                    { startPeriod: { lte: startPeriod } },
-                                    { endPeriod: { gte: startPeriod } }
-                                ]
-                            },
-                            {
-                                AND: [
-                                    { startPeriod: { lte: endPeriod } },
-                                    { endPeriod: { gte: endPeriod } }
-                                ]
-                            },
-                            {
-                                AND: [
-                                    { startPeriod: { gte: startPeriod } },
-                                    { endPeriod: { lte: endPeriod } }
-                                ]
-                            }
-                        ],
-                        NOT: {
-                            planId: planId
-                        }
-                    },
-                    include: {
-                        plan: true,
-                        teacher: true,
-                        room: true
-                    }
-                });
+                // ตรวจสอบว่าเป็นภาคเรียนที่ 3 ของ DVE หรือ TRANSFER หรือไม่
+                const termNumber = parseInt(termYear.split('/')[0]);
+                const isDVEOrTransferTerm3 = termNumber === 3 && (planType === 'DVE-MSIX' || planType === 'DVE-LVC' || planType === 'TRANSFER');
 
-                if (teacherConflicts.length > 0) {
-                    conflicts.push({
-                        type: "TEACHER_CONFLICT",
-                        message: "อาจารย์มีการสอนในเวลาดังกล่าวแล้ว",
-                        conflicts: teacherConflicts.map(tc => ({
-                            planId: tc.planId,
-                            plan: tc.plan,
-                            day: tc.day,
-                            startPeriod: tc.startPeriod,
-                            endPeriod: tc.endPeriod,
-                            teacher: tc.teacher,
-                            room: tc.room,
-                            section: tc.section
-                        }))
+                // ข้าม teacher conflict check สำหรับภาคเรียนที่ 3 ของ DVE และ TRANSFER
+                if (!isDVEOrTransferTerm3) {
+                    const teacherConflicts = await prisma.timetable_tb.findMany({
+                        where: {
+                            teacherId,
+                            termYear,
+                            day,
+                            OR: [
+                                {
+                                    AND: [
+                                        { startPeriod: { lte: startPeriod } },
+                                        { endPeriod: { gte: startPeriod } }
+                                    ]
+                                },
+                                {
+                                    AND: [
+                                        { startPeriod: { lte: endPeriod } },
+                                        { endPeriod: { gte: endPeriod } }
+                                    ]
+                                },
+                                {
+                                    AND: [
+                                        { startPeriod: { gte: startPeriod } },
+                                        { endPeriod: { lte: endPeriod } }
+                                    ]
+                                }
+                            ],
+                            NOT: {
+                                planId: planId
+                            }
+                        },
+                        include: {
+                            plan: true,
+                            teacher: true,
+                            room: true
+                        }
                     });
+
+                    if (teacherConflicts.length > 0) {
+                        conflicts.push({
+                            type: "TEACHER_CONFLICT",
+                            message: "อาจารย์มีการสอนในเวลาดังกล่าวแล้ว",
+                            conflicts: teacherConflicts.map(tc => ({
+                                planId: tc.planId,
+                                plan: tc.plan,
+                                day: tc.day,
+                                startPeriod: tc.startPeriod,
+                                endPeriod: tc.endPeriod,
+                                teacher: tc.teacher,
+                                room: tc.room,
+                                section: tc.section
+                            }))
+                        });
+                    }
                 }
             }
 
@@ -207,50 +215,58 @@ export async function POST(request: Request) {
             }
 
             // ตรวจสอบ section ซ้ำกันในวิชาเดียวกันแต่ต่างแผนการเรียน
+            // ยกเว้นภาคเรียนที่ 3 ของ DVE และ TRANSFER ที่อนุญาตให้ section ซ้ำได้
             if (section) {
                 const currentPlan = await prisma.plans_tb.findUnique({
                     where: { id: planId }
                 });
 
                 if (currentPlan) {
-                    const duplicateSectionPlans = await prisma.plans_tb.findMany({
-                        where: {
-                            subjectCode: currentPlan.subjectCode,
-                            termYear: currentPlan.termYear,
-                            section: section,
-                            planType: {
-                                not: currentPlan.planType
+                    // ตรวจสอบว่าเป็นภาคเรียนที่ 3 ของ DVE หรือ TRANSFER หรือไม่
+                    const termNumber = parseInt(termYear.split('/')[0]);
+                    const isDVEOrTransferTerm3 = termNumber === 3 && (planType === 'DVE-MSIX' || planType === 'DVE-LVC' || planType === 'TRANSFER');
+
+                    // ข้าม section conflict check สำหรับภาคเรียนที่ 3 ของ DVE และ TRANSFER
+                    if (!isDVEOrTransferTerm3) {
+                        const duplicateSectionPlans = await prisma.plans_tb.findMany({
+                            where: {
+                                subjectCode: currentPlan.subjectCode,
+                                termYear: currentPlan.termYear,
+                                section: section,
+                                planType: {
+                                    not: currentPlan.planType
+                                },
+                                // เพิ่มเงื่อนไขให้ไม่รวม planId ปัจจุบัน
+                                NOT: {
+                                    id: planId
+                                }
                             },
-                            // เพิ่มเงื่อนไขให้ไม่รวม planId ปัจจุบัน
-                            NOT: {
-                                id: planId
+                            include: {
+                                timetables: true
                             }
-                        },
-                        include: {
-                            timetables: true
-                        }
-                    });
-
-                    if (duplicateSectionPlans.length > 0) {
-                        const conflictDetails = duplicateSectionPlans.map(plan => {
-                            const planTypeText = plan.planType === 'TRANSFER' ? 'เทียบโอน' :
-                                plan.planType === 'FOUR_YEAR' ? '4 ปี' :
-                                    plan.planType;
-                            return `${planTypeText} ${plan.yearLevel}`;
-                        }).join(', ');
-
-                        conflicts.push({
-                            type: "DUPLICATE_SECTION_CONFLICT",
-                            message: `วิชา ${currentPlan.subjectCode} section ${section} มีอยู่แล้วในแผนการเรียน: ${conflictDetails}`,
-                            conflicts: duplicateSectionPlans.map(plan => ({
-                                planId: plan.id,
-                                subjectCode: plan.subjectCode,
-                                planType: plan.planType,
-                                yearLevel: plan.yearLevel,
-                                section: plan.section,
-                                termYear: plan.termYear
-                            }))
                         });
+
+                        if (duplicateSectionPlans.length > 0) {
+                            const conflictDetails = duplicateSectionPlans.map(plan => {
+                                const planTypeText = plan.planType === 'TRANSFER' ? 'เทียบโอน' :
+                                    plan.planType === 'FOUR_YEAR' ? '4 ปี' :
+                                        plan.planType;
+                                return `${planTypeText} ${plan.yearLevel}`;
+                            }).join(', ');
+
+                            conflicts.push({
+                                type: "DUPLICATE_SECTION_CONFLICT",
+                                message: `วิชา ${currentPlan.subjectCode} section ${section} มีอยู่แล้วในแผนการเรียน: ${conflictDetails}`,
+                                conflicts: duplicateSectionPlans.map(plan => ({
+                                    planId: plan.id,
+                                    subjectCode: plan.subjectCode,
+                                    planType: plan.planType,
+                                    yearLevel: plan.yearLevel,
+                                    section: plan.section,
+                                    termYear: plan.termYear
+                                }))
+                            });
+                        }
                     }
                 }
             }

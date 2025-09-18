@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { signOut, useSession } from "next-auth/react"
 import { Calendar, CircleUser, Grid2x2Check, House, LogOut, Menu, NotebookPen, School, SquareUser, Table } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import {
     NavigationMenu,
@@ -23,6 +23,26 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 export function NavigationMenuCustom() {
     const { data: session } = useSession()
     const [isOpen, setIsOpen] = useState(false)
+    const [isTerm3, setIsTerm3] = useState<boolean>(false)
+
+    // ดึงข้อมูลภาคเรียนปัจจุบัน
+    useEffect(() => {
+        const fetchCurrentTermYear = async () => {
+            try {
+                const response = await fetch('/api/current-term-year')
+                if (response.ok) {
+                    const data = await response.json()
+                    // ตรวจสอบว่าเป็นภาคเรียนที่ 3 หรือไม่
+                    const termNumber = parseInt(data.termYear.split('/')[0])
+                    setIsTerm3(termNumber === 3)
+                }
+            } catch (error) {
+                console.error('Error fetching current term year:', error)
+            }
+        }
+
+        fetchCurrentTermYear()
+    }, [])
 
     const handleSignOut = async () => {
         await signOut({ callbackUrl: "/login" })
@@ -62,10 +82,12 @@ export function NavigationMenuCustom() {
             items: [
                 { href: "/adjust-time-tables/adjust-plan-transfer/transfer-one-year", label: "จัดตารางเรียน ปี 1" },
                 { href: "/adjust-time-tables/adjust-plan-transfer/transfer-two-year", label: "จัดตารางเรียน ปี 2" },
-                { href: "/adjust-time-tables/adjust-plan-transfer/transfer-three-year", label: "จัดตารางเรียน ปี 3" },
+                // ระงับเมนูย่อย ปี 3 ในภาคเรียนที่ 3
+                ...(isTerm3 ? [] : [{ href: "/adjust-time-tables/adjust-plan-transfer/transfer-three-year", label: "จัดตารางเรียน ปี 3" }]),
             ]
         },
-        {
+        // ซ่อนทั้งเมนูหลัก "จัดตารางเรียน 4 ปี" ในภาคเรียนที่ 3
+        ...(isTerm3 ? [] : [{
             title: "จัดตารางเรียน 4 ปี",
             icon: <Table size={16} color="#00ff40" className="mr-2" />,
             items: [
@@ -74,7 +96,7 @@ export function NavigationMenuCustom() {
                 { href: "/adjust-time-tables/adjust-plan-four-year/four-three-year", label: "จัดตารางเรียน ปี 3" },
                 { href: "/adjust-time-tables/adjust-plan-four-year/four-four-year", label: "จัดตารางเรียน ปี 4" },
             ]
-        },
+        }]),
         {
             title: "จัดตารางเรียน ปวส.",
             icon: <Table size={16} color="#ff8000" className="mr-2" />,
