@@ -53,13 +53,13 @@ function ErrorDisplay({ error, onReset }: { error: Error | null; onReset: () => 
                 </div>
 
                 <h3 className="text-lg font-semibold text-destructive mb-2">
-                    {isMaxUpdateDepthError ? 'เกิดปัญหาแล้วสิ' : 'เกิดข้อผิดพลาด'}
+                    {isMaxUpdateDepthError ? 'เกิดปัญหาแล้วสิ' : 'เกิดปัญหาแล้วสิ'}
                 </h3>
 
                 <p className="text-sm text-muted-foreground mb-4">
                     {isMaxUpdateDepthError
                         ? 'ควรหลีกเลี่ยงการลากวิชาไปทับซ้อนกับวิชาอื่น หรือวางลงในคาบที่มีวิชาอยู่แล้ว รวมถึงการลากที่เร็วเกินไปในช่องที่มีวิชาอยู่ด้วย'
-                        : 'เกิดข้อผิดพลาดในการแสดงผลตารางเรียน'
+                        : 'ควรหลีกเลี่ยงการลากวิชาไปทับซ้อนกับวิชาอื่น หรือวางลงในคาบที่มีวิชาอยู่แล้ว รวมถึงการลากที่เร็วเกินไปในช่องที่มีวิชาอยู่ด้วย'
                     }
                 </p>
 
