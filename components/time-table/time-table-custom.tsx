@@ -6,8 +6,85 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
-export default function TimeTableCustom({
+class TimeTableErrorBoundary extends React.Component<
+    { children: React.ReactNode; onReset: () => void },
+    { hasError: boolean; error: Error | null }
+> {
+    constructor(props: { children: React.ReactNode; onReset: () => void }) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error: Error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        console.error('TimeTable Error Boundary caught an error:', error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <ErrorDisplay
+                    error={this.state.error}
+                    onReset={() => {
+                        this.setState({ hasError: false, error: null });
+                        this.props.onReset();
+                    }}
+                />
+            );
+        }
+
+        return this.props.children;
+    }
+}
+
+function ErrorDisplay({ error, onReset }: { error: Error | null; onReset: () => void }) {
+    const isMaxUpdateDepthError = error?.message?.includes('Maximum update depth exceeded');
+
+    return (
+        <div className="w-full min-h-[400px] flex items-center justify-center bg-card rounded-lg border border-destructive/20">
+            <div className="text-center p-8 max-w">
+                <div className="mb-4">
+                    <AlertTriangle className="mx-auto h-16 w-16 text-destructive" />
+                </div>
+
+                <h3 className="text-lg font-semibold text-destructive mb-2">
+                    {isMaxUpdateDepthError ? 'เกิดปัญหาแล้วสิ' : 'เกิดข้อผิดพลาด'}
+                </h3>
+
+                <p className="text-sm text-muted-foreground mb-4">
+                    {isMaxUpdateDepthError
+                        ? 'ควรหลีกเลี่ยงการลากวิชาไปทับซ้อนกับวิชาอื่น หรือวางลงในคาบที่มีวิชาอยู่แล้ว รวมถึงการลากที่เร็วเกินไปในช่องที่มีวิชาอยู่ด้วย'
+                        : 'เกิดข้อผิดพลาดในการแสดงผลตารางเรียน'
+                    }
+                </p>
+
+                <div className="flex gap-2 justify-center">
+                    <button
+                        onClick={onReset}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                    >
+                        <RefreshCw className="h-4 w-4" />
+                        ลองใหม่
+                    </button>
+
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90 transition-colors"
+                    >
+                        รีเฟรชหน้า
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function TimeTableCustomInternal({
     plans = [],
     assignments = {},
     onRemoveAssignment = null,
@@ -204,7 +281,6 @@ export default function TimeTableCustom({
                         <tr key={rowIdx}>
                             <td className="border text-center text-xs w-[72px]">{day}</td>
                             {Array.from({ length: 25 }, (_, colIdx) => {
-
                                 if (rowIdx === 2 && colIdx === 14) {
                                     return (
                                         <td
@@ -221,32 +297,24 @@ export default function TimeTableCustom({
                                     return null;
                                 }
 
-
                                 const cellKey = `${rowIdx}-${colIdx}`;
 
-
                                 if (cellSkip.has(cellKey)) {
-
                                     return null;
                                 }
-
 
                                 if (calculatedHighlight.skipCells?.includes(cellKey)) {
                                     return null;
                                 }
 
-
                                 const subject = cellToSubject[cellKey];
                                 const colspan = cellColspan[cellKey] || 1;
-
 
                                 const isHighlightStart = cellKey === calculatedHighlight.startCell;
                                 const highlightColspan = isHighlightStart && calculatedHighlight.colspan ? calculatedHighlight.colspan : 1;
                                 const isInvalidHighlight = isHighlightStart && calculatedHighlight.invalid;
 
-
                                 const uniqueCellKey = `cell-${rowIdx}-${colIdx}`;
-
 
                                 return (
                                     <SimpleCell
@@ -336,11 +404,10 @@ const SimpleCell = React.memo(function SimpleCell({
             onContextMenu={handleContextMenu}
         >
             {subject ? (
-                <SubjectInCell subject={subject} colspan={colspan} />
+                <SubjectInCell subject={subject} />
             ) : isHighlighted && activeSubject ? (
                 <HighlightPreview
                     subject={activeSubject}
-                    colspan={colspan}
                     isInvalid={isInvalidHighlight}
                 />
             ) : null}
@@ -351,23 +418,30 @@ const SimpleCell = React.memo(function SimpleCell({
 
 const HighlightPreview = React.memo(function HighlightPreview({
     subject,
-    colspan = 1,
     isInvalid = false
 }: {
     subject: any;
-    colspan?: number;
     isInvalid?: boolean;
 }) {
 
     const lectureHours = subject.lectureHour || 0;
     const labHours = subject.labHour || 0;
     const totalHours = lectureHours + labHours;
+    const totalPeriods = totalHours * 2;
 
     return (
         <div className={`w-full h-full p-1 ${isInvalid ? 'opacity-50' : 'opacity-80'}`}>
             <div className="text-center">
                 <div className={`font-medium ${isInvalid ? 'text-red-950 dark:text-red-50' : 'text-green-950 dark:text-green-50'}`}>
                     {subject.subjectCode}
+                    {subject.section && (
+                        <span className={`text-[9px] ml-1 px-1 py-0.5 rounded ${isInvalid
+                            ? 'bg-red-200 dark:bg-red-700'
+                            : 'bg-green-200 dark:bg-green-700'
+                            }`}>
+                            sec.{subject.section}
+                        </span>
+                    )}
                 </div>
                 <div className={`text-[10px] truncate ${isInvalid ? 'text-red-900 dark:text-red-100' : 'text-green-900 dark:text-green-100'}`}>
                     {subject.subjectName}
@@ -376,11 +450,9 @@ const HighlightPreview = React.memo(function HighlightPreview({
                     <span className={`${isInvalid ? 'bg-red-200/50 dark:bg-red-700/50' : 'bg-green-200/50 dark:bg-green-700/50'} px-1 rounded`}>
                         {totalHours} ชม. ({lectureHours}/{labHours})
                     </span>
-                    {colspan > 1 && (
-                        <span className={`${isInvalid ? 'bg-red-300/30 dark:bg-red-600/30' : 'bg-green-300/30 dark:bg-green-600/30'} px-1 rounded`}>
-                            {colspan} คาบ
-                        </span>
-                    )}
+                    <span className={`${isInvalid ? 'bg-red-300/30 dark:bg-red-600/30' : 'bg-green-300/30 dark:bg-green-600/30'} px-1 rounded`}>
+                        {totalPeriods} คาบ
+                    </span>
                 </div>
                 {isInvalid && (
                     <div className="text-[8px] mt-1 bg-red-300/30 dark:bg-red-600/30 px-1 rounded text-red-800 dark:text-red-200">
@@ -394,11 +466,9 @@ const HighlightPreview = React.memo(function HighlightPreview({
 
 
 const SubjectInCell = React.memo(function SubjectInCell({
-    subject,
-    colspan = 1
+    subject
 }: {
     subject: any;
-    colspan?: number;
 }) {
 
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -441,11 +511,9 @@ const SubjectInCell = React.memo(function SubjectInCell({
                                 <span className="bg-green-200/50 dark:bg-green-700/50 px-1 rounded">
                                     {totalHours} ชม. ({lectureHours}/{labHours})
                                 </span>
-                                {colspan > 1 && (
-                                    <span className="bg-green-300/30 dark:bg-green-600/30 px-1 rounded">
-                                        {colspan} คาบ
-                                    </span>
-                                )}
+                                <span className="bg-green-300/30 dark:bg-green-600/30 px-1 rounded">
+                                    {totalHours * 2} คาบ
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -496,3 +564,31 @@ const SubjectInCell = React.memo(function SubjectInCell({
         </TooltipProvider>
     );
 });
+
+export default function TimeTableCustom({
+    plans = [],
+    assignments = {},
+    onRemoveAssignment = null,
+    activeSubject = null,
+    dragOverCell = null
+}: {
+    plans?: any[];
+    assignments?: { [subjectId: number]: { day: number; periods: number[] } | null };
+    onRemoveAssignment?: ((subjectId: number) => void) | null;
+    activeSubject?: any;
+    dragOverCell?: { day: number; period: number } | null;
+}) {
+    return (
+        <TimeTableErrorBoundary onReset={() => {
+            console.log('TimeTable Error Boundary Reset');
+        }}>
+            <TimeTableCustomInternal
+                plans={plans}
+                assignments={assignments}
+                onRemoveAssignment={onRemoveAssignment}
+                activeSubject={activeSubject}
+                dragOverCell={dragOverCell}
+            />
+        </TimeTableErrorBoundary>
+    );
+}
