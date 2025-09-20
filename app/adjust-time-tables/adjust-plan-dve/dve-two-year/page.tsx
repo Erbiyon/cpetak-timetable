@@ -417,6 +417,9 @@ export default function DveLvcTwoYear() {
                         } catch (syncError) {
                             console.warn("เกิดข้อผิดพลาดในการซิ๊งค์ไปยัง DVE-MSIX:", syncError);
                         }
+
+                        // รีเฟรชข้อมูลหลังจากลากวิชาเข้าตารางสำเร็จ
+                        await handleSubjectUpdate();
                     }
                 } catch (error) {
                     console.error("เกิดข้อผิดพลาดในการบันทึกตารางเรียน:", error);
@@ -484,6 +487,9 @@ export default function DveLvcTwoYear() {
                     console.warn("เกิดข้อผิดพลาดในการซิ๊งค์การลบไปยัง DVE-MSIX:", syncError);
                 }
             }
+
+            // รีเฟรชข้อมูลหลังจากลบวิชาออกจากตารางสำเร็จ
+            await handleSubjectUpdate();
 
         } catch (error) {
             console.error("เกิดข้อผิดพลาดในการลบข้อมูลตารางเรียน:", error);

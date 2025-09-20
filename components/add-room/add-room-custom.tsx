@@ -115,6 +115,10 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
                                 <RadioGroupItem value="ปฏิบัติ" id="practical" />
                                 <Label htmlFor="practical">ปฏิบัติ</Label>
                             </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="ไม่ระบุ" id="unspecified" />
+                                <Label htmlFor="unspecified">ไม่ระบุ</Label>
+                            </div>
                         </RadioGroup>
                     </div>
                 </div>

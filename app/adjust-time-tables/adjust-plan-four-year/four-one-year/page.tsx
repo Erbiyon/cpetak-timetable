@@ -399,10 +399,8 @@ export default function FourOneYear() {
                         setConflicts([]);
                         setDragFailedSubjectId(null);
 
-                        // หาก Co-Teaching ให้รีเฟรชข้อมูลเพื่ออัพเดทตารางวิชาอื่นๆ
-                        if (isCoTeaching) {
-                            await handleSubjectUpdate();
-                        }
+                        // รีเฟรชข้อมูลหลังจากลากวิชาเข้าตารางสำเร็จ
+                        await handleSubjectUpdate();
                     }
                 } catch (error) {
                     console.error("เกิดข้อผิดพลาดในการบันทึกตารางเรียน:", error);

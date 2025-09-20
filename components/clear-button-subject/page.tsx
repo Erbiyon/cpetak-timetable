@@ -62,15 +62,10 @@ export default function ClearButtonSubject({
 
             if (timetableData.length === 0) {
                 console.log('ℹ️ ไม่มีตารางเรียนที่ต้องลบ');
-
+                // ถ้าไม่มีข้อมูลให้ลบ ก็ไม่ต้อง refresh เพราะไม่มีการเปลี่ยนแปลง
                 if (onClearComplete) {
                     onClearComplete();
                 }
-
-                setTimeout(() => {
-                    window.location.reload();
-                }, 500);
-
                 return;
             }
 
@@ -150,13 +145,15 @@ export default function ClearButtonSubject({
                 }
             }
 
+            // ใช้ callback เพื่อ refresh ข้อมูลแทนการ reload ทั้งหน้า
             if (onClearComplete) {
                 onClearComplete();
+            } else {
+                // ถ้าไม่มี callback ให้ reload หน้าเว็บ
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
             }
-
-            setTimeout(() => {
-                window.location.reload();
-            }, 500);
 
         } catch (error) {
             console.error("Error clearing timetable:", error);

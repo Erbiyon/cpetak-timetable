@@ -231,6 +231,13 @@ function ConflictDialog({
     }>;
     onClose: () => void;
 }) {
+    const handleClose = () => {
+        onClose();
+        setTimeout(() => {
+            window.location.reload();
+        }, 300);
+    };
+
     const getPlanTypeText = (planType: string) => {
         switch (planType) {
             case "TRANSFER": return "เทียบโอน";
@@ -266,7 +273,7 @@ function ConflictDialog({
                             <span>พบการชนกันในตาราง</span>
                         </h2>
                         <button
-                            onClick={onClose}
+                            onClick={handleClose}
                             className="text-gray-500 hover:text-gray-700 text-xl font-bold"
                         >
                             ×
@@ -454,7 +461,7 @@ function ConflictDialog({
                     <div className="mt-6 flex justify-end">
                         <Button
                             variant="outline"
-                            onClick={onClose}
+                            onClick={handleClose}
                             className="px-4 py-2 bg-card rounded"
                         >
                             ปิด
