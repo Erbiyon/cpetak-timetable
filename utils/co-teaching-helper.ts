@@ -129,7 +129,7 @@ export async function handleCoTeachingMerge(
    mergedPlanIds: number[]
 ) {
    try {
-      // หาวิชาทั้งหมดที่ต้องรวมกลับ (ทุกชั้นปี ทุก planType ที่เป็นส่วนแบ่งของวิชานี้)
+
       const allRelatedPlans = await prisma.plans_tb.findMany({
          where: {
             subjectCode: subjectCode,
@@ -140,11 +140,11 @@ export async function handleCoTeachingMerge(
             OR: [
                {
                   subjectName: {
-                     contains: `${subjectCode} (ส่วนที่` // วิชาที่แบ่งแล้ว
+                     contains: `${subjectCode} (ส่วนที่`
                   }
                },
                {
-                  id: { in: mergedPlanIds } // วิชาที่ส่งมา
+                  id: { in: mergedPlanIds }
                }
             ]
          }
@@ -157,7 +157,7 @@ export async function handleCoTeachingMerge(
          subjectName: p.subjectName
       })));
 
-      // หา groups ทั้งหมดที่เกี่ยวข้องกับวิชานี้ (รวมทุกส่วนแบ่ง)
+
       const relatedGroups = await prisma.coTeaching_tb.findMany({
          where: {
             OR: [
@@ -200,14 +200,14 @@ export async function handleCoTeachingMerge(
 
       console.log("Input mergedPlanIds:", mergedPlanIds);
 
-      // ลบ groups เดิมทั้งหมดที่เกี่ยวข้องกับวิชานี้
+
       for (const group of relatedGroups) {
          await prisma.coTeaching_tb.delete({
             where: { id: group.id }
          });
       }
 
-      // สร้าง group ใหม่สำหรับวิชาที่รวมแล้ว โดยใช้วิชาที่รวมแล้วทั้งหมด
+
       const originalGroupKey = generateCoTeachingGroupKey(subjectCode, termYear);
       await prisma.coTeaching_tb.create({
          data: {

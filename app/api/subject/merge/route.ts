@@ -50,7 +50,7 @@ export async function POST(
                                 some: {
                                     subjectCode: subjectCode,
                                     termYear: subjectToMerge.termYear
-                                    // ลบ yearLevel เพื่อให้หาทุกชั้นปี
+
                                 }
                             }
                         }
@@ -64,7 +64,7 @@ export async function POST(
                             planType: {
                                 in: ["TRANSFER", "FOUR_YEAR"]
                             }
-                            // ลบ yearLevel เพื่อให้หาทุกชั้นปี
+
                         }
                     }
                 }
@@ -78,7 +78,7 @@ export async function POST(
             })));
 
 
-            // รวบรวม plan IDs ทั้งหมดที่จะรวม (ทุกชั้นปี)
+
             const allPlansToMerge = relatedCoTeachingGroups.flatMap(group => group.plans);
 
             console.log("All plans to merge (all year levels):", allPlansToMerge.map(p => ({
