@@ -11,7 +11,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Scissors, Trash2, TriangleAlert } from "lucide-react"
+import { Scissors, Trash2 } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Info } from "lucide-react"
