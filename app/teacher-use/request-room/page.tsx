@@ -40,7 +40,7 @@ type Subject = {
         id: number;
         roomCode: string;
         roomType: string;
-        roomCate?: string; // เพิ่ม roomCate
+        roomCate?: string;
     } | null;
     teacher?: {
         id: number;
@@ -54,7 +54,7 @@ type Room = {
     id: number;
     roomCode: string;
     roomType: string;
-    roomCate?: string; // เพิ่ม roomCate
+    roomCate?: string;
 };
 
 type GroupedSubjects = {
@@ -74,14 +74,14 @@ export default function RequestRoomPage() {
     const [teacherInfo, setTeacherInfo] = useState<any>(null);
     const [accessDenied, setAccessDenied] = useState(false);
 
-    // ตรวจสอบการยืนยันตัวตน
+
     useEffect(() => {
         if (status === "unauthenticated") {
             router.push("/login");
         }
     }, [status, router]);
 
-    // ดึงข้อมูลอาจารย์และตรวจสอบสิทธิ์
+
     useEffect(() => {
         if (session?.user?.id && status === "authenticated") {
             fetchTeacherInfo();
@@ -98,7 +98,7 @@ export default function RequestRoomPage() {
                 console.log('Teacher info:', teacherData);
                 setTeacherInfo(teacherData);
 
-                // ตรวจสอบ teacherType
+
                 if (teacherData.teacherType === "อาจารย์ภายนอกสาขา") {
                     console.log('Access denied: อาจารย์ภายนอกสาขา');
                     setAccessDenied(true);
@@ -117,7 +117,7 @@ export default function RequestRoomPage() {
         }
     };
 
-    // โหลดวิชาที่อาจารย์คนนี้เป็นเจ้าของเท่านั้น
+
     const fetchSubjects = async () => {
         if (accessDenied || !session?.user?.id) return;
 
@@ -136,7 +136,7 @@ export default function RequestRoomPage() {
                 const data = await res.json();
                 console.log("API response - subjects found:", data.length);
 
-                // เพิ่มการกรองเพื่อให้แน่ใจว่าเป็นวิชาของอาจารย์คนนี้
+
                 const mySubjects = data.filter((subject: Subject) =>
                     subject.teacherId && subject.teacherId.toString() === session?.user?.id
                 );
@@ -152,7 +152,7 @@ export default function RequestRoomPage() {
         }
     };
 
-    // โหลดข้อมูลห้องเรียน
+
     const fetchRooms = async () => {
         if (accessDenied) return;
 
@@ -161,8 +161,8 @@ export default function RequestRoomPage() {
             const response = await fetch('/api/room');
             if (response.ok) {
                 const data = await response.json();
-                // กรองห้องที่ roomType ไม่ใช่ "ไม่ได้กำหนดประเภทห้อง"
-                const filteredRooms = data.filter((room: Room) => room.roomType !== "ไม่ได้กำหนดประเภทห้อง");
+
+                const filteredRooms = data.filter((room: Room) => room.roomType == "อาคารสาขาวิศวกรรมคอมพิวเตอร์" || room.roomType == "ตึกวิศวกรรมศาสตร์");
                 console.log("Rooms received:", filteredRooms);
                 setRooms(filteredRooms);
             } else {
@@ -173,7 +173,7 @@ export default function RequestRoomPage() {
         }
     };
 
-    // โหลดข้อมูล term year ปัจจุบัน
+
     useEffect(() => {
         async function fetchTermYear() {
             if (accessDenied) return;
@@ -193,13 +193,13 @@ export default function RequestRoomPage() {
             }
         }
 
-        // เรียกเฉพาะเมื่อไม่ได้ถูกปฏิเสธสิทธิ์
+
         if (!accessDenied && teacherInfo && teacherInfo.teacherType !== "อาจารย์ภายนอกสาขา") {
             fetchTermYear();
         }
     }, [accessDenied, teacherInfo]);
 
-    // โหลดข้อมูลวิชาและห้องเมื่อมีการเปลี่ยน term year
+
     useEffect(() => {
         if (currentTermYear && !accessDenied && session?.user?.id) {
             fetchSubjects();
@@ -207,24 +207,24 @@ export default function RequestRoomPage() {
         }
     }, [currentTermYear, accessDenied, session?.user?.id]);
 
-    // อัปเดตห้องเรียนเท่านั้น
+
     const handleRoomUpdate = async (subjectId: number, roomId: string) => {
         if (accessDenied) return;
 
         try {
             setUpdating(subjectId);
 
-            // หา subject หลัก
+
             const subject = subjects.find(s => s.id === subjectId);
             if (!subject) return;
 
-            // เช็คว่าเป็น DVE หรือไม่
+
             const isDVE = subject.planType === "DVE-MSIX" || subject.planType === "DVE-LVC";
 
             let updateSubjectIds: number[] = [subjectId];
 
             if (isDVE) {
-                // หา subject อื่นๆ ที่รหัสวิชาเดียวกัน, planType เป็น DVE, termYear เดียวกัน
+
                 updateSubjectIds = subjects
                     .filter(s =>
                         s.subjectCode === subject.subjectCode &&
@@ -234,7 +234,7 @@ export default function RequestRoomPage() {
                     .map(s => s.id);
             }
 
-            // PATCH ทุก subject ที่เกี่ยวข้อง
+
             await Promise.all(
                 updateSubjectIds.map(id =>
                     fetch(`/api/subject/${id}/room`, {
@@ -247,7 +247,7 @@ export default function RequestRoomPage() {
                 )
             );
 
-            // รีเฟรชข้อมูล
+
             await fetchSubjects();
 
             const selectedRoom = rooms.find(room => room.id === parseInt(roomId));
@@ -263,7 +263,7 @@ export default function RequestRoomPage() {
         }
     };
 
-    // แปลง planType เป็นข้อความภาษาไทย
+
     const getPlanTypeText = (planType: string) => {
         switch (planType) {
             case "TRANSFER": return "เทียบโอน";
@@ -274,7 +274,7 @@ export default function RequestRoomPage() {
         }
     };
 
-    // จัดกลุ่มวิชาตาม planType และ yearLevel
+
     const groupedSubjects: GroupedSubjects = subjects.reduce((acc, subject) => {
         if (!acc[subject.planType]) {
             acc[subject.planType] = {};
@@ -286,7 +286,7 @@ export default function RequestRoomPage() {
         return acc;
     }, {} as GroupedSubjects);
 
-    // เรียงลำดับ yearLevel
+
     const sortYearLevels = (yearLevels: string[]) => {
         return yearLevels.sort((a, b) => {
             const getYearNumber = (yearLevel: string) => {
@@ -312,7 +312,7 @@ export default function RequestRoomPage() {
         return null;
     }
 
-    // แสดงหน้าการปฏิเสธสิทธิ์สำหรับอาจารย์ภายนอกสาขา
+
     if (accessDenied) {
         return (
             <div className="container mx-auto p-6">
@@ -333,7 +333,7 @@ export default function RequestRoomPage() {
 
     return (
         <div className="container mx-auto p-6">
-            {/* Header */}
+
             <div className="mb-6">
                 <h1 className="text-3xl font-bold">เลือกห้องเรียนสำหรับวิชาที่สอน</h1>
                 <p className="text-gray-600 mt-2">
@@ -349,7 +349,7 @@ export default function RequestRoomPage() {
                 )}
             </div>
 
-            {/* รายการวิชา */}
+
             {loading ? (
                 <Card>
                     <CardContent className="flex justify-center items-center p-8">
@@ -371,7 +371,7 @@ export default function RequestRoomPage() {
                         <div className="space-y-6">
                             {Object.entries(groupedSubjects).map(([planType, yearLevels]) => (
                                 <div key={planType} className="space-y-4">
-                                    {/* หัวข้อ Plan Type */}
+
                                     <div className="p-3 rounded-lg border bg-muted">
                                         <h3 className="font-bold text-lg">
                                             {getPlanTypeText(planType)}
@@ -381,28 +381,28 @@ export default function RequestRoomPage() {
                                         </h3>
                                     </div>
 
-                                    {/* แสดงกลุ่มตาม Year Level */}
+
                                     {sortYearLevels(Object.keys(yearLevels)).map((yearLevel) => {
                                         const subjects = yearLevels[yearLevel];
 
                                         return (
                                             <div key={`${planType}-${yearLevel}`} className="space-y-2">
-                                                {/* หัวข้อ Year Level */}
+
                                                 <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
                                                     <span className="font-medium">{yearLevel}</span>
                                                     <Badge variant="secondary">{subjects.length} วิชา</Badge>
                                                 </div>
 
-                                                {/* ตารางวิชา */}
+
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
                                                             <TableHead className="w-[100px]">รหัสวิชา</TableHead>
                                                             <TableHead>ชื่อวิชา</TableHead>
-                                                            <TableHead className="w-[80px] text-center">Section</TableHead>
+                                                            <TableHead className="w-[80px] text-center">กลุ่มเรียน</TableHead>
                                                             <TableHead className="w-[60px] text-center">หน่วยกิต</TableHead>
                                                             <TableHead className="w-[100px] text-center">ชั่วโมง</TableHead>
-                                                            <TableHead className="w-[130px] text-center">ห้องเรียน</TableHead>
+                                                            <TableHead className="w-[340px] text-center">ห้องเรียน</TableHead>
                                                             <TableHead className="w-[80px] text-center">สถานะ</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
@@ -466,7 +466,7 @@ export default function RequestRoomPage() {
                                                                         <Loader2 className="h-4 w-4 animate-spin mx-auto" />
                                                                     ) : (
                                                                         <div className="flex items-center justify-center">
-                                                                            {/* ไอคอนสถานะห้อง */}
+
                                                                             {subject.roomId ? (
                                                                                 <div title="เลือกห้องแล้ว">
                                                                                     <CheckCircle className="h-5 w-5 text-green-600" />

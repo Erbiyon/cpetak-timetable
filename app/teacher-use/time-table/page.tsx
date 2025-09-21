@@ -372,9 +372,9 @@ function SubjectInCell({
                                                 <span className="font-medium text-purple-300">
                                                     {subject.planType === 'TRANSFER' && 'เทียบโอน'}
                                                     {subject.planType === 'FOUR_YEAR' && '4 ปี'}
-                                                    {subject.planType === 'DVE_LVC' && 'ทค.'}
-                                                    {subject.planType === 'DVE_MSIX' && 'ทค.ม.6'}
-                                                    {!['TRANSFER', 'FOUR_YEAR', 'DVE_LVC', 'DVE_MSIX'].includes(subject.planType) && subject.planType}
+                                                    {subject.planType === 'DVE-LVC' && 'ปวส. (ปวช)'}
+                                                    {subject.planType === 'DVE-MSIX' && 'ปวส. (ม.6)'}
+                                                    {!['TRANSFER', 'FOUR_YEAR', 'DVE-LVC', 'DVE-MSIX'].includes(subject.planType) && subject.planType}
                                                 </span>
                                             </div>
                                         )}
