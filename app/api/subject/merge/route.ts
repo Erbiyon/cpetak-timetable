@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
+import {
+    checkCoTeachingGroup,
+    handleCoTeachingMerge
+} from "@/utils/co-teaching-helper"
 
 const prisma = new PrismaClient()
 
@@ -22,144 +26,107 @@ export async function POST(
             return NextResponse.json({ error: "ไม่พบวิชาที่ระบุ" }, { status: 404 })
         }
 
-
         const baseSubjectName = subjectToMerge.subjectName.replace(/\s*\(ส่วนที่ \d+\)\s*$/, '')
         const subjectCode = subjectToMerge.subjectCode
 
 
-        const allParts = await prisma.plans_tb.findMany({
-            where: {
-                subjectCode: subjectCode,
-                subjectName: {
-                    contains: baseSubjectName
-                },
-                termYear: subjectToMerge.termYear,
-                yearLevel: subjectToMerge.yearLevel,
-                planType: subjectToMerge.planType
-            },
-            include: {
-                room: true,
-                teacher: true
-            }
-        })
+        const coTeachingGroup = await checkCoTeachingGroup(subjectId);
+
+        if (coTeachingGroup) {
+
+            console.log("พบวิชาสอนร่วม Group Key:", coTeachingGroup.groupKey);
 
 
-        const splitParts = allParts.filter(part =>
-            part.subjectName.includes('(ส่วนที่')
-        )
-
-        if (splitParts.length < 2) {
-            return NextResponse.json({ error: "ไม่พบส่วนที่แบ่งเพื่อรวม" }, { status: 400 })
-        }
-
-        console.log("ข้อมูลส่วนที่พบทั้งหมด:", splitParts.map(p => ({
-            id: p.id,
-            name: p.subjectName,
-            roomId: p.roomId,
-            teacherId: p.teacherId,
-            section: p.section,
-            lectureHour: p.lectureHour,
-            labHour: p.labHour
-        })));
-
-
-        const totalLectureHours = splitParts.reduce((sum, part) => sum + (part.lectureHour || 0), 0)
-        const totalLabHours = splitParts.reduce((sum, part) => sum + (part.labHour || 0), 0)
-
-
-
-        let originalSection = null;
-        for (const part of splitParts) {
-            if (part.section) {
-
-                const sectionMatch = part.section.match(/^(.+)-\d+$/);
-                if (sectionMatch) {
-                    originalSection = sectionMatch[1];
-                    break;
-                } else {
-
-                    originalSection = part.section;
-                    break;
-                }
-            }
-        }
-
-        console.log("การคำนวณ section เดิม:", {
-            splitParts: splitParts.map(p => ({ id: p.id, section: p.section })),
-            originalSection
-        });
-
-
-        let mergedRoomId = null;
-        let mergedTeacherId = null;
-
-        for (const part of splitParts) {
-            if (!mergedRoomId && part.roomId) mergedRoomId = part.roomId;
-            if (!mergedTeacherId && part.teacherId) mergedTeacherId = part.teacherId;
-        }
-
-        console.log("ข้อมูลที่จะรวม:", {
-            roomId: mergedRoomId,
-            teacherId: mergedTeacherId,
-            section: originalSection,
-            lectureHour: totalLectureHours,
-            labHour: totalLabHours
-        });
-
-
-        await prisma.timetable_tb.deleteMany({
-            where: {
-                planId: {
-                    in: splitParts.map(part => part.id)
-                }
-            }
-        })
-
-
-        const mergedSubject = await prisma.plans_tb.update({
-            where: { id: splitParts[0].id },
-            data: {
-                subjectName: baseSubjectName,
-                lectureHour: totalLectureHours,
-                labHour: totalLabHours,
-                roomId: mergedRoomId,
-                teacherId: mergedTeacherId,
-                section: originalSection
-            },
-            include: {
-                room: true,
-                teacher: true
-            }
-        })
-
-
-        const partsToDelete = splitParts.slice(1).map(part => part.id)
-        if (partsToDelete.length > 0) {
-            await prisma.plans_tb.deleteMany({
+            const relatedCoTeachingGroups = await prisma.coTeaching_tb.findMany({
                 where: {
-                    id: {
-                        in: partsToDelete
+                    groupKey: {
+                        startsWith: `${subjectCode}-`
+                    }
+                },
+                include: {
+                    plans: {
+                        where: {
+                            termYear: subjectToMerge.termYear,
+                            yearLevel: subjectToMerge.yearLevel
+                        }
                     }
                 }
+            });
+
+
+            const allPlansToMerge = relatedCoTeachingGroups.flatMap(group => group.plans);
+
+
+            const groupedByPlanType = allPlansToMerge.reduce((acc, plan) => {
+                if (!acc[plan.planType!]) {
+                    acc[plan.planType!] = [];
+                }
+                acc[plan.planType!].push(plan);
+                return acc;
+            }, {} as Record<string, any[]>);
+
+            const mergedSubjects = [];
+            let allDeletedParts: number[] = [];
+
+
+            for (const [, plans] of Object.entries(groupedByPlanType)) {
+                if (plans.length > 0) {
+                    const result = await mergeSubjectPartsWithDeleted(plans, baseSubjectName);
+                    mergedSubjects.push(result.mergedSubject);
+                    allDeletedParts = allDeletedParts.concat(result.deletedParts);
+                }
+            }
+
+
+            await handleCoTeachingMerge(
+                subjectCode,
+                subjectToMerge.termYear || "",
+                mergedSubjects.map(s => s.id)
+            );
+
+            return NextResponse.json({
+                success: true,
+                mergedSubjects,
+                mergedSubject: mergedSubjects[0],
+                deletedParts: allDeletedParts,
+                isCoTeaching: true
+            });
+
+        } else {
+
+            const allParts = await prisma.plans_tb.findMany({
+                where: {
+                    subjectCode: subjectCode,
+                    subjectName: {
+                        contains: baseSubjectName
+                    },
+                    termYear: subjectToMerge.termYear,
+                    yearLevel: subjectToMerge.yearLevel,
+                    planType: subjectToMerge.planType
+                },
+                include: {
+                    room: true,
+                    teacher: true
+                }
             })
+
+            const splitParts = allParts.filter(part =>
+                part.subjectName.includes('(ส่วนที่')
+            )
+
+            if (splitParts.length < 2) {
+                return NextResponse.json({ error: "ไม่พบส่วนที่แบ่งเพื่อรวม" }, { status: 400 })
+            }
+
+            const result = await mergeSubjectPartsWithDeleted(splitParts, baseSubjectName);
+
+            return NextResponse.json({
+                success: true,
+                mergedSubject: result.mergedSubject,
+                deletedParts: result.deletedParts,
+                isCoTeaching: false
+            });
         }
-
-        console.log("รวมสำเร็จ:", {
-            mergedSubject: {
-                id: mergedSubject.id,
-                name: mergedSubject.subjectName,
-                roomId: mergedSubject.roomId,
-                teacherId: mergedSubject.teacherId,
-                section: mergedSubject.section
-            },
-            deletedParts: partsToDelete
-        });
-
-        return NextResponse.json({
-            success: true,
-            mergedSubject,
-            deletedParts: partsToDelete
-        })
 
     } catch (error) {
         console.error("ผิดพลาดในการรวมวิชา:", error)
@@ -167,4 +134,117 @@ export async function POST(
     } finally {
         await prisma.$disconnect()
     }
+}
+
+async function mergeSubjectParts(splitParts: any[], baseSubjectName: string) {
+    console.log("ข้อมูลส่วนที่พบทั้งหมด:", splitParts.map(p => ({
+        id: p.id,
+        name: p.subjectName,
+        roomId: p.roomId,
+        teacherId: p.teacherId,
+        section: p.section,
+        lectureHour: p.lectureHour,
+        labHour: p.labHour
+    })));
+
+    const totalLectureHours = splitParts.reduce((sum, part) => sum + (part.lectureHour || 0), 0)
+    const totalLabHours = splitParts.reduce((sum, part) => sum + (part.labHour || 0), 0)
+
+
+    let originalSection = null;
+    for (const part of splitParts) {
+        if (part.section) {
+            const sectionMatch = part.section.match(/^(.+)-\d+$/);
+            if (sectionMatch) {
+                originalSection = sectionMatch[1];
+                break;
+            } else {
+                originalSection = part.section;
+                break;
+            }
+        }
+    }
+
+    console.log("การคำนวณ section เดิม:", {
+        splitParts: splitParts.map(p => ({ id: p.id, section: p.section })),
+        originalSection
+    });
+
+
+    let mergedRoomId = null;
+    let mergedTeacherId = null;
+
+    for (const part of splitParts) {
+        if (!mergedRoomId && part.roomId) mergedRoomId = part.roomId;
+        if (!mergedTeacherId && part.teacherId) mergedTeacherId = part.teacherId;
+    }
+
+    console.log("ข้อมูลที่จะรวม:", {
+        roomId: mergedRoomId,
+        teacherId: mergedTeacherId,
+        section: originalSection,
+        lectureHour: totalLectureHours,
+        labHour: totalLabHours
+    });
+
+
+    await prisma.timetable_tb.deleteMany({
+        where: {
+            planId: {
+                in: splitParts.map(part => part.id)
+            }
+        }
+    })
+
+
+    const mergedSubject = await prisma.plans_tb.update({
+        where: { id: splitParts[0].id },
+        data: {
+            subjectName: baseSubjectName,
+            lectureHour: totalLectureHours,
+            labHour: totalLabHours,
+            roomId: mergedRoomId,
+            teacherId: mergedTeacherId,
+            section: originalSection
+        },
+        include: {
+            room: true,
+            teacher: true
+        }
+    })
+
+
+    const partsToDelete = splitParts.slice(1).map(part => part.id)
+    if (partsToDelete.length > 0) {
+        await prisma.plans_tb.deleteMany({
+            where: {
+                id: {
+                    in: partsToDelete
+                }
+            }
+        })
+    }
+
+    console.log("รวมสำเร็จ:", {
+        mergedSubject: {
+            id: mergedSubject.id,
+            name: mergedSubject.subjectName,
+            roomId: mergedSubject.roomId,
+            teacherId: mergedSubject.teacherId,
+            section: mergedSubject.section
+        },
+        deletedParts: partsToDelete
+    });
+
+    return mergedSubject;
+}
+
+async function mergeSubjectPartsWithDeleted(splitParts: any[], baseSubjectName: string) {
+    const mergedSubject = await mergeSubjectParts(splitParts, baseSubjectName);
+    const deletedParts = splitParts.slice(1).map(part => part.id);
+
+    return {
+        mergedSubject,
+        deletedParts
+    };
 }

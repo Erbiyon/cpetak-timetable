@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -11,7 +11,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Scissors, Trash2 } from "lucide-react"
+import { Scissors, Trash2, TriangleAlert } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Info } from "lucide-react"
@@ -36,6 +36,32 @@ export default function CutButton({
     const totalLabHours = subject?.labHour || 0
     const totalHours = totalLectureHours + totalLabHours
 
+    const [isCoTeaching, setIsCoTeaching] = useState(false)
+    const [coTeachingDetails, setCoTeachingDetails] = useState<any>(null)
+
+
+    useEffect(() => {
+        const checkCoTeaching = async () => {
+            if (!subject?.id) return;
+
+            try {
+                const response = await fetch(`/api/subject/co-teaching/check?subjectId=${subject.id}`);
+                const data = await response.json();
+
+                if (data.groupKey) {
+                    setIsCoTeaching(true);
+                    setCoTeachingDetails(data);
+                } else {
+                    setIsCoTeaching(false);
+                    setCoTeachingDetails(null);
+                }
+            } catch (error) {
+                console.error("Error checking co-teaching status:", error);
+            }
+        };
+
+        checkCoTeaching();
+    }, [subject?.id]);
 
     const currentPartNumber = useMemo(() => {
         const nameMatch = subject?.subjectName?.match(/\(ส่วนที่ (\d+)\)$/);
@@ -130,6 +156,14 @@ export default function CutButton({
         }
     }
 
+    const getPlanTypeText = (planType: string) => {
+        switch (planType) {
+            case "TRANSFER": return "เทียบโอน";
+            case "FOUR_YEAR": return "4 ปี";
+            default: return planType;
+        }
+    };
+
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -146,6 +180,7 @@ export default function CutButton({
                     <DialogTitle>
                         {isAlreadySplitSubject ? "จัดการส่วนวิชา" : "แบ่งวิชา"} {subject?.subjectCode}
                         {isAlreadySplitSubject ? ` (ส่วนที่ ${currentPartNumber})` : ''}
+                        {isCoTeaching && <span className="text-orange-600 ml-2">(วิชาสอนร่วม)</span>}
                     </DialogTitle>
                     <DialogDescription>
                         {isAlreadySplitSubject
@@ -155,6 +190,20 @@ export default function CutButton({
                     </DialogDescription>
                 </DialogHeader>
 
+                {isCoTeaching && coTeachingDetails && (
+                    <Alert className="bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800">
+                        <Info className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                        <AlertDescription className="text-orange-800 dark:text-orange-200">
+                            <div className="font-medium mb-2">วิชาสอนร่วม</div>
+                            <div className="text-sm">
+                                วิชานี้เป็นวิชาสอนร่วมระหว่างแผนการเรียน{" "}
+                                <div className="font-medium">
+                                    {coTeachingDetails.details.map((d: any) => getPlanTypeText(d.planType)).join(", ")}
+                                </div>
+                            </div>
+                        </AlertDescription>
+                    </Alert>
+                )}
 
                 {isAlreadySplitSubject && (
                     <div className="py-4 border-b">
@@ -162,6 +211,11 @@ export default function CutButton({
                             <Info className="h-4 w-4" />
                             <AlertDescription>
                                 การรวมส่วนจะรวมทุกส่วนของวิชานี้กลับเป็นวิชาเดิม และลบข้อมูลในตารางเรียน
+                                {isCoTeaching && (
+                                    <div className="mt-2 font-medium text-orange-600 dark:text-orange-400">
+                                        ⚠️ วิชาสอนร่วม: จะรวมทุกแผนการเรียนพร้อมกัน
+                                    </div>
+                                )}
                             </AlertDescription>
                         </Alert>
                         <div className="flex justify-center">
@@ -173,6 +227,7 @@ export default function CutButton({
                                 >
                                     <Trash2 className="h-4 w-4" />
                                     รวมส่วนกลับเป็นวิชาเดิม
+                                    {isCoTeaching && " (ทุกแผน)"}
                                 </Button>
                             </DialogClose>
                         </div>
@@ -181,7 +236,7 @@ export default function CutButton({
 
 
                 <form onSubmit={handleSubmit}>
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-4">
                         <div className="text-sm font-medium">
                             {isAlreadySplitSubject ? "แบ่งส่วนเพิ่ม" : "แบ่งวิชาออกเป็น 2 ส่วน"}
                         </div>
@@ -261,7 +316,15 @@ export default function CutButton({
                             className={`bg-muted/50 ${hasSomePartZeroHours ? "border-yellow-500 dark:border-yellow-700" : ""}`}
                         >
                             <Info className={`h-4 w-4 ${hasSomePartZeroHours ? "text-yellow-600 dark:text-yellow-400" : ""}`} />
-                            <AlertDescription>{infoMessage}</AlertDescription>
+                            <AlertDescription>
+                                {infoMessage}
+                                {isCoTeaching && (
+                                    <div className="mt-2 font-medium text-orange-600 dark:text-orange-400 flex items-center gap-1">
+                                        <TriangleAlert className="h-4 w-4" />
+                                        <span>วิชาสอนร่วม: จะแบ่งทุกแผนการเรียนพร้อมกัน</span>
+                                    </div>
+                                )}
+                            </AlertDescription>
                         </Alert>
                     </div>
                     <DialogFooter>
@@ -271,7 +334,9 @@ export default function CutButton({
                             </Button>
                         </DialogClose>
                         <DialogClose asChild>
-                            <Button type="submit">แบ่งวิชา</Button>
+                            <Button type="submit">
+                                แบ่งวิชา
+                            </Button>
                         </DialogClose>
                     </DialogFooter>
                 </form>

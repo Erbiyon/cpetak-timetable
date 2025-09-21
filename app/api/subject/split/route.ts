@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
+import {
+    checkCoTeachingGroup,
+    handleCoTeachingSplit
+} from "@/utils/co-teaching-helper"
 
 const prisma = new PrismaClient()
 
@@ -32,33 +36,19 @@ export async function POST(
         })
 
 
-        // const baseSubjectName = originalSubject.subjectName.replace(/\s*\(ส่วนที่ \d+\)\s*$/, '')
-
-
-        // const currentPartMatch = originalSubject.subjectName.match(/\(ส่วนที่ (\d+)\)$/)
-        // const currentPartNumber = currentPartMatch ? parseInt(currentPartMatch[1], 10) : 1
-
-
-        // const originalSection = originalSubject.section || "1";
-        // const newSection1 = `${originalSection}-1`;
-        // const newSection2 = `${originalSection}-2`;
-
-
-        const isDVEPlan = originalSubject.planType === "DVE-MSIX" || originalSubject.planType === "DVE-LVC";
+        const coTeachingGroup = await checkCoTeachingGroup(subjectId);
 
         let allUpdatedSubjects = [];
         let allNewSubjects = [];
 
-        if (isDVEPlan) {
+        if (coTeachingGroup) {
 
-            const sameSubjects = await prisma.plans_tb.findMany({
+            console.log("พบวิชาสอนร่วม Group Key:", coTeachingGroup.groupKey);
+            console.log("วิชาในกลุ่ม:", coTeachingGroup.planIds);
+
+            const coTeachingSubjects = await prisma.plans_tb.findMany({
                 where: {
-                    subjectCode: originalSubject.subjectCode,
-                    termYear: originalSubject.termYear,
-                    yearLevel: originalSubject.yearLevel,
-                    planType: {
-                        in: ["DVE-MSIX", "DVE-LVC"]
-                    }
+                    id: { in: coTeachingGroup.planIds }
                 },
                 include: {
                     room: true,
@@ -66,19 +56,61 @@ export async function POST(
                 }
             });
 
-            console.log("เจอวิชา DVE ที่จะถูกแบ่งแยก:", sameSubjects.length);
+            const part1Ids: number[] = [];
+            const part2Ids: number[] = [];
 
-
-            for (const subject of sameSubjects) {
+            for (const subject of coTeachingSubjects) {
                 const result = await splitSingleSubject(subject, splitData);
                 allUpdatedSubjects.push(result.updatedSubject);
                 allNewSubjects.push(result.newSubject);
+                part1Ids.push(result.updatedSubject.id);
+                part2Ids.push(result.newSubject.id);
             }
+
+
+            await handleCoTeachingSplit(
+                coTeachingGroup.groupKey,
+                { part1Ids, part2Ids },
+                originalSubject.subjectCode,
+                originalSubject.termYear || "",
+                {
+                    part1: splitData.part1.partNumber,
+                    part2: splitData.part2.partNumber
+                }
+            );
+
         } else {
 
-            const result = await splitSingleSubject(originalSubject, splitData);
-            allUpdatedSubjects.push(result.updatedSubject);
-            allNewSubjects.push(result.newSubject);
+            const isDVEPlan = originalSubject.planType === "DVE-MSIX" || originalSubject.planType === "DVE-LVC";
+
+            if (isDVEPlan) {
+                const sameSubjects = await prisma.plans_tb.findMany({
+                    where: {
+                        subjectCode: originalSubject.subjectCode,
+                        termYear: originalSubject.termYear,
+                        yearLevel: originalSubject.yearLevel,
+                        planType: {
+                            in: ["DVE-MSIX", "DVE-LVC"]
+                        }
+                    },
+                    include: {
+                        room: true,
+                        teacher: true
+                    }
+                });
+
+                console.log("เจอวิชา DVE ที่จะถูกแบ่งแยก:", sameSubjects.length);
+
+                for (const subject of sameSubjects) {
+                    const result = await splitSingleSubject(subject, splitData);
+                    allUpdatedSubjects.push(result.updatedSubject);
+                    allNewSubjects.push(result.newSubject);
+                }
+            } else {
+                const result = await splitSingleSubject(originalSubject, splitData);
+                allUpdatedSubjects.push(result.updatedSubject);
+                allNewSubjects.push(result.newSubject);
+            }
         }
 
         return NextResponse.json({
@@ -86,7 +118,8 @@ export async function POST(
             updatedSubject: allUpdatedSubjects[0],
             newSubject: allNewSubjects[0],
             allUpdatedSubjects,
-            allNewSubjects
+            allNewSubjects,
+            isCoTeaching: !!coTeachingGroup
         })
 
     } catch (error) {
@@ -103,8 +136,8 @@ async function splitSingleSubject(originalSubject: any, splitData: any) {
     const baseSubjectName = originalSubject.subjectName.replace(/\s*\(ส่วนที่ \d+\)\s*$/, '')
 
 
-    // const currentPartMatch = originalSubject.subjectName.match(/\(ส่วนที่ (\d+)\)$/)
-    // const currentPartNumber = currentPartMatch ? parseInt(currentPartMatch[1], 10) : 1
+
+
 
 
     const originalSection = originalSubject.section || "1";
