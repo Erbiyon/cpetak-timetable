@@ -483,6 +483,16 @@ function RoomTimetable({
     );
 }
 
+const getPlanTypeText = (planType: string) => {
+    switch (planType) {
+        case "TRANSFER": return "เทียบโอน";
+        case "FOUR_YEAR": return "4 ปี";
+        case "DVE-MSIX": return "ปวส. (ม.6)";
+        case "DVE-LVC": return "ปวส. (ปวช.)";
+        default: return planType;
+    }
+};
+
 function SubjectInCell({
     subject,
     colspan = 1
@@ -532,6 +542,10 @@ function SubjectInCell({
                         </div>
                         <div className="mt-1">{subject.subjectName}</div>
                         <div className="mt-2 grid grid-cols-2 gap-2">
+                            <div>หลักสูตร:</div>
+                            <div className="text-right">{getPlanTypeText(subject.planType)}</div>
+                            <div>ชั้นปี:</div>
+                            <div className="text-right">{subject.yearLevel}</div>
                             <div>จำนวนหน่วยกิต:</div>
                             <div className="text-right">{subject.credit}</div>
                             <div>ชั่วโมงบรรยาย:</div>
