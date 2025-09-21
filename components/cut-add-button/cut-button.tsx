@@ -160,6 +160,8 @@ export default function CutButton({
         switch (planType) {
             case "TRANSFER": return "เทียบโอน";
             case "FOUR_YEAR": return "4 ปี";
+            case "DVE-MSIX": return "ปวส. (ม.6)";
+            case "DVE-LVC": return "ปวส. (ปวช.)";
             default: return planType;
         }
     };
@@ -180,7 +182,6 @@ export default function CutButton({
                     <DialogTitle>
                         {isAlreadySplitSubject ? "จัดการส่วนวิชา" : "แบ่งวิชา"} {subject?.subjectCode}
                         {isAlreadySplitSubject ? ` (ส่วนที่ ${currentPartNumber})` : ''}
-                        {isCoTeaching && <span className="text-orange-600 ml-2">(วิชาสอนร่วม)</span>}
                     </DialogTitle>
                     <DialogDescription>
                         {isAlreadySplitSubject
@@ -194,40 +195,26 @@ export default function CutButton({
                     <Alert className="bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800">
                         <Info className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                         <AlertDescription className="text-orange-800 dark:text-orange-200">
-                            <div className="font-medium mb-2">วิชาสอนร่วม</div>
+                            <div className="font-medium">วิชาสอนร่วม วิชานี้เป็นวิชาสอนร่วมระหว่างแผนการเรียน {
+                                coTeachingDetails.details.map((d: any) => getPlanTypeText(d.planType)).join(", ")}
+                            </div>
                             <div className="text-sm">
-                                วิชานี้เป็นวิชาสอนร่วมระหว่างแผนการเรียน{" "}
-                                <div className="font-medium">
-                                    {coTeachingDetails.details.map((d: any) => getPlanTypeText(d.planType)).join(", ")}
-                                </div>
                             </div>
                         </AlertDescription>
                     </Alert>
                 )}
 
                 {isAlreadySplitSubject && (
-                    <div className="py-4 border-b">
-                        <Alert className="mb-4">
-                            <Info className="h-4 w-4" />
-                            <AlertDescription>
-                                การรวมส่วนจะรวมทุกส่วนของวิชานี้กลับเป็นวิชาเดิม และลบข้อมูลในตารางเรียน
-                                {isCoTeaching && (
-                                    <div className="mt-2 font-medium text-orange-600 dark:text-orange-400">
-                                        ⚠️ วิชาสอนร่วม: จะรวมทุกแผนการเรียนพร้อมกัน
-                                    </div>
-                                )}
-                            </AlertDescription>
-                        </Alert>
+                    <div className="border-b mb-2">
                         <div className="flex justify-center">
                             <DialogClose asChild>
                                 <Button
                                     variant="destructive"
                                     onClick={handleMerge}
-                                    className="flex items-center gap-2"
+                                    className="flex items-center gap-2 mb-2"
                                 >
                                     <Trash2 className="h-4 w-4" />
                                     รวมส่วนกลับเป็นวิชาเดิม
-                                    {isCoTeaching && " (ทุกแผน)"}
                                 </Button>
                             </DialogClose>
                         </div>
@@ -237,16 +224,12 @@ export default function CutButton({
 
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-4">
-                        <div className="text-sm font-medium">
-                            {isAlreadySplitSubject ? "แบ่งส่วนเพิ่ม" : "แบ่งวิชาออกเป็น 2 ส่วน"}
-                        </div>
-
                         <div className="grid gap-2">
                             <Label>
                                 จำนวนชั่วโมงทั้งหมด: {totalHours} ชม. (บรรยาย {totalLectureHours} ชม. / ปฏิบัติ{" "}
                                 {totalLabHours} ชม.)
                             </Label>
-                            <div className="flex items-center gap-2 mt-4">
+                            <div className="flex items-center gap-2 mt-2">
                                 <div className="w-14 text-right font-medium">ส่วนที่ {currentPartNumber}:</div>
                                 <Slider
                                     min={0}
@@ -273,7 +256,7 @@ export default function CutButton({
                         </div>
 
 
-                        <div className="rounded-lg border p-4 bg-card mt-4 shadow-sm">
+                        <div className="rounded-lg border p-4 bg-card mt-2 shadow-sm">
                             <div className="text-sm font-medium mb-3">รายละเอียดการแบ่ง</div>
                             <div className="grid grid-cols-3 gap-2 text-sm">
                                 <div className="font-medium"></div>
@@ -318,16 +301,10 @@ export default function CutButton({
                             <Info className={`h-4 w-4 ${hasSomePartZeroHours ? "text-yellow-600 dark:text-yellow-400" : ""}`} />
                             <AlertDescription>
                                 {infoMessage}
-                                {isCoTeaching && (
-                                    <div className="mt-2 font-medium text-orange-600 dark:text-orange-400 flex items-center gap-1">
-                                        <TriangleAlert className="h-4 w-4" />
-                                        <span>วิชาสอนร่วม: จะแบ่งทุกแผนการเรียนพร้อมกัน</span>
-                                    </div>
-                                )}
                             </AlertDescription>
                         </Alert>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="mt-3">
                         <DialogClose asChild>
                             <Button variant="outline" type="button">
                                 ยกเลิก
