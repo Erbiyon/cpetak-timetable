@@ -39,37 +39,80 @@ export async function POST(
 
             const relatedCoTeachingGroups = await prisma.coTeaching_tb.findMany({
                 where: {
-                    groupKey: {
-                        startsWith: `${subjectCode}-`
-                    }
+                    OR: [
+                        {
+                            groupKey: {
+                                startsWith: `${subjectCode}-`
+                            }
+                        },
+                        {
+                            plans: {
+                                some: {
+                                    subjectCode: subjectCode,
+                                    termYear: subjectToMerge.termYear
+                                    // ลบ yearLevel เพื่อให้หาทุกชั้นปี
+                                }
+                            }
+                        }
+                    ]
                 },
                 include: {
                     plans: {
                         where: {
+                            subjectCode: subjectCode,
                             termYear: subjectToMerge.termYear,
-                            yearLevel: subjectToMerge.yearLevel
+                            planType: {
+                                in: ["TRANSFER", "FOUR_YEAR"]
+                            }
+                            // ลบ yearLevel เพื่อให้หาทุกชั้นปี
                         }
                     }
                 }
             });
 
+            console.log("Related co-teaching groups (all year levels):", relatedCoTeachingGroups.map(g => ({
+                id: g.id,
+                groupKey: g.groupKey,
+                planCount: g.plans.length,
+                plans: g.plans.map(p => ({ id: p.id, planType: p.planType, yearLevel: p.yearLevel, subjectName: p.subjectName }))
+            })));
 
+
+            // รวบรวม plan IDs ทั้งหมดที่จะรวม (ทุกชั้นปี)
             const allPlansToMerge = relatedCoTeachingGroups.flatMap(group => group.plans);
 
+            console.log("All plans to merge (all year levels):", allPlansToMerge.map(p => ({
+                id: p.id,
+                planType: p.planType,
+                yearLevel: p.yearLevel,
+                subjectName: p.subjectName
+            })));
 
-            const groupedByPlanType = allPlansToMerge.reduce((acc, plan) => {
-                if (!acc[plan.planType!]) {
-                    acc[plan.planType!] = [];
+            if (allPlansToMerge.length === 0) {
+                return NextResponse.json({ error: "ไม่พบวิชาที่สามารถรวมได้" }, { status: 400 })
+            }
+
+
+            const groupedByPlanTypeAndYear = allPlansToMerge.reduce((acc, plan) => {
+                const key = `${plan.planType}-${plan.yearLevel}`;
+                if (!acc[key]) {
+                    acc[key] = [];
                 }
-                acc[plan.planType!].push(plan);
+                acc[key].push(plan);
                 return acc;
             }, {} as Record<string, any[]>);
+
+            console.log("Grouped plans:", Object.entries(groupedByPlanTypeAndYear).map(([key, plans]) => ({
+                key,
+                planCount: plans.length,
+                plans: plans.map((p: any) => ({ id: p.id, planType: p.planType, yearLevel: p.yearLevel, subjectName: p.subjectName }))
+            })));
 
             const mergedSubjects = [];
             let allDeletedParts: number[] = [];
 
 
-            for (const [, plans] of Object.entries(groupedByPlanType)) {
+            for (const [, plans] of Object.entries(groupedByPlanTypeAndYear)) {
                 if (plans.length > 0) {
                     const result = await mergeSubjectPartsWithDeleted(plans, baseSubjectName);
                     mergedSubjects.push(result.mergedSubject);

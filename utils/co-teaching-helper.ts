@@ -129,14 +129,43 @@ export async function handleCoTeachingMerge(
    mergedPlanIds: number[]
 ) {
    try {
+      // หาวิชาทั้งหมดที่ต้องรวมกลับ (ทุกชั้นปี ทุก planType ที่เป็นส่วนแบ่งของวิชานี้)
+      const allRelatedPlans = await prisma.plans_tb.findMany({
+         where: {
+            subjectCode: subjectCode,
+            termYear: termYear,
+            planType: {
+               in: ["TRANSFER", "FOUR_YEAR"]
+            },
+            OR: [
+               {
+                  subjectName: {
+                     contains: `${subjectCode} (ส่วนที่` // วิชาที่แบ่งแล้ว
+                  }
+               },
+               {
+                  id: { in: mergedPlanIds } // วิชาที่ส่งมา
+               }
+            ]
+         }
+      });
 
+      console.log("All related plans found:", allRelatedPlans.map(p => ({
+         id: p.id,
+         planType: p.planType,
+         yearLevel: p.yearLevel,
+         subjectName: p.subjectName
+      })));
+
+      // หา groups ทั้งหมดที่เกี่ยวข้องกับวิชานี้ (รวมทุกส่วนแบ่ง)
       const relatedGroups = await prisma.coTeaching_tb.findMany({
          where: {
             OR: [
                {
                   plans: {
                      some: {
-                        id: { in: mergedPlanIds }
+                        subjectCode: subjectCode,
+                        termYear: termYear
                      }
                   }
                },
@@ -144,20 +173,41 @@ export async function handleCoTeachingMerge(
                   groupKey: {
                      startsWith: `${subjectCode}-`
                   }
+               },
+               {
+                  groupKey: {
+                     contains: `/${termYear}`
+                  }
                }
             ]
          },
-         include: { plans: true }
+         include: {
+            plans: {
+               where: {
+                  subjectCode: subjectCode,
+                  termYear: termYear
+               }
+            }
+         }
       });
 
+      console.log("Related groups found:", relatedGroups.map(g => ({
+         id: g.id,
+         groupKey: g.groupKey,
+         planCount: g.plans.length,
+         plans: g.plans.map(p => ({ id: p.id, planType: p.planType, yearLevel: p.yearLevel, subjectName: p.subjectName }))
+      })));
 
+      console.log("Input mergedPlanIds:", mergedPlanIds);
+
+      // ลบ groups เดิมทั้งหมดที่เกี่ยวข้องกับวิชานี้
       for (const group of relatedGroups) {
          await prisma.coTeaching_tb.delete({
             where: { id: group.id }
          });
       }
 
-
+      // สร้าง group ใหม่สำหรับวิชาที่รวมแล้ว โดยใช้วิชาที่รวมแล้วทั้งหมด
       const originalGroupKey = generateCoTeachingGroupKey(subjectCode, termYear);
       await prisma.coTeaching_tb.create({
          data: {
@@ -166,6 +216,11 @@ export async function handleCoTeachingMerge(
                connect: mergedPlanIds.map(id => ({ id }))
             }
          }
+      });
+
+      console.log("Created new co-teaching group:", {
+         groupKey: originalGroupKey,
+         mergedPlanIds: mergedPlanIds
       });
 
       return {
