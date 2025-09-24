@@ -111,7 +111,7 @@ export default function LoginPage() {
                     }
                 }
 
-                router.push("/study-plans/transfer-plan")
+                router.push("/dashboard")
             }
         } catch (error) {
             console.error("Admin login failed:", error)

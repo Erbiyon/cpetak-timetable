@@ -41,3 +41,14 @@ export async function GET() {
     })
     return NextResponse.json(terms)
 }
+
+export async function DELETE() {
+    try {
+        // ลบข้อมูลภาคเรียนทั้งหมด
+        await prisma.term_tb.deleteMany()
+        return NextResponse.json({ message: "ลบข้อมูลภาคเรียนทั้งหมดสำเร็จ" })
+    } catch (error) {
+        console.error("Error deleting all terms:", error)
+        return NextResponse.json({ error: "ไม่สามารถลบข้อมูลได้" }, { status: 500 })
+    }
+}

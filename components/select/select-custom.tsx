@@ -37,8 +37,8 @@ export function SelectCustom({ currentYear, onYearChange, planType = "TRANSFER" 
                 yearsToShow = 3
         }
 
-        for (let i = 0; i < yearsToShow; i++) {
-            const year = currentBuddhistYear - i
+        for (let i = 2; i >= -yearsToShow; i--) {
+            const year = currentBuddhistYear + i
             years.push({
                 value: year.toString(),
                 label: `${year}`

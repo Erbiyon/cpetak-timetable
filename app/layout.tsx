@@ -25,8 +25,9 @@ export default function RootLayout({
             <body className={`${sarabun.className} antialiased`}>
                 <AuthSessionProvider>
                     <ThemeProviderCustom>
-                        <HideNavbarCustom />
-                        {children}
+                        <HideNavbarCustom>
+                            {children}
+                        </HideNavbarCustom>
                     </ThemeProviderCustom>
                 </AuthSessionProvider>
             </body>

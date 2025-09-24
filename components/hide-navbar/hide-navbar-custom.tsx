@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { NavigationMenuCustom } from "@/components/navbar/navbar-custom";
 
-export default function HideNavbarCustom() {
+export default function HideNavbarCustom({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
 
     const hideNavbarPages = [
@@ -17,8 +17,13 @@ export default function HideNavbarCustom() {
     const shouldHideNavbar = hideNavbarPages.includes(pathname);
 
     if (shouldHideNavbar) {
-        return null;
+        return <>{children}</>;
     }
 
-    return <NavigationMenuCustom />;
+    return (
+        <>
+            <NavigationMenuCustom />
+            {children}
+        </>
+    );
 }

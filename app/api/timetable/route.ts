@@ -96,13 +96,13 @@ export async function POST(request: Request) {
                 });
             }
 
-            // ตรวจสอบ teacher conflict ยกเว้นภาคเรียนที่ 3 ของ DVE และ TRANSFER
+
             if (teacherId) {
-                // ตรวจสอบว่าเป็นภาคเรียนที่ 3 ของ DVE หรือ TRANSFER หรือไม่
+
                 const termNumber = parseInt(termYear.split('/')[0]);
                 const isDVEOrTransferTerm3 = termNumber === 3 && (planType === 'DVE-MSIX' || planType === 'DVE-LVC' || planType === 'TRANSFER');
 
-                // ข้าม teacher conflict check สำหรับภาคเรียนที่ 3 ของ DVE และ TRANSFER
+
                 if (!isDVEOrTransferTerm3) {
                     const teacherConflicts = await prisma.timetable_tb.findMany({
                         where: {
@@ -214,19 +214,19 @@ export async function POST(request: Request) {
                 }
             }
 
-            // ตรวจสอบ section ซ้ำกันในวิชาเดียวกันแต่ต่างแผนการเรียน
-            // ยกเว้นภาคเรียนที่ 3 ของ DVE และ TRANSFER ที่อนุญาตให้ section ซ้ำได้
+
+
             if (section) {
                 const currentPlan = await prisma.plans_tb.findUnique({
                     where: { id: planId }
                 });
 
                 if (currentPlan) {
-                    // ตรวจสอบว่าเป็นภาคเรียนที่ 3 ของ DVE หรือ TRANSFER หรือไม่
+
                     const termNumber = parseInt(termYear.split('/')[0]);
                     const isDVEOrTransferTerm3 = termNumber === 3 && (planType === 'DVE-MSIX' || planType === 'DVE-LVC' || planType === 'TRANSFER');
 
-                    // ข้าม section conflict check สำหรับภาคเรียนที่ 3 ของ DVE และ TRANSFER
+
                     if (!isDVEOrTransferTerm3) {
                         const duplicateSectionPlans = await prisma.plans_tb.findMany({
                             where: {
@@ -236,7 +236,7 @@ export async function POST(request: Request) {
                                 planType: {
                                     not: currentPlan.planType
                                 },
-                                // เพิ่มเงื่อนไขให้ไม่รวม planId ปัจจุบัน
+
                                 NOT: {
                                     id: planId
                                 }
