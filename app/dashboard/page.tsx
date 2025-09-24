@@ -11,14 +11,16 @@ export default function DashboardPage() {
    const router = useRouter()
 
    useEffect(() => {
-      if (status === "loading") return
+      if (status === "loading") return // รอให้ NextAuth ตรวจสอบเสร็จ
 
-      if (!session) {
+      // หากไม่มี authentication หรือ unauthenticated
+      if (status === "unauthenticated" || !session) {
          router.push("/login")
          return
       }
 
-      if (session.user?.role === "teacher") {
+      // หาก authenticated แต่เป็น teacher
+      if (status === "authenticated" && session.user?.role === "teacher") {
          router.push("/teacher-use/time-table")
          return
       }
@@ -35,8 +37,16 @@ export default function DashboardPage() {
       )
    }
 
-   if (!session || session.user?.role !== "admin") {
-      return null
+   // แสดงเฉพาะเมื่อ authenticated และเป็น admin
+   if (status !== "authenticated" || !session || session.user?.role !== "admin") {
+      return (
+         <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+               <LoaderCircle className="animate-spin mx-auto h-8 w-8 mb-4" />
+               <p className="text-muted-foreground">กำลังตรวจสอบสิทธิ์...</p>
+            </div>
+         </div>
+      )
    }
 
    return (

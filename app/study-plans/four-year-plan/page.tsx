@@ -59,7 +59,7 @@ export default function FourYearPlan() {
                 <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold mb-2 sm:mb-3 break-words leading-tight">
                     แผนการเรียนสำหรับนักศึกษาที่เข้ารับการศึกษาในปีการศึกษา {academicYear}
                 </h1>
-                <h3 className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-300 leading-relaxed">
+                <h3 className="text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
                     หลักสูตรวิศวกรรมคอมพิวเตอร์ <span className="text-green-600 font-medium">4 ปี</span> มทร.ล้านนา ตาก
                 </h3>
             </div>

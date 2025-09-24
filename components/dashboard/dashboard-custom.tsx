@@ -201,7 +201,7 @@ export default function DashboardCustom() {
                            </div>
                            <div>
                               <CardTitle className="text-lg">{action.title}</CardTitle>
-                              <CardDescription className="text-sm">{action.description}</CardDescription>
+                              <CardDescription className="text-sm dark:text-white text-black">{action.description}</CardDescription>
                            </div>
                         </div>
                      </CardHeader>
@@ -263,7 +263,7 @@ export default function DashboardCustom() {
                            <div className="flex items-center justify-between">
                               <div>
                                  <h3 className="font-medium text-base mb-1">{action.title}</h3>
-                                 <p className="text-sm text-muted-foreground">{action.description}</p>
+                                 <p className="text-sm">{action.description}</p>
                               </div>
                               <div className={`p-2 rounded-lg ${action.color} group-hover:scale-110 transition-transform`}>
                                  {action.icon}

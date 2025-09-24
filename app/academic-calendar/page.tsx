@@ -79,20 +79,17 @@ export default function AcademicCalendar() {
 
     async function clearAllTerms() {
         try {
-            // ลบข้อมูลจากฐานข้อมูล
             const deleteResponse = await fetch("/api/term", {
                 method: "DELETE",
             })
 
             if (deleteResponse.ok) {
-                // ลบการกำหนดภาคเรียนปัจจุบัน
                 await fetch("/api/term-year", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ termYear: "" }),
                 })
 
-                // อัพเดท state
                 setTerm1({})
                 setTerm2({})
                 setTerm3({})
@@ -123,7 +120,6 @@ export default function AcademicCalendar() {
                     })
                 }
 
-                // ดึงข้อมูลภาคเรียนปัจจุบัน
                 const currentTermRes = await fetch("/api/current-term-year")
                 if (currentTermRes.ok) {
                     const currentTermData = await currentTermRes.json()
@@ -140,7 +136,7 @@ export default function AcademicCalendar() {
     }, [])
 
     function getCurrentTerm() {
-        const today = new Date(2026, 0, 1)
+        const today = new Date()
         for (let i = 0; i < terms.length; i++) {
             const t = terms[i]
             if (t.start && t.end && today >= t.start && today <= t.end) {
