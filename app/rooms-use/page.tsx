@@ -206,7 +206,7 @@ export default function RoomsUse() {
                                         value="in-department"
                                         className="text-xs sm:text-sm px-2 py-2 h-auto whitespace-normal text-center"
                                     >
-                                        อาคารสาขาวิศวกรรมคอมพิวเตอร์
+                                        อาคารหลักสูตรวิศวกรรมคอมพิวเตอร์
                                     </TabsTrigger>
                                     <TabsTrigger
                                         value="engineering"
@@ -214,12 +214,6 @@ export default function RoomsUse() {
                                     >
                                         ตึกวิศวกรรมศาสตร์
                                     </TabsTrigger>
-                                    {/* <TabsTrigger
-                                        value="out-department"
-                                        className="text-xs sm:text-sm px-2 py-2 h-auto whitespace-normal text-center"
-                                    >
-                                        ห้องเรียนนอกสาขา
-                                    </TabsTrigger> */}
                                 </TabsList>
 
                                 <TabsContent value="in-department">
@@ -273,32 +267,6 @@ export default function RoomsUse() {
                                         </p>
                                     )}
                                 </TabsContent>
-
-                                {/* <TabsContent value="out-department">
-                                    <Select key={`out-${activeTab}`} value={selectedRoomId} onValueChange={handleRoomChange}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="เลือกห้องเรียนนอกสาขา" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {roomGroups.outDepartment.length > 0 ? (
-                                                roomGroups.outDepartment.map(room => (
-                                                    <SelectItem key={`out-${room.id}`} value={String(room.id)}>
-                                                        {room.roomCode}
-                                                    </SelectItem>
-                                                ))
-                                            ) : (
-                                                <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                                                    ไม่มีข้อมูลห้องเรียน
-                                                </div>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    {roomGroups.outDepartment.length === 0 && (
-                                        <p className="text-sm text-muted-foreground mt-2">
-                                            ยังไม่มีการเพิ่มห้องเรียนนอกสาขา
-                                        </p>
-                                    )}
-                                </TabsContent> */}
                             </Tabs>
                         </div>
 
