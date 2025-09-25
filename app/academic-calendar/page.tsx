@@ -101,7 +101,7 @@ export default function AcademicCalendar() {
                 throw new Error("ไม่สามารถลบข้อมูลได้")
             }
         } catch (error) {
-            console.error("Error clearing all terms:", error)
+            console.error("ผิดพลาดในการลบข้อมูล:", error)
             alert("เกิดข้อผิดพลาดในการลบข้อมูล")
         }
     }
