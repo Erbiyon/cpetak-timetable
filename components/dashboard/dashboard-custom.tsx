@@ -162,8 +162,7 @@ export default function DashboardCustom() {
 
    return (
       <div className="space-y-6">
-
-         <div className="bg-gradient-to-r bg-blue-600 rounded-lg p-6 text-white">
+         <div className="bg-gradient-to-r bg-blue-600 dark:bg-card rounded-lg p-6 text-white dark:border">
             <div className="flex justify-between items-start mb-4">
                <div>
                   <h1 className="text-2xl font-bold mb-2">ยินดีต้อนรับ, {session?.user?.name || "ผู้ดูแลระบบ"}</h1>
