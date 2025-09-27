@@ -373,51 +373,10 @@ export default function DveMsixOneYear() {
                         setConflicts([]);
                         throw new Error(data.error || 'เกิดข้อผิดพลาดในการบันทึกตาราง');
                     } else {
-                        console.log("บันทึกตารางเรียนสำเร็จ", data);
+                        console.log("🎉 [FRONTEND] บันทึกตารางเรียนสำเร็จ (API จะ sync อัตโนมัติ)", data);
                         setConflicts([]);
                         setDragFailedSubjectId(null);
 
-                        try {
-                            const searchResponse = await fetch(`/api/subject?subjectCode=${encodeURIComponent(subject.subjectCode)}&termYear=${encodeURIComponent(termYear || '')}&yearLevel=${encodeURIComponent('ปี 1')}&planType=DVE-LVC`);
-
-                            if (searchResponse.ok) {
-                                const dveSubjects = await searchResponse.json();
-                                const matchingSubject = dveSubjects.find((s: any) => s.subjectCode === subject.subjectCode);
-
-                                if (matchingSubject) {
-                                    console.log("พบวิชาใน DVE-LVC ที่ต้องซิ๊งค์:", matchingSubject.subjectCode);
-
-                                    const syncResponse = await fetch('/api/timetable', {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                        },
-                                        body: JSON.stringify({
-                                            planId: matchingSubject.id,
-                                            termYear: termYear || '1',
-                                            yearLevel: 'ปี 1',
-                                            planType: 'DVE-LVC',
-                                            day,
-                                            startPeriod,
-                                            endPeriod,
-                                            roomId: matchingSubject.roomId || null,
-                                            teacherId: matchingSubject.teacherId || null,
-                                            section: matchingSubject.section || null
-                                        }),
-                                    });
-
-                                    if (syncResponse.ok) {
-                                        console.log("ซิ๊งค์ตารางไปยัง DVE-LVC สำเร็จ");
-                                    } else {
-                                        console.warn("ไม่สามารถซิ๊งค์ตารางไปยัง DVE-LVC ได้:", await syncResponse.text());
-                                    }
-                                }
-                            }
-                        } catch (syncError) {
-                            console.warn("เกิดข้อผิดพลาดในการซิ๊งค์ไปยัง DVE-LVC:", syncError);
-                        }
-
-                        // รีเฟรชข้อมูลหลังจากลากวิชาเข้าตารางสำเร็จ
                         await handleSubjectUpdate();
                     }
                 } catch (error) {
@@ -464,30 +423,8 @@ export default function DveMsixOneYear() {
 
             setDragFailedSubjectId(prev => prev === subjectId ? null : prev);
 
-            if (subject) {
-                try {
-                    const searchResponse = await fetch(`/api/subject?subjectCode=${encodeURIComponent(subject.subjectCode)}&termYear=${encodeURIComponent(termYear || '')}&yearLevel=${encodeURIComponent('ปี 1')}&planType=DVE-LVC`);
+            console.log("[FRONTEND] ลบตารางเรียนสำเร็จ (API จะ sync อัตโนมัติ) - วิชา:", subject?.subjectName);
 
-                    if (searchResponse.ok) {
-                        const dveSubjects = await searchResponse.json();
-                        const matchingSubject = dveSubjects.find((s: any) => s.subjectCode === subject.subjectCode);
-
-                        if (matchingSubject) {
-                            console.log("ลบวิชาใน DVE-LVC ด้วย:", matchingSubject.subjectCode);
-
-                            await fetch(`/api/timetable/${matchingSubject.id}`, {
-                                method: 'DELETE',
-                            });
-
-                            console.log("ซิ๊งค์การลบไปยัง DVE-LVC สำเร็จ");
-                        }
-                    }
-                } catch (syncError) {
-                    console.warn("เกิดข้อผิดพลาดในการซิ๊งค์การลบไปยัง DVE-LVC:", syncError);
-                }
-            }
-
-            // รีเฟรชข้อมูลหลังจากลบวิชาออกจากตารางสำเร็จ
             await handleSubjectUpdate();
 
         } catch (error) {

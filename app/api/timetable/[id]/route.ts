@@ -55,7 +55,6 @@ export async function DELETE(
 
         console.log("Attempting to delete timetable for planId:", planId);
 
-        // ดึงข้อมูลวิชาปัจจุบัน
         const currentPlan = await prisma.plans_tb.findUnique({
             where: { id: planId }
         });
@@ -70,7 +69,6 @@ export async function DELETE(
         const isDVE = currentPlan.planType === 'DVE-MSIX' || currentPlan.planType === 'DVE-LVC';
         const isTransferOrFourYear = currentPlan.planType === 'TRANSFER' || currentPlan.planType === 'FOUR_YEAR';
 
-        // ตรวจสอบ Co-Teaching (เฉพาะ Transfer และ Four Year)
         let coTeachingGroup = null;
         let isCoTeaching = false;
 
@@ -93,7 +91,6 @@ export async function DELETE(
                     }
                 }
             });
-            // แก้ไขการกำหนดค่า isCoTeaching
             isCoTeaching = coTeachingGroup !== null && coTeachingGroup.plans.length > 1;
         }
 
@@ -108,39 +105,77 @@ export async function DELETE(
         let deletedPlans: number[] = [];
 
         if (isDVE) {
-            // DVE: ลบทุกวิชาที่มีรหัสเหมือนกันในภาคเรียนเดียวกัน
-            const duplicatePlans = await prisma.plans_tb.findMany({
-                where: {
-                    subjectCode: currentPlan.subjectCode,
-                    termYear: currentPlan.termYear,
-                    NOT: {
-                        id: planId
+            const isSplitSubject = currentPlan.subjectName && currentPlan.subjectName.includes('(ส่วนที่');
+
+            if (isSplitSubject) {
+                console.log(`� [API-DELETE] ลบวิชาที่แบ่งแล้วพร้อม sync: ${currentPlan.subjectName} (planId: ${planId})`);
+
+                const duplicatePlans = await prisma.plans_tb.findMany({
+                    where: {
+                        subjectCode: currentPlan.subjectCode,
+                        subjectName: currentPlan.subjectName,
+                        termYear: currentPlan.termYear,
+                        yearLevel: currentPlan.yearLevel,
+                        NOT: {
+                            id: planId
+                        }
                     }
-                }
-            });
+                });
 
-            const allPlanIds = [planId, ...duplicatePlans.map(p => p.id)];
+                const allPlanIds = [planId, ...duplicatePlans.map(p => p.id)];
+                console.log(`🎯 [API-DELETE] ลบวิชาส่วนเดียวกัน ${allPlanIds.length} รายการ:`, allPlanIds);
 
-            console.log("DVE: Deleting timetables for duplicate plans:", allPlanIds);
-
-            const deleteResult = await prisma.timetable_tb.deleteMany({
-                where: {
-                    planId: {
-                        in: allPlanIds
+                const deleteResult = await prisma.timetable_tb.deleteMany({
+                    where: {
+                        planId: {
+                            in: allPlanIds
+                        }
                     }
-                }
-            });
+                });
 
-            deletedPlans = allPlanIds;
+                deletedPlans = allPlanIds;
 
-            return Response.json({
-                message: "ลบตารางเรียนสำหรับวิชา DVE ที่มีรหัสเหมือนกันทั้งหมดแล้ว",
-                deletedPlans: deletedPlans,
-                deletedCount: deleteResult.count
-            });
+                return Response.json({
+                    message: "ลบตารางเรียนสำหรับวิชาที่แบ่งแล้วพร้อม sync",
+                    deletedPlans: deletedPlans,
+                    deletedCount: deleteResult.count
+                });
+            } else {
+                console.log(`🔄 [API-DELETE] ลบวิชา DVE ปกติ: ${currentPlan.subjectName} (planId: ${planId})`);
+
+                const duplicatePlans = await prisma.plans_tb.findMany({
+                    where: {
+                        subjectCode: currentPlan.subjectCode,
+                        termYear: currentPlan.termYear,
+                        yearLevel: currentPlan.yearLevel,
+                        NOT: {
+                            id: planId
+                        }
+                    }
+                });
+
+                const allPlanIds = [planId, ...duplicatePlans.map(p => p.id)];
+
+                console.log("DVE: Deleting timetables for duplicate plans:", allPlanIds);
+
+                const deleteResult = await prisma.timetable_tb.deleteMany({
+                    where: {
+                        planId: {
+                            in: allPlanIds
+                        }
+                    }
+                });
+
+                deletedPlans = allPlanIds;
+
+                return Response.json({
+                    message: "ลบตารางเรียนสำหรับวิชา DVE ที่มีรหัสเหมือนกันทั้งหมดแล้ว",
+                    deletedPlans: deletedPlans,
+                    deletedCount: deleteResult.count
+                });
+            }
 
         } else if (isCoTeaching && isTransferOrFourYear && coTeachingGroup) {
-            // Transfer/Four Year Co-Teaching: ลบทุกวิชาใน Co-Teaching group
             const planIds = coTeachingGroup.plans.map(p => p.id);
 
             console.log("Co-Teaching: Deleting timetables for group:", planIds);
@@ -162,7 +197,6 @@ export async function DELETE(
             });
 
         } else {
-            // ปกติ: ลบเฉพาะวิชาที่เลือก
             console.log("Normal: Deleting timetable for single plan:", planId);
 
             const deleteResult = await prisma.timetable_tb.deleteMany({

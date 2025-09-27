@@ -37,7 +37,7 @@ export async function POST(request: Request) {
             isCoTeaching = coTeachingGroup !== null && coTeachingGroup.plans.length > 1;
         }
 
-        const shouldCheckConflicts = !isDVE && !(isCoTeaching && isTransferOrFourYear);
+        const shouldCheckConflicts = !(isCoTeaching && isTransferOrFourYear);
         const conflicts: any[] = [];
 
         if (shouldCheckConflicts) {
@@ -96,66 +96,58 @@ export async function POST(request: Request) {
                 });
             }
 
-
             if (teacherId) {
-
-                const termNumber = parseInt(termYear.split('/')[0]);
-                const isDVEOrTransferTerm3 = termNumber === 3 && (planType === 'DVE-MSIX' || planType === 'DVE-LVC' || planType === 'TRANSFER');
-
-
-                if (!isDVEOrTransferTerm3) {
-                    const teacherConflicts = await prisma.timetable_tb.findMany({
-                        where: {
-                            teacherId,
-                            termYear,
-                            day,
-                            OR: [
-                                {
-                                    AND: [
-                                        { startPeriod: { lte: startPeriod } },
-                                        { endPeriod: { gte: startPeriod } }
-                                    ]
-                                },
-                                {
-                                    AND: [
-                                        { startPeriod: { lte: endPeriod } },
-                                        { endPeriod: { gte: endPeriod } }
-                                    ]
-                                },
-                                {
-                                    AND: [
-                                        { startPeriod: { gte: startPeriod } },
-                                        { endPeriod: { lte: endPeriod } }
-                                    ]
-                                }
-                            ],
-                            NOT: {
-                                planId: planId
+                const teacherConflicts = await prisma.timetable_tb.findMany({
+                    where: {
+                        teacherId,
+                        termYear,
+                        day,
+                        OR: [
+                            {
+                                AND: [
+                                    { startPeriod: { lte: startPeriod } },
+                                    { endPeriod: { gte: startPeriod } }
+                                ]
+                            },
+                            {
+                                AND: [
+                                    { startPeriod: { lte: endPeriod } },
+                                    { endPeriod: { gte: endPeriod } }
+                                ]
+                            },
+                            {
+                                AND: [
+                                    { startPeriod: { gte: startPeriod } },
+                                    { endPeriod: { lte: endPeriod } }
+                                ]
                             }
-                        },
-                        include: {
-                            plan: true,
-                            teacher: true,
-                            room: true
+                        ],
+                        NOT: {
+                            planId: planId
                         }
-                    });
-
-                    if (teacherConflicts.length > 0) {
-                        conflicts.push({
-                            type: "TEACHER_CONFLICT",
-                            message: "อาจารย์มีการสอนในเวลาดังกล่าวแล้ว",
-                            conflicts: teacherConflicts.map(tc => ({
-                                planId: tc.planId,
-                                plan: tc.plan,
-                                day: tc.day,
-                                startPeriod: tc.startPeriod,
-                                endPeriod: tc.endPeriod,
-                                teacher: tc.teacher,
-                                room: tc.room,
-                                section: tc.section
-                            }))
-                        });
+                    },
+                    include: {
+                        plan: true,
+                        teacher: true,
+                        room: true
                     }
+                });
+
+                if (teacherConflicts.length > 0) {
+                    conflicts.push({
+                        type: "TEACHER_CONFLICT",
+                        message: "อาจารย์มีการสอนในเวลาดังกล่าวแล้ว",
+                        conflicts: teacherConflicts.map(tc => ({
+                            planId: tc.planId,
+                            plan: tc.plan,
+                            day: tc.day,
+                            startPeriod: tc.startPeriod,
+                            endPeriod: tc.endPeriod,
+                            teacher: tc.teacher,
+                            room: tc.room,
+                            section: tc.section
+                        }))
+                    });
                 }
             }
 
@@ -222,51 +214,53 @@ export async function POST(request: Request) {
                 });
 
                 if (currentPlan) {
+                    const currentIsDVE = currentPlan.planType === 'DVE-MSIX' || currentPlan.planType === 'DVE-LVC';
 
-                    const termNumber = parseInt(termYear.split('/')[0]);
-                    const isDVEOrTransferTerm3 = termNumber === 3 && (planType === 'DVE-MSIX' || planType === 'DVE-LVC' || planType === 'TRANSFER');
-
-
-                    if (!isDVEOrTransferTerm3) {
-                        const duplicateSectionPlans = await prisma.plans_tb.findMany({
-                            where: {
-                                subjectCode: currentPlan.subjectCode,
-                                termYear: currentPlan.termYear,
-                                section: section,
-                                planType: {
-                                    not: currentPlan.planType
-                                },
-
-                                NOT: {
-                                    id: planId
-                                }
+                    const duplicateSectionPlans = await prisma.plans_tb.findMany({
+                        where: {
+                            subjectCode: currentPlan.subjectCode,
+                            termYear: currentPlan.termYear,
+                            section: section,
+                            planType: {
+                                not: currentPlan.planType
                             },
-                            include: {
-                                timetables: true
+                            NOT: {
+                                id: planId
                             }
-                        });
-
-                        if (duplicateSectionPlans.length > 0) {
-                            const conflictDetails = duplicateSectionPlans.map(plan => {
-                                const planTypeText = plan.planType === 'TRANSFER' ? 'เทียบโอน' :
-                                    plan.planType === 'FOUR_YEAR' ? '4 ปี' :
-                                        plan.planType;
-                                return `${planTypeText} ${plan.yearLevel}`;
-                            }).join(', ');
-
-                            conflicts.push({
-                                type: "DUPLICATE_SECTION_CONFLICT",
-                                message: `วิชา ${currentPlan.subjectCode} section ${section} มีอยู่แล้วในแผนการเรียน: ${conflictDetails}`,
-                                conflicts: duplicateSectionPlans.map(plan => ({
-                                    planId: plan.id,
-                                    subjectCode: plan.subjectCode,
-                                    planType: plan.planType,
-                                    yearLevel: plan.yearLevel,
-                                    section: plan.section,
-                                    termYear: plan.termYear
-                                }))
-                            });
+                        },
+                        include: {
+                            timetables: true
                         }
+                    });
+
+                    const filteredDuplicates = currentIsDVE
+                        ? duplicateSectionPlans.filter(plan =>
+                            plan.planType !== 'DVE-MSIX' && plan.planType !== 'DVE-LVC'
+                        )
+                        : duplicateSectionPlans;
+
+                    if (filteredDuplicates.length > 0) {
+                        const conflictDetails = filteredDuplicates.map(plan => {
+                            const planTypeText = plan.planType === 'TRANSFER' ? 'เทียบโอน' :
+                                plan.planType === 'FOUR_YEAR' ? '4 ปี' :
+                                    plan.planType === 'DVE-MSIX' ? 'DVE-MSIX' :
+                                        plan.planType === 'DVE-LVC' ? 'DVE-LVC' :
+                                            plan.planType;
+                            return `${planTypeText} ${plan.yearLevel}`;
+                        }).join(', ');
+
+                        conflicts.push({
+                            type: "DUPLICATE_SECTION_CONFLICT",
+                            message: `วิชา ${currentPlan.subjectCode} section ${section} มีอยู่แล้วในแผนการเรียน: ${conflictDetails}`,
+                            conflicts: filteredDuplicates.map(plan => ({
+                                planId: plan.id,
+                                subjectCode: plan.subjectCode,
+                                planType: plan.planType,
+                                yearLevel: plan.yearLevel,
+                                section: plan.section,
+                                termYear: plan.termYear
+                            }))
+                        });
                     }
                 }
             }
@@ -313,37 +307,82 @@ export async function POST(request: Request) {
             });
 
             if (currentPlan) {
-                const duplicatePlans = await prisma.plans_tb.findMany({
-                    where: {
-                        subjectCode: currentPlan.subjectCode,
-                        termYear: currentPlan.termYear,
-                        NOT: {
-                            id: planId
+                const isSplitSubject = currentPlan.subjectName && currentPlan.subjectName.includes('(ส่วนที่');
+
+                if (isSplitSubject) {
+                    console.log(`� [API-SYNC] ซิ๊งค์วิชาที่แบ่งแล้ว: ${currentPlan.subjectName} (planId: ${planId})`);
+
+                    const duplicatePlans = await prisma.plans_tb.findMany({
+                        where: {
+                            subjectCode: currentPlan.subjectCode,
+                            subjectName: currentPlan.subjectName,
+                            termYear: currentPlan.termYear,
+                            yearLevel: currentPlan.yearLevel,
+                            NOT: {
+                                id: planId
+                            }
                         }
+                    });
+
+                    console.log(`🎯 [API-SYNC] พบวิชาส่วนเดียวกัน ${duplicatePlans.length} รายการ`);
+
+                    for (const duplicatePlan of duplicatePlans) {
+                        console.log(`  📋 ซิ๊งค์ไปยัง: ${duplicatePlan.subjectName} (${duplicatePlan.planType}) planId: ${duplicatePlan.id}`);
+
+                        await prisma.timetable_tb.deleteMany({
+                            where: { planId: duplicatePlan.id }
+                        });
+
+                        await prisma.timetable_tb.create({
+                            data: {
+                                planId: duplicatePlan.id,
+                                termYear,
+                                yearLevel: duplicatePlan.yearLevel || yearLevel,
+                                planType: duplicatePlan.planType || planType,
+                                day,
+                                startPeriod,
+                                endPeriod,
+                                roomId: duplicatePlan.roomId || null,
+                                teacherId: duplicatePlan.teacherId || null,
+                                section: duplicatePlan.section || null
+                            }
+                        });
                     }
-                });
+                } else {
+                    console.log(`🔄 [API-SYNC] ทำการซิ๊งค์วิชาปกติ: ${currentPlan.subjectName} (planId: ${planId})`);
 
-                for (const duplicatePlan of duplicatePlans) {
-
-                    await prisma.timetable_tb.deleteMany({
-                        where: { planId: duplicatePlan.id }
-                    });
-
-
-                    await prisma.timetable_tb.create({
-                        data: {
-                            planId: duplicatePlan.id,
-                            termYear,
-                            yearLevel: duplicatePlan.yearLevel || yearLevel,
-                            planType: duplicatePlan.planType || planType,
-                            day,
-                            startPeriod,
-                            endPeriod,
-                            roomId: duplicatePlan.roomId || null,
-                            teacherId: duplicatePlan.teacherId || null,
-                            section: duplicatePlan.section || null
+                    const duplicatePlans = await prisma.plans_tb.findMany({
+                        where: {
+                            subjectCode: currentPlan.subjectCode,
+                            termYear: currentPlan.termYear,
+                            yearLevel: currentPlan.yearLevel,
+                            NOT: {
+                                id: planId
+                            }
                         }
                     });
+
+                    for (const duplicatePlan of duplicatePlans) {
+
+                        await prisma.timetable_tb.deleteMany({
+                            where: { planId: duplicatePlan.id }
+                        });
+
+                        await prisma.timetable_tb.create({
+                            data: {
+                                planId: duplicatePlan.id,
+                                termYear,
+                                yearLevel: duplicatePlan.yearLevel || yearLevel,
+                                planType: duplicatePlan.planType || planType,
+                                day,
+                                startPeriod,
+                                endPeriod,
+                                roomId: duplicatePlan.roomId || null,
+                                teacherId: duplicatePlan.teacherId || null,
+                                section: duplicatePlan.section || null
+                            }
+                        });
+                    }
                 }
             }
 
