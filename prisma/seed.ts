@@ -12,6 +12,7 @@ async function main() {
 
     for (const yl of yearLevels) {
         const existing = await prisma.yearLevel_tb.findFirst({ where: { name: yl.name } });
+
         if (existing) {
             await prisma.yearLevel_tb.update({
                 where: { id: existing.id },
