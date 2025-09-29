@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
     const yearLevel = url.searchParams.get('yearLevel') || undefined;
     const termYear = url.searchParams.get('termYear') || undefined;
     const planType = url.searchParams.get('planType') || undefined;
-    const dep = url.searchParams.get('dep') || undefined; // เพิ่มพารามิเตอร์ dep
+    const dep = url.searchParams.get('dep') || undefined;
 
     try {
         const where: any = {};

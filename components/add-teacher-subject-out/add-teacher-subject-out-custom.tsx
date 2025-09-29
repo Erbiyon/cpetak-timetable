@@ -280,7 +280,7 @@ export function AddTeacherSubjectOutCustom({
                         </Select>
                     </div>
 
-                    {/* แก้ไขเงื่อนไขการแสดง duplicate warning */}
+
                     {showDuplicate && otherPlan && !isDVE && (
                         <div>
                             มีวิชาที่มีรหัสเหมือนกัน {subjectCode} <br />

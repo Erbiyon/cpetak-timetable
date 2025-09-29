@@ -265,7 +265,7 @@ export default function FourFourYear() {
             const subject = plans.find(plan => plan.id === subjectId);
 
             if (subject) {
-                // ตรวจสอบว่าเป็น Co-Teaching หรือไม่
+
                 const isCoTeaching = await checkCoTeaching(subjectId);
 
                 console.log("กำลังวางวิชา:", {
@@ -277,7 +277,7 @@ export default function FourFourYear() {
                 const totalHours = (subject.lectureHour || 0) + (subject.labHour || 0);
                 const totalPeriods = totalHours * 2;
 
-                // ตรวจสอบขอบเขตตาราง
+
                 const lastPeriod = period + totalPeriods - 1;
                 if (lastPeriod >= 25) {
                     console.warn("ไม่สามารถวางวิชาได้: เกินขอบตาราง");
@@ -287,7 +287,7 @@ export default function FourFourYear() {
                     return;
                 }
 
-                // ตรวจสอบช่วงกิจกรรม
+
                 const isWednesday = day === 2;
                 const activityPeriods = [14, 15, 16, 17];
                 const wouldOverlapActivity = isWednesday && activityPeriods.some(actPeriod => {
@@ -311,7 +311,7 @@ export default function FourFourYear() {
                     periods.push(currentPeriod);
                 }
 
-                // ตรวจสอบการทับกับวิชาอื่น (ยกเว้น Co-Teaching)
+
                 if (!isCoTeaching) {
                     let hasOverlap = false;
                     Object.entries(tableAssignments).forEach(([existingSubjectId, assignment]) => {
@@ -334,7 +334,7 @@ export default function FourFourYear() {
                     }
                 }
 
-                // อัพเดท state
+
                 const newAssignment = { day, periods };
                 setTableAssignments(prev => ({
                     ...prev,
@@ -353,8 +353,8 @@ export default function FourFourYear() {
                         body: JSON.stringify({
                             planId: subjectId,
                             termYear: termYear || '1',
-                            yearLevel: 'ปี 4', // เปลี่ยนตามแต่ละไฟล์
-                            planType: 'FOUR_YEAR', // เปลี่ยนตามแต่ละไฟล์
+                            yearLevel: 'ปี 4',
+                            planType: 'FOUR_YEAR',
                             day,
                             startPeriod,
                             endPeriod,
@@ -400,12 +400,12 @@ export default function FourFourYear() {
                         setConflicts([]);
                         setDragFailedSubjectId(null);
 
-                        // รีเฟรชข้อมูลหลังจากลากวิชาเข้าตารางสำเร็จ
+
                         await handleSubjectUpdate();
                     }
                 } catch (error) {
                     console.error("เกิดข้อผิดพลาดในการบันทึกตารางเรียน:", error);
-                    // คืนสถานะ
+
                     setTableAssignments(prev => {
                         const newState = { ...prev };
                         if (activeSubject?.fromTable && activeSubject.originalAssignment) {
@@ -429,7 +429,7 @@ export default function FourFourYear() {
 
     async function handleRemoveAssignment(subjectId: number) {
         try {
-            // ตรวจสอบว่าเป็น Co-Teaching หรือไม่
+
             const isCoTeaching = await checkCoTeaching(subjectId);
 
             const response = await fetch(`/api/timetable/${subjectId}`, {
@@ -441,7 +441,7 @@ export default function FourFourYear() {
                 console.log("ลบตารางเรียนสำเร็จ:", data);
 
                 if (isCoTeaching && data.deletedPlans) {
-                    // อัพเดท state สำหรับทุกวิชาที่ถูกลบ
+
                     setTableAssignments(prev => {
                         const newState = { ...prev };
                         data.deletedPlans.forEach((planId: number) => {
@@ -450,7 +450,7 @@ export default function FourFourYear() {
                         return newState;
                     });
                 } else {
-                    // ลบเฉพาะวิชาเดียว
+
                     setTableAssignments(prev => {
                         const newState = { ...prev };
                         delete newState[subjectId];
@@ -458,7 +458,7 @@ export default function FourFourYear() {
                     });
                 }
 
-                // รีเฟรชข้อมูล
+
                 await handleSubjectUpdate();
             } else {
                 console.error("เกิดข้อผิดพลาดในการลบตารางเรียน");
@@ -880,7 +880,7 @@ export default function FourFourYear() {
     );
 }
 
-// เพิ่มฟังก์ชันตรวจสอบ Co-Teaching
+
 async function checkCoTeaching(subjectId: number): Promise<boolean> {
     try {
         const response = await fetch(`/api/subject/co-teaching/check?subjectId=${subjectId}`);

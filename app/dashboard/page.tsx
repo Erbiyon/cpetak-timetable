@@ -11,15 +11,15 @@ export default function DashboardPage() {
    const router = useRouter()
 
    useEffect(() => {
-      if (status === "loading") return // รอให้ NextAuth ตรวจสอบเสร็จ
+      if (status === "loading") return
 
-      // หากไม่มี authentication หรือ unauthenticated
+
       if (status === "unauthenticated" || !session) {
          router.push("/login")
          return
       }
 
-      // หาก authenticated แต่เป็น teacher
+
       if (status === "authenticated" && session.user?.role === "teacher") {
          router.push("/teacher-use/time-table")
          return
@@ -37,7 +37,7 @@ export default function DashboardPage() {
       )
    }
 
-   // แสดงเฉพาะเมื่อ authenticated และเป็น admin
+
    if (status !== "authenticated" || !session || session.user?.role !== "admin") {
       return (
          <div className="min-h-screen flex items-center justify-center">

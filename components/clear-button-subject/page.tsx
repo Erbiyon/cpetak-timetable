@@ -22,7 +22,7 @@ interface ClearButtonSubjectProps {
     onClearComplete?: () => void;
 }
 
-// ใช้ API ที่มีอยู่แล้ว
+
 async function checkCoTeaching(subjectId: number): Promise<boolean> {
     try {
         const response = await fetch(`/api/subject/co-teaching/check?subjectId=${subjectId}`);
@@ -49,7 +49,7 @@ export default function ClearButtonSubject({
         try {
             console.log('🗑️ เริ่มการล้างตารางเรียนพร้อมตรวจสอบ Co-Teaching');
 
-            // ดึงข้อมูลตารางเรียนที่มีอยู่
+
             const timetableResponse = await fetch(`/api/timetable?termYear=${termYear}&yearLevel=${yearLevel}&planType=${planType}`);
 
             if (!timetableResponse.ok) {
@@ -62,23 +62,23 @@ export default function ClearButtonSubject({
 
             if (timetableData.length === 0) {
                 console.log('ℹ️ ไม่มีตารางเรียนที่ต้องลบ');
-                // ถ้าไม่มีข้อมูลให้ลบ ก็ไม่ต้อง refresh เพราะไม่มีการเปลี่ยนแปลง
+
                 if (onClearComplete) {
                     onClearComplete();
                 }
                 return;
             }
 
-            // ลบทีละรายการพร้อมตรวจสอบ Co-Teaching
+
             for (const timetable of timetableData) {
                 try {
-                    // ตรวจสอบโครงสร้างข้อมูล
+
                     console.log('🔍 ข้อมูลตาราง:', timetable);
 
-                    // หา subjectId จากโครงสร้างข้อมูลที่แตกต่างกัน
+
                     let subjectId = timetable.subjectId || timetable.planId || timetable.id;
 
-                    // ถ้ายังไม่มี ลองหาจาก nested object
+
                     if (!subjectId && timetable.plan) {
                         subjectId = timetable.plan.id;
                     }
@@ -90,14 +90,14 @@ export default function ClearButtonSubject({
 
                     console.log(`🔍 ตรวจสอบ Co-Teaching สำหรับวิชา ID: ${subjectId}`);
 
-                    // ใช้ API ที่มีอยู่แล้วตรวจสอบ Co-Teaching
+
                     const isCoTeaching = await checkCoTeaching(subjectId);
 
                     if (isCoTeaching) {
                         console.log(`📚 วิชา ID ${subjectId} เป็น Co-Teaching`);
                     }
 
-                    // ลบด้วย API เดิม (จะจัดการ Co-Teaching อัตโนมัติ)
+
                     const response = await fetch(`/api/timetable/${subjectId}`, {
                         method: 'DELETE',
                     });
@@ -115,7 +115,7 @@ export default function ClearButtonSubject({
 
             console.log('✅ ล้างตารางเรียนทั้งหมดเสร็จสิ้น');
 
-            // ส่วนซิ๊งค์ DVE เหมือนเดิม
+
             const isDVEPlan = planType === "DVE-MSIX" || planType === "DVE-LVC";
             if (isDVEPlan) {
                 const targetPlanType = planType === "DVE-MSIX" ? "DVE-LVC" : "DVE-MSIX";
@@ -145,11 +145,11 @@ export default function ClearButtonSubject({
                 }
             }
 
-            // ใช้ callback เพื่อ refresh ข้อมูลแทนการ reload ทั้งหน้า
+
             if (onClearComplete) {
                 onClearComplete();
             } else {
-                // ถ้าไม่มี callback ให้ reload หน้าเว็บ
+
                 setTimeout(() => {
                     window.location.reload();
                 }, 500);

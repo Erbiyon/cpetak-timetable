@@ -11,9 +11,9 @@ export default function Home() {
     const router = useRouter()
 
     useEffect(() => {
-        if (status === "loading") return // รอให้ NextAuth ตรวจสอบ session เสร็จ
+        if (status === "loading") return
 
-        // เฉพาะเมื่อ authenticated และมี session ถูกต้อง
+
         if (status === "authenticated" && session?.user) {
             if (session.user.role === "admin") {
                 router.push("/dashboard")
@@ -21,7 +21,7 @@ export default function Home() {
                 router.push("/teacher-use/time-table")
             }
         }
-        // หาก status === "unauthenticated" จะแสดงหน้า login โดยไม่ต้อง redirect
+
     }, [session, status, router])
 
     if (status === "loading") {
@@ -35,7 +35,7 @@ export default function Home() {
         )
     }
 
-    // หาก authenticated แล้วจะ redirect ใน useEffect แล้ว แสดง loading
+
     if (status === "authenticated" && session?.user) {
         return (
             <div className="min-h-screen flex items-center justify-center px-4">
@@ -47,6 +47,6 @@ export default function Home() {
         )
     }
 
-    // แสดงหน้า login เฉพาะเมื่อ unauthenticated
+
     return <LoginPage />
 }

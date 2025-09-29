@@ -12,7 +12,7 @@ export async function PATCH(
         const planId = parseInt(id);
         const body = await request.json();
 
-        // ตรวจสอบว่าเป็น Co-Teaching หรือไม่
+
         const coTeachingGroup = await prisma.coTeaching_tb.findFirst({
             where: {
                 plans: {
@@ -28,7 +28,7 @@ export async function PATCH(
 
         const isCoTeaching = coTeachingGroup && coTeachingGroup.plans.length > 1;
 
-        // ตรวจสอบว่าเป็น Transfer หรือ Four Year
+
         const currentPlan = await prisma.plans_tb.findUnique({
             where: { id: planId }
         });
@@ -36,7 +36,7 @@ export async function PATCH(
         const isTransferOrFourYear = currentPlan &&
             (currentPlan.planType === 'TRANSFER' || currentPlan.planType === 'FOUR_YEAR');
 
-        // อัพเดทข้อมูลหลัก
+
         const updatedPlan = await prisma.plans_tb.update({
             where: { id: planId },
             data: body,
@@ -47,25 +47,25 @@ export async function PATCH(
             }
         });
 
-        // หากเป็น Co-Teaching ของ Transfer/Four Year และมีการเปลี่ยน section
+
         if (isCoTeaching && isTransferOrFourYear && body.section !== undefined) {
             const otherPlans = coTeachingGroup.plans.filter(p => p.id !== planId);
 
-            // อัพเดท section ให้วิชาอื่นๆ ในกลุ่ม Co-Teaching
+
             for (const otherPlan of otherPlans) {
                 await prisma.plans_tb.update({
                     where: { id: otherPlan.id },
                     data: { section: body.section }
                 });
 
-                // อัพเดทตารางเรียนด้วย (ถ้ามี)
+
                 await prisma.timetable_tb.updateMany({
                     where: { planId: otherPlan.id },
                     data: { section: body.section }
                 });
             }
 
-            // อัพเดทตารางเรียนของวิชาหลักด้วย
+
             if (updatedPlan.timetables.length > 0) {
                 await prisma.timetable_tb.updateMany({
                     where: { planId: planId },
