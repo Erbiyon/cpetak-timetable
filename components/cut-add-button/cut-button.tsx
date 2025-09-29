@@ -56,7 +56,7 @@ export default function CutButton({
                     setCoTeachingDetails(null);
                 }
             } catch (error) {
-                console.error("Error checking co-teaching status:", error);
+                console.error("ผิดพลาดในการตรวจสอบสถานะการสอนร่วม:", error);
             }
         };
 
@@ -80,10 +80,10 @@ export default function CutButton({
 
     const infoMessage = useMemo(() => {
         if (hoursPart1 === 0) {
-            return `ส่วนที่ ${currentPartNumber} มีชั่วโมงรวมเป็น 0 - จะปรับปรุงวิชาเป็นส่วนที่ ${currentPartNumber + 1} เท่านั้น`
+            return `ส่วนที่ ${currentPartNumber} มีชั่วโมงรวมเป็น 0`
         }
         if (hoursPart2 === 0) {
-            return `ส่วนที่ ${currentPartNumber + 1} มีชั่วโมงรวมเป็น 0 - จะคงวิชาเดิมโดยไม่สร้างส่วนแบ่งเพิ่ม`
+            return `ส่วนที่ ${currentPartNumber + 1} มีชั่วโมงรวมเป็น 0`
         }
         return `ทั้งสองส่วนจะถูกสร้างขึ้น - ส่วนที่ ${currentPartNumber} และส่วนที่ ${currentPartNumber + 1}`
     }, [hoursPart1, hoursPart2, currentPartNumber])
@@ -311,7 +311,7 @@ export default function CutButton({
                             </Button>
                         </DialogClose>
                         <DialogClose asChild>
-                            <Button type="submit">
+                            <Button type="submit" disabled={hasSomePartZeroHours}>
                                 แบ่งวิชา
                             </Button>
                         </DialogClose>
