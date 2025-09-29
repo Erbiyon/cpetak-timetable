@@ -134,12 +134,6 @@ export async function POST(
 async function splitSingleSubject(originalSubject: any, splitData: any) {
 
     const baseSubjectName = originalSubject.subjectName.replace(/\s*\(ส่วนที่ \d+\)\s*$/, '')
-
-
-
-
-
-
     const originalSection = originalSubject.section || "1";
     const newSection1 = `${originalSection}-1`;
     const newSection2 = `${originalSection}-2`;

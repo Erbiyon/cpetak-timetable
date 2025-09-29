@@ -99,12 +99,12 @@ export default function DownloadTeacherButton({
                     curriculum: `หลักสูตร : วศ.บ.วิศวกรรมคอมพิวเตอร์ 4 ปี ${yearLevel || ''}`,
                     filePrefix: `ตารางสอน4ปี_${yearLevel || ''}`
                 };
-            case 'DVE_LVC':
+            case 'DVE-LVC':
                 return {
                     curriculum: `หลักสูตร : ทค.เทคนิคคอมพิวเตอร์ ${yearLevel || ''}`,
                     filePrefix: `ตารางสอนทค_${yearLevel || ''}`
                 };
-            case 'DVE_MSIX':
+            case 'DVE-MSIX':
                 return {
                     curriculum: `หลักสูตร : ทค.เทคนิคคอมพิวเตอร์ ${yearLevel || ''}`,
                     filePrefix: `ตารางสอนทค_ม.6_${yearLevel || ''}`
@@ -276,8 +276,8 @@ export default function DownloadTeacherButton({
                         case "TRANSFER":
                         case "FOUR_YEAR":
                             return "ป.ตรี";
-                        case "DVE_LVC":
-                        case "DVE_MSIX":
+                        case "DVE-LVC":
+                        case "DVE-MSIX":
                             return "ปวส.";
                         default:
                             return "";
@@ -296,8 +296,8 @@ export default function DownloadTeacherButton({
                             return yearValue ? `วศ.บ. วค.${yearValue}(ทอ.)` : `วศ.บ. วค.1 หรือ 2 หรือ 3(ทอ.)`;
                         case "FOUR_YEAR":
                             return yearValue ? `วศ.บ. วค.${yearValue}(4 ปี)` : `วศ.บ. วค.1 หรือ 2 หรือ 3 หรือ 4(4 ปี)`;
-                        case "DVE_LVC":
-                        case "DVE_MSIX":
+                        case "DVE-LVC":
+                        case "DVE-MSIX":
                             return yearValue ? `ทค.${yearValue}` : `ทค.1 หรือ 2`;
                         default:
                             return "";
@@ -554,8 +554,8 @@ export default function DownloadTeacherButton({
                     return yearValue ? `วศ.บ. วค.${yearValue}(ทอ.)` : `วศ.บ. วค.1 หรือ 2 หรือ 3(ทอ.)`;
                 case "FOUR_YEAR":
                     return yearValue ? `วศ.บ. วค.${yearValue}(4 ปี)` : `วศ.บ. วค.1 หรือ 2 หรือ 3 หรือ 4(4 ปี)`;
-                case "DVE_LVC":
-                case "DVE_MSIX":
+                case "DVE-LVC":
+                case "DVE-MSIX":
                     return yearValue ? `ทค.${yearValue}` : `ทค.1 หรือ 2`;
                 default:
                     return "";

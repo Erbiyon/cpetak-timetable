@@ -53,7 +53,8 @@ export default function AddRoomSubjectOutCustom({
         if (/^6\d*$/.test(trimmedCode)) return "อาคารสาขาวิศวกรรมคอมพิวเตอร์";
         if (/^7\d*$/.test(trimmedCode)) return " อาคารเรียน 7";
         if (/^3\d*$/.test(trimmedCode)) return " อาคารเรียน 3";
-        if (trimmedCode.includes("โรงฝึก")) return "โรงฝึกงานทางวิศวกรรม"; // แก้ไขที่นี่
+        if (trimmedCode.includes("โรงฝึก")) return "โรงฝึกงานทางวิศวกรรม";
+        if (trimmedCode.includes("โรงยิม")) return "โรงยิม";
 
         return "ไม่ได้กำหนดประเภทห้อง";
     };
