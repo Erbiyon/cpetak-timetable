@@ -17,7 +17,7 @@ model Term_tb {
 }
 
 model Plans_tb {
-  id          Int            @id @default(autoincrement())
+  id          Int             @id @default(autoincrement())
   subjectCode String
   subjectName String
   credit      Int
@@ -30,8 +30,8 @@ model Plans_tb {
   roomId      Int?
   teacherId   Int?
   section     String?
-  room        Room_tb?       @relation(fields: [roomId], references: [id])
-  teacher     Teacher_tb?    @relation(fields: [teacherId], references: [id])
+  room        Room_tb?        @relation(fields: [roomId], references: [id])
+  teacher     Teacher_tb?     @relation(fields: [teacherId], references: [id])
   timetables  Timetable_tb[]
   coTeachings CoTeaching_tb[] @relation("CoTeachingPlans")
 
@@ -59,7 +59,7 @@ model Room_tb {
   id         Int            @id @default(autoincrement())
   roomCode   String
   roomType   String
-  roomCate   String?    
+  roomCate   String?
   plans      Plans_tb[]
   timetables Timetable_tb[]
 
@@ -104,7 +104,27 @@ model Timetable_tb {
 }
 
 model CoTeaching_tb {
-  id        Int        @id @default(autoincrement())
-  groupKey  String     @unique
-  plans     Plans_tb[] @relation("CoTeachingPlans")
+  id       Int        @id @default(autoincrement())
+  groupKey String     @unique
+  plans    Plans_tb[] @relation("CoTeachingPlans")
+}
+
+model Curriculum_tb {
+  id              Int    @id @default(autoincrement())
+  id_sub          String
+  subject_name    String
+  credit          Int
+  lacture_credit  Int
+  lab_credit      Int
+  out_credit      Int
+  curriculum_type String
+
+  @@map("Curriculum_tb")
+}
+
+model RoomRequestDeadline_tb {
+  id       Int      @id @default(1)
+  deadline DateTime
+
+  @@map("RoomRequestDeadline_tb")
 }

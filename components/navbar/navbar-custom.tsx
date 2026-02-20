@@ -1,187 +1,252 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
-import { signOut, useSession } from "next-auth/react"
-import { Calendar, CircleUser, Grid2x2Check, House, LogOut, Menu, NotebookPen, School, SquareUser, Table, LayoutDashboard } from "lucide-react"
-import { useState, useEffect } from "react"
-import { DarkModeToggle } from "../theme-provider/dark-mode"
-import { Button } from "../ui/button"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import * as React from "react";
+import Link from "next/link";
+import { signOut, useSession } from "next-auth/react";
+import {
+  Calendar,
+  CircleUser,
+  Grid2x2Check,
+  House,
+  LogOut,
+  Menu,
+  NotebookPen,
+  School,
+  SquareUser,
+  Table,
+  LayoutDashboard,
+} from "lucide-react";
+import { useState, useEffect } from "react";
+import { DarkModeToggle } from "../theme-provider/dark-mode";
+import { Button } from "../ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 export function NavigationMenuCustom() {
-    const { data: session } = useSession()
-    const [isOpen, setIsOpen] = useState(false)
-    const [isTerm3, setIsTerm3] = useState<boolean>(false)
+  const { data: session } = useSession();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isTerm3, setIsTerm3] = useState<boolean>(false);
 
-    useEffect(() => {
-        const fetchCurrentTermYear = async () => {
-            try {
-                const response = await fetch('/api/current-term-year')
-                if (response.ok) {
-                    const data = await response.json()
-                    const termNumber = parseInt(data.termYear.split('/')[0])
-                    setIsTerm3(termNumber === 3)
-                }
-            } catch (error) {
-                console.error('Error fetching current term year:', error)
-            }
+  useEffect(() => {
+    const fetchCurrentTermYear = async () => {
+      try {
+        const response = await fetch("/api/current-term-year");
+        if (response.ok) {
+          const data = await response.json();
+          const termNumber = parseInt(data.termYear.split("/")[0]);
+          setIsTerm3(termNumber === 3);
         }
+      } catch (error) {
+        console.error("Error fetching current term year:", error);
+      }
+    };
 
-        fetchCurrentTermYear()
-    }, [])
+    fetchCurrentTermYear();
+  }, []);
 
-    const handleSignOut = async () => {
-        await signOut({ callbackUrl: "/" })
-    }
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: "/" });
+  };
 
-    const menuItems = [
+  const menuItems = [
+    {
+      title: "แผนการเรียน",
+      icon: <NotebookPen size={16} className="mr-2" />,
+      items: [
+        { href: "/study-plans/transfer-plan", label: "แผนการเรียน เทียบโอน" },
+        { href: "/study-plans/four-year-plan", label: "แผนการเรียน 4 ปี" },
+        { href: "/study-plans/dve-lvc-plan", label: "แผนการเรียน ปวส. (ปวช.)" },
+        { href: "/study-plans/dve-msix-plan", label: "แผนการเรียน ปวส. (ม.6)" },
+      ],
+    },
+    {
+      title: "ห้องเรียน",
+      icon: <School size={16} className="mr-2" />,
+      items: [
+        { href: "/rooms", label: "จัดการห้องเรียน" },
+        { href: "/rooms/room-out", label: "เพิ่มห้องเรียนวิชานอกสาขา" },
+      ],
+    },
+    {
+      title: "อาจารย์",
+      icon: <SquareUser size={16} className="mr-2" />,
+      items: [
+        { href: "/teachers", label: "จัดการรายชื่ออาจารย์" },
+        { href: "/teachers/in-teacher", label: "เพิ่มอาจารย์วิชาภายในสาขา" },
+        { href: "/teachers/out-teacher", label: "เพิ่มอาจารย์วิชาภายนอกสาขา" },
+      ],
+    },
+    {
+      title: "จัดตารางเรียน เทียบโอน",
+      icon: <Table size={16} color="#0000ff" className="mr-2" />,
+      items: [
         {
-            title: "แผนการเรียน",
-            icon: <NotebookPen size={16} className="mr-2" />,
-            items: [
-                { href: "/study-plans/transfer-plan", label: "แผนการเรียน เทียบโอน" },
-                { href: "/study-plans/four-year-plan", label: "แผนการเรียน 4 ปี" },
-                { href: "/study-plans/dve-lvc-plan", label: "แผนการเรียน ปวส. (ปวช.)" },
-                { href: "/study-plans/dve-msix-plan", label: "แผนการเรียน ปวส. (ม.6)" },
-            ]
+          href: "/adjust-time-tables/adjust-plan-transfer/transfer-one-year",
+          label: "จัดตารางเรียน ปี 1",
         },
         {
-            title: "ห้องเรียน",
-            icon: <School size={16} className="mr-2" />,
-            items: [
-                { href: "/rooms", label: "จัดการห้องเรียน" },
-                { href: "/rooms/room-out", label: "เพิ่มห้องเรียนวิชานอกสาขา" }
-            ]
+          href: "/adjust-time-tables/adjust-plan-transfer/transfer-two-year",
+          label: "จัดตารางเรียน ปี 2",
         },
-        {
-            title: "อาจารย์",
-            icon: <SquareUser size={16} className="mr-2" />,
-            items: [
-                { href: "/teachers", label: "จัดการรายชื่ออาจารย์" },
-                { href: "/teachers/in-teacher", label: "เพิ่มอาจารย์วิชาภายในสาขา" },
-                { href: "/teachers/out-teacher", label: "เพิ่มอาจารย์วิชาภายนอกสาขา" },
-            ]
-        },
-        {
-            title: "จัดตารางเรียน เทียบโอน",
-            icon: <Table size={16} color="#0000ff" className="mr-2" />,
-            items: [
-                { href: "/adjust-time-tables/adjust-plan-transfer/transfer-one-year", label: "จัดตารางเรียน ปี 1" },
-                { href: "/adjust-time-tables/adjust-plan-transfer/transfer-two-year", label: "จัดตารางเรียน ปี 2" },
-                ...(isTerm3 ? [] : [{ href: "/adjust-time-tables/adjust-plan-transfer/transfer-three-year", label: "จัดตารางเรียน ปี 3" }]),
-            ]
-        },
-        ...(isTerm3 ? [] : [{
+        ...(isTerm3
+          ? []
+          : [
+              {
+                href: "/adjust-time-tables/adjust-plan-transfer/transfer-three-year",
+                label: "จัดตารางเรียน ปี 3",
+              },
+            ]),
+      ],
+    },
+    ...(isTerm3
+      ? []
+      : [
+          {
             title: "จัดตารางเรียน 4 ปี",
             icon: <Table size={16} color="#00ff40" className="mr-2" />,
             items: [
-                { href: "/adjust-time-tables/adjust-plan-four-year/four-one-year", label: "จัดตารางเรียน ปี 1" },
-                { href: "/adjust-time-tables/adjust-plan-four-year/four-two-year", label: "จัดตารางเรียน ปี 2" },
-                { href: "/adjust-time-tables/adjust-plan-four-year/four-three-year", label: "จัดตารางเรียน ปี 3" },
-                { href: "/adjust-time-tables/adjust-plan-four-year/four-four-year", label: "จัดตารางเรียน ปี 4" },
-            ]
-        }]),
+              {
+                href: "/adjust-time-tables/adjust-plan-four-year/four-one-year",
+                label: "จัดตารางเรียน ปี 1",
+              },
+              {
+                href: "/adjust-time-tables/adjust-plan-four-year/four-two-year",
+                label: "จัดตารางเรียน ปี 2",
+              },
+              {
+                href: "/adjust-time-tables/adjust-plan-four-year/four-three-year",
+                label: "จัดตารางเรียน ปี 3",
+              },
+              {
+                href: "/adjust-time-tables/adjust-plan-four-year/four-four-year",
+                label: "จัดตารางเรียน ปี 4",
+              },
+            ],
+          },
+        ]),
+    {
+      title: "จัดตารางเรียน ปวส.",
+      icon: <Table size={16} color="#ff8000" className="mr-2" />,
+      items: [
         {
-            title: "จัดตารางเรียน ปวส.",
-            icon: <Table size={16} color="#ff8000" className="mr-2" />,
-            items: [
-                { href: "/adjust-time-tables/adjust-plan-dve/dve-one-year", label: "ปวส. ปี 1 (ปวช.)" },
-                { href: "/adjust-time-tables/adjust-plan-dve/dve-two-year", label: "ปวส. ปี 2 (ปวช.)" },
-                { href: "/adjust-time-tables/adjust-plan-dve/dve-ms-one-year", label: "ปวส. ปี 1 (ม.6)" },
-                { href: "/adjust-time-tables/adjust-plan-dve/dve-ms-two-year", label: "ปวส. ปี 2 (ม.6)" },
-            ]
-        }
-    ]
+          href: "/adjust-time-tables/adjust-plan-dve/dve-one-year",
+          label: "ปวส. ปี 1 (ปวช.)",
+        },
+        {
+          href: "/adjust-time-tables/adjust-plan-dve/dve-two-year",
+          label: "ปวส. ปี 2 (ปวช.)",
+        },
+        {
+          href: "/adjust-time-tables/adjust-plan-dve/dve-ms-one-year",
+          label: "ปวส. ปี 1 (ม.6)",
+        },
+        {
+          href: "/adjust-time-tables/adjust-plan-dve/dve-ms-two-year",
+          label: "ปวส. ปี 2 (ม.6)",
+        },
+      ],
+    },
+  ];
 
-    const singleItems = [
-        { href: "/dashboard", label: "หน้าหลัก", icon: LayoutDashboard },
-        { href: "/class-schedule", label: "ตารางสอน", icon: Grid2x2Check },
-        { href: "/rooms-use", label: "การใช้ห้อง", icon: House },
-        { href: "/academic-calendar", label: "ปฏิทินการศึกษา", icon: Calendar },
-    ]
+  const singleItems = [
+    { href: "/dashboard", label: "หน้าหลัก", icon: LayoutDashboard },
+    { href: "/class-schedule", label: "ตารางสอน", icon: Grid2x2Check },
+    { href: "/rooms-use", label: "การใช้ห้อง", icon: House },
+    { href: "/academic-calendar", label: "ปฏิทินการศึกษา", icon: Calendar },
+    { href: "/curriculum", label: "หลักสูตร", icon: NotebookPen },
+  ];
 
-    return (
-        <>
-            <div className="sticky top-0 left-0 w-full z-50 bg-card border-b p-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center justify-between">
-                        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-                            <SheetTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                    <Menu className="h-6 w-6" />
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent side="left" className="w-[300px] overflow-y-auto">
-                                <SheetHeader>
-                                    <SheetTitle>เมนู</SheetTitle>
-                                </SheetHeader>
-                                <div className="flex flex-col space-y-4 mt-6">
-
-                                    <div className="px-3 py-2 border-b border-border">
-                                        <div className="font-medium text-foreground flex items-center">
-                                            <CircleUser className="mr-2 h-4 w-4" />
-                                            {session?.user?.name || "ผู้ดูแลระบบ"}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground ml-6">
-                                            {session?.user?.role === "admin" ? "ผู้ดูแลระบบ" : "ผู้ใช้"}
-                                        </div>
-                                    </div>
-
-                                    {menuItems.map((menu) => (
-                                        <Collapsible key={menu.title}>
-                                            <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-accent rounded-md">
-                                                <span className="text-sm font-medium flex"><span>{menu.icon}</span> {menu.title}</span>
-                                                <span className="text-xs">▼</span>
-                                            </CollapsibleTrigger>
-                                            <CollapsibleContent className="ml-4 mt-2 space-y-1">
-                                                {menu.items.map((item) => (
-                                                    <Link
-                                                        key={item.href}
-                                                        href={item.href}
-                                                        onClick={() => setIsOpen(false)}
-                                                        className="block px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-md"
-                                                    >
-                                                        {item.label}
-                                                    </Link>
-                                                ))}
-                                            </CollapsibleContent>
-                                        </Collapsible>
-                                    ))}
-
-                                    {singleItems.map((item) => (
-                                        <Link
-                                            key={item.href}
-                                            href={item.href}
-                                            onClick={() => setIsOpen(false)}
-                                            className="flex px-3 py-2 text-sm font-medium hover:bg-accent rounded-md"
-                                        >
-                                            <item.icon size={16} className="mr-2" /> {item.label}
-                                        </Link>
-                                    ))}
-
-
-                                    <button
-                                        onClick={handleSignOut}
-                                        className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950 rounded-md transition-colors mt-4"
-                                    >
-                                        <LogOut className="mr-2 h-4 w-4" />
-                                        ออกจากระบบ
-                                    </button>
-                                </div>
-                            </SheetContent>
-                        </Sheet>
-                        <Link href="/dashboard">
-                            <h1 className="text-lg font-semibold">ระบบจัดตารางเรียน</h1>
-                        </Link>
+  return (
+    <>
+      <div className="sticky top-0 left-0 w-full z-50 bg-card border-b p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>เมนู</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col space-y-4 mt-6">
+                  <div className="px-3 py-2 border-b border-border">
+                    <div className="font-medium text-foreground flex items-center">
+                      <CircleUser className="mr-2 h-4 w-4" />
+                      {session?.user?.name || "ผู้ดูแลระบบ"}
                     </div>
-                    <div className="flex items-center gap-2">
-                        <DarkModeToggle />
-
+                    <div className="text-xs text-muted-foreground ml-6">
+                      {session?.user?.role === "admin"
+                        ? "ผู้ดูแลระบบ"
+                        : "ผู้ใช้"}
                     </div>
+                  </div>
+
+                  {menuItems.map((menu) => (
+                    <Collapsible key={menu.title}>
+                      <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-accent rounded-md">
+                        <span className="text-sm font-medium flex">
+                          <span>{menu.icon}</span> {menu.title}
+                        </span>
+                        <span className="text-xs">▼</span>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="ml-4 mt-2 space-y-1">
+                        {menu.items.map((item) => (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setIsOpen(false)}
+                            className="block px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-md"
+                          >
+                            {item.label}
+                          </Link>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))}
+
+                  {singleItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsOpen(false)}
+                      className="flex px-3 py-2 text-sm font-medium hover:bg-accent rounded-md"
+                    >
+                      <item.icon size={16} className="mr-2" /> {item.label}
+                    </Link>
+                  ))}
+
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950 rounded-md transition-colors mt-4"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    ออกจากระบบ
+                  </button>
                 </div>
-            </div>
-        </>
-    )
+              </SheetContent>
+            </Sheet>
+            <Link href="/dashboard">
+              <h1 className="text-lg font-semibold">ระบบจัดตารางเรียน</h1>
+            </Link>
+          </div>
+          <div className="flex items-center gap-2">
+            <DarkModeToggle />
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }
