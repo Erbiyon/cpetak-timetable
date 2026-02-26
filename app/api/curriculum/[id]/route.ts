@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const body = await req.json();
@@ -32,7 +30,7 @@ export async function PUT(
     if (existingCurriculum) {
       return NextResponse.json(
         { error: `รหัสวิชา ${id_sub} มีอยู่ในระบบแล้ว` },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -54,7 +52,7 @@ export async function PUT(
     console.error("Error updating curriculum:", error);
     return NextResponse.json(
       { error: "เกิดข้อผิดพลาดในการแก้ไขข้อมูล" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     await prisma.$disconnect();
@@ -63,7 +61,7 @@ export async function PUT(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id: idParam } = await params;
@@ -78,7 +76,7 @@ export async function DELETE(
     console.error("Error deleting curriculum:", error);
     return NextResponse.json(
       { error: "เกิดข้อผิดพลาดในการลบข้อมูล" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     await prisma.$disconnect();

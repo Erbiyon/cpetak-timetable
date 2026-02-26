@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
@@ -14,7 +12,7 @@ export async function GET() {
     console.error("Error fetching room request deadline:", error);
     return NextResponse.json(
       { error: "เกิดข้อผิดพลาดในการดึงข้อมูล" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     await prisma.$disconnect();
@@ -29,7 +27,7 @@ export async function POST(req: NextRequest) {
     if (!deadline) {
       return NextResponse.json(
         { error: "กรุณาระบุวันที่กำหนด" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -44,7 +42,7 @@ export async function POST(req: NextRequest) {
     console.error("Error setting room request deadline:", error);
     return NextResponse.json(
       { error: "เกิดข้อผิดพลาดในการบันทึกข้อมูล" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     await prisma.$disconnect();

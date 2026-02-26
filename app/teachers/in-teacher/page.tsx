@@ -85,7 +85,6 @@ export default function InTeacherPage() {
 
   return (
     <div>
-      {/* Deadline Settings Card */}
       <div className="mx-5 mt-5 mb-3">
         <Card>
           <CardHeader>
@@ -109,7 +108,7 @@ export default function InTeacherPage() {
                         variant="outline"
                         className={cn(
                           "w-full justify-start text-left font-normal",
-                          !deadline && "text-muted-foreground"
+                          !deadline && "text-muted-foreground",
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function GET(_req: NextRequest) {
   try {
@@ -16,7 +14,7 @@ export async function GET(_req: NextRequest) {
     console.error("Error fetching curricula:", error);
     return NextResponse.json(
       { error: "เกิดข้อผิดพลาดในการดึงข้อมูล" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     await prisma.$disconnect();
@@ -44,7 +42,7 @@ export async function POST(req: NextRequest) {
     if (existingCurriculum) {
       return NextResponse.json(
         { error: `รหัสวิชา ${id_sub} มีอยู่ในระบบแล้ว` },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -65,7 +63,7 @@ export async function POST(req: NextRequest) {
     console.error("Error creating curriculum:", error);
     return NextResponse.json(
       { error: "เกิดข้อผิดพลาดในการเพิ่มข้อมูล" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     await prisma.$disconnect();

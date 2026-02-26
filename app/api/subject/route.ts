@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,7 +32,7 @@ export async function POST(req: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "กรุณากรอกข้อมูลให้ครบถ้วน" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -75,7 +73,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "เกิดข้อผิดพลาด" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -145,7 +143,7 @@ export async function GET(req: NextRequest) {
     console.error("ผิดพลาดในการดึงข้อมูลวิชา:", error);
     return NextResponse.json(
       { error: "เกิดข้อผิดพลาดในการดึงข้อมูลวิชา" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     await prisma.$disconnect();
@@ -174,7 +172,7 @@ export async function PUT(req: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: "กรุณาระบุ ID ของวิชาที่ต้องการอัปเดต" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -221,7 +219,7 @@ export async function PUT(req: NextRequest) {
     console.error("ผิดพลาดในการอัปเดตวิชา:", error);
     return NextResponse.json(
       { error: "เกิดข้อผิดพลาดในการอัปเดตวิชา" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     await prisma.$disconnect();

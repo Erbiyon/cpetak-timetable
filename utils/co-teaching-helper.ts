@@ -1,252 +1,267 @@
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma";
 
 export async function checkCoTeachingGroup(subjectId: number) {
-   const group = await prisma.coTeaching_tb.findFirst({
-      where: {
-         plans: {
-            some: { id: subjectId }
-         }
+  const group = await prisma.coTeaching_tb.findFirst({
+    where: {
+      plans: {
+        some: { id: subjectId },
       },
-      include: {
-         plans: {
-            select: {
-               id: true,
-               planType: true,
-               yearLevel: true,
-               subjectCode: true,
-               termYear: true
-            }
-         }
-      }
-   });
+    },
+    include: {
+      plans: {
+        select: {
+          id: true,
+          planType: true,
+          yearLevel: true,
+          subjectCode: true,
+          termYear: true,
+        },
+      },
+    },
+  });
 
-   return group ? {
-      groupKey: group.groupKey,
-      planIds: group.plans.map(p => p.id),
-      plans: group.plans
-   } : null;
+  return group
+    ? {
+        groupKey: group.groupKey,
+        planIds: group.plans.map((p) => p.id),
+        plans: group.plans,
+      }
+    : null;
 }
 
-export function generateCoTeachingGroupKey(subjectCode: string, termYear: string, partNumber?: number): string {
+export function generateCoTeachingGroupKey(
+  subjectCode: string,
+  termYear: string,
+  partNumber?: number,
+): string {
+  const termMatch = termYear.match(/(\d+)\/(\d+)/);
 
-   const termMatch = termYear.match(/(\d+)\/(\d+)/);
+  if (!termMatch) {
+    throw new Error(`Invalid termYear format: ${termYear}`);
+  }
 
-   if (!termMatch) {
-      throw new Error(`Invalid termYear format: ${termYear}`);
-   }
+  const termNumber = termMatch[1];
+  const year = termMatch[2];
 
-   const termNumber = termMatch[1];
-   const year = termMatch[2];
+  if (partNumber !== undefined) {
+    return `${subjectCode}-${partNumber}-${termNumber}/${year}`;
+  }
 
-
-   if (partNumber !== undefined) {
-      return `${subjectCode}-${partNumber}-${termNumber}/${year}`;
-   }
-
-
-   return `${subjectCode}-${termNumber}/${year}`;
+  return `${subjectCode}-${termNumber}/${year}`;
 }
 
 export async function handleCoTeachingSplit(
-   originalGroupKey: string,
-   newPlanIds: { part1Ids: number[], part2Ids: number[] },
-   subjectCode: string,
-   termYear: string,
-   partNumbers: { part1: number, part2: number }
+  originalGroupKey: string,
+  newPlanIds: { part1Ids: number[]; part2Ids: number[] },
+  subjectCode: string,
+  termYear: string,
+  partNumbers: { part1: number; part2: number },
 ) {
-   try {
+  try {
+    const originalGroup = await prisma.coTeaching_tb.findUnique({
+      where: { groupKey: originalGroupKey },
+      include: { plans: true },
+    });
 
-      const originalGroup = await prisma.coTeaching_tb.findUnique({
-         where: { groupKey: originalGroupKey },
-         include: { plans: true }
+    if (originalGroup) {
+      const allOldPlanIds = [...newPlanIds.part1Ids, ...newPlanIds.part2Ids];
+
+      await prisma.coTeaching_tb.update({
+        where: { id: originalGroup.id },
+        data: {
+          plans: {
+            disconnect: allOldPlanIds.map((id) => ({ id })),
+          },
+        },
       });
 
-      if (originalGroup) {
-         const allOldPlanIds = [...newPlanIds.part1Ids, ...newPlanIds.part2Ids];
+      const updatedGroup = await prisma.coTeaching_tb.findUnique({
+        where: { id: originalGroup.id },
+        include: { plans: true },
+      });
 
-         await prisma.coTeaching_tb.update({
-            where: { id: originalGroup.id },
-            data: {
-               plans: {
-                  disconnect: allOldPlanIds.map(id => ({ id }))
-               }
-            }
-         });
-
-
-         const updatedGroup = await prisma.coTeaching_tb.findUnique({
-            where: { id: originalGroup.id },
-            include: { plans: true }
-         });
-
-         if (updatedGroup && updatedGroup.plans.length === 0) {
-            await prisma.coTeaching_tb.delete({
-               where: { id: originalGroup.id }
-            });
-         }
+      if (updatedGroup && updatedGroup.plans.length === 0) {
+        await prisma.coTeaching_tb.delete({
+          where: { id: originalGroup.id },
+        });
       }
+    }
 
+    const part1GroupKey = generateCoTeachingGroupKey(
+      subjectCode,
+      termYear,
+      partNumbers.part1,
+    );
+    await prisma.coTeaching_tb.create({
+      data: {
+        groupKey: part1GroupKey,
+        plans: {
+          connect: newPlanIds.part1Ids.map((id) => ({ id })),
+        },
+      },
+    });
 
-      const part1GroupKey = generateCoTeachingGroupKey(subjectCode, termYear, partNumbers.part1);
-      await prisma.coTeaching_tb.create({
-         data: {
-            groupKey: part1GroupKey,
-            plans: {
-               connect: newPlanIds.part1Ids.map(id => ({ id }))
-            }
-         }
-      });
+    const part2GroupKey = generateCoTeachingGroupKey(
+      subjectCode,
+      termYear,
+      partNumbers.part2,
+    );
+    await prisma.coTeaching_tb.create({
+      data: {
+        groupKey: part2GroupKey,
+        plans: {
+          connect: newPlanIds.part2Ids.map((id) => ({ id })),
+        },
+      },
+    });
 
-
-      const part2GroupKey = generateCoTeachingGroupKey(subjectCode, termYear, partNumbers.part2);
-      await prisma.coTeaching_tb.create({
-         data: {
-            groupKey: part2GroupKey,
-            plans: {
-               connect: newPlanIds.part2Ids.map(id => ({ id }))
-            }
-         }
-      });
-
-      return {
-         success: true,
-         newGroupKeys: {
-            part1: part1GroupKey,
-            part2: part2GroupKey
-         }
-      };
-   } catch (error) {
-      console.error("Error handling co-teaching split:", error);
-      throw error;
-   }
+    return {
+      success: true,
+      newGroupKeys: {
+        part1: part1GroupKey,
+        part2: part2GroupKey,
+      },
+    };
+  } catch (error) {
+    console.error("Error handling co-teaching split:", error);
+    throw error;
+  }
 }
 
 export async function handleCoTeachingMerge(
-   subjectCode: string,
-   termYear: string,
-   mergedPlanIds: number[]
+  subjectCode: string,
+  termYear: string,
+  mergedPlanIds: number[],
 ) {
-   try {
-
-      const allRelatedPlans = await prisma.plans_tb.findMany({
-         where: {
-            subjectCode: subjectCode,
-            termYear: termYear,
-            planType: {
-               in: ["TRANSFER", "FOUR_YEAR"]
-            },
-            OR: [
-               {
-                  subjectName: {
-                     contains: `${subjectCode} (ส่วนที่`
-                  }
-               },
-               {
-                  id: { in: mergedPlanIds }
-               }
-            ]
-         }
-      });
-
-      console.log("All related plans found:", allRelatedPlans.map(p => ({
-         id: p.id,
-         planType: p.planType,
-         yearLevel: p.yearLevel,
-         subjectName: p.subjectName
-      })));
-
-
-      const relatedGroups = await prisma.coTeaching_tb.findMany({
-         where: {
-            OR: [
-               {
-                  plans: {
-                     some: {
-                        subjectCode: subjectCode,
-                        termYear: termYear
-                     }
-                  }
-               },
-               {
-                  groupKey: {
-                     startsWith: `${subjectCode}-`
-                  }
-               },
-               {
-                  groupKey: {
-                     contains: `/${termYear}`
-                  }
-               }
-            ]
-         },
-         include: {
-            plans: {
-               where: {
-                  subjectCode: subjectCode,
-                  termYear: termYear
-               }
-            }
-         }
-      });
-
-      console.log("Related groups found:", relatedGroups.map(g => ({
-         id: g.id,
-         groupKey: g.groupKey,
-         planCount: g.plans.length,
-         plans: g.plans.map(p => ({ id: p.id, planType: p.planType, yearLevel: p.yearLevel, subjectName: p.subjectName }))
-      })));
-
-      console.log("Input mergedPlanIds:", mergedPlanIds);
-
-
-      for (const group of relatedGroups) {
-         await prisma.coTeaching_tb.delete({
-            where: { id: group.id }
-         });
-      }
-
-
-      const originalGroupKey = generateCoTeachingGroupKey(subjectCode, termYear);
-      await prisma.coTeaching_tb.create({
-         data: {
-            groupKey: originalGroupKey,
-            plans: {
-               connect: mergedPlanIds.map(id => ({ id }))
-            }
-         }
-      });
-
-      console.log("Created new co-teaching group:", {
-         groupKey: originalGroupKey,
-         mergedPlanIds: mergedPlanIds
-      });
-
-      return {
-         success: true,
-         newGroupKey: originalGroupKey
-      };
-   } catch (error) {
-      console.error("Error handling co-teaching merge:", error);
-      throw error;
-   }
-}
-
-export async function findCoTeachingSubjects(subjectCode: string, termYear: string) {
-   const subjects = await prisma.plans_tb.findMany({
+  try {
+    const allRelatedPlans = await prisma.plans_tb.findMany({
       where: {
-         subjectCode: subjectCode,
-         termYear: termYear,
-         planType: {
-            in: ["TRANSFER", "FOUR_YEAR"]
-         }
+        subjectCode: subjectCode,
+        termYear: termYear,
+        planType: {
+          in: ["TRANSFER", "FOUR_YEAR"],
+        },
+        OR: [
+          {
+            subjectName: {
+              contains: `${subjectCode} (ส่วนที่`,
+            },
+          },
+          {
+            id: { in: mergedPlanIds },
+          },
+        ],
+      },
+    });
+
+    console.log(
+      "All related plans found:",
+      allRelatedPlans.map((p) => ({
+        id: p.id,
+        planType: p.planType,
+        yearLevel: p.yearLevel,
+        subjectName: p.subjectName,
+      })),
+    );
+
+    const relatedGroups = await prisma.coTeaching_tb.findMany({
+      where: {
+        OR: [
+          {
+            plans: {
+              some: {
+                subjectCode: subjectCode,
+                termYear: termYear,
+              },
+            },
+          },
+          {
+            groupKey: {
+              startsWith: `${subjectCode}-`,
+            },
+          },
+          {
+            groupKey: {
+              contains: `/${termYear}`,
+            },
+          },
+        ],
       },
       include: {
-         room: true,
-         teacher: true
-      }
-   });
+        plans: {
+          where: {
+            subjectCode: subjectCode,
+            termYear: termYear,
+          },
+        },
+      },
+    });
 
-   return subjects;
+    console.log(
+      "Related groups found:",
+      relatedGroups.map((g) => ({
+        id: g.id,
+        groupKey: g.groupKey,
+        planCount: g.plans.length,
+        plans: g.plans.map((p) => ({
+          id: p.id,
+          planType: p.planType,
+          yearLevel: p.yearLevel,
+          subjectName: p.subjectName,
+        })),
+      })),
+    );
+
+    console.log("Input mergedPlanIds:", mergedPlanIds);
+
+    for (const group of relatedGroups) {
+      await prisma.coTeaching_tb.delete({
+        where: { id: group.id },
+      });
+    }
+
+    const originalGroupKey = generateCoTeachingGroupKey(subjectCode, termYear);
+    await prisma.coTeaching_tb.create({
+      data: {
+        groupKey: originalGroupKey,
+        plans: {
+          connect: mergedPlanIds.map((id) => ({ id })),
+        },
+      },
+    });
+
+    console.log("Created new co-teaching group:", {
+      groupKey: originalGroupKey,
+      mergedPlanIds: mergedPlanIds,
+    });
+
+    return {
+      success: true,
+      newGroupKey: originalGroupKey,
+    };
+  } catch (error) {
+    console.error("Error handling co-teaching merge:", error);
+    throw error;
+  }
+}
+
+export async function findCoTeachingSubjects(
+  subjectCode: string,
+  termYear: string,
+) {
+  const subjects = await prisma.plans_tb.findMany({
+    where: {
+      subjectCode: subjectCode,
+      termYear: termYear,
+      planType: {
+        in: ["TRANSFER", "FOUR_YEAR"],
+      },
+    },
+    include: {
+      room: true,
+      teacher: true,
+    },
+  });
+
+  return subjects;
 }
