@@ -99,7 +99,7 @@ export default function PlansStatusCustom({
       setShowConflictDialog(false);
       setLastShownConflicts([]);
     }
-  }, [conflicts]);
+  }, [conflicts, lastConflictTimestamp]);
 
   const handleCloseConflictDialog = () => {
     setShowConflictDialog(false);

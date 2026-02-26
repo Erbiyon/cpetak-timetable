@@ -96,16 +96,6 @@ function TimeTableCustomInternal({
 }) {
   const days = ["จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา."];
 
-  const assignmentsKey = useMemo(() => {
-    return JSON.stringify(assignments);
-  }, [assignments]);
-
-  const plansKey = useMemo(() => {
-    return JSON.stringify(
-      plans.map((p) => ({ id: p.id, subjectCode: p.subjectCode })),
-    );
-  }, [plans]);
-
   const { cellToSubject, cellColspan, cellSkip } = useMemo(() => {
     const cellToSubject: { [cellKey: string]: any } = {};
     const cellColspan: { [cellKey: string]: number } = {};
@@ -159,17 +149,7 @@ function TimeTableCustomInternal({
     });
 
     return { cellToSubject, cellColspan, cellSkip };
-  }, [assignmentsKey, plansKey]);
-
-  const dragOverCellKey = useMemo(() => {
-    return dragOverCell ? `${dragOverCell.day}-${dragOverCell.period}` : null;
-  }, [dragOverCell]);
-
-  const activeSubjectKey = useMemo(() => {
-    return activeSubject
-      ? `${activeSubject.id}-${activeSubject.lectureHour}-${activeSubject.labHour}`
-      : null;
-  }, [activeSubject]);
+  }, [assignments, plans]);
 
   const calculatedHighlight = useMemo(() => {
     if (!activeSubject || !dragOverCell) {
@@ -230,7 +210,7 @@ function TimeTableCustomInternal({
       period: firstPeriod,
       invalid,
     };
-  }, [activeSubjectKey, dragOverCellKey]);
+  }, [activeSubject, dragOverCell]);
 
   const memoizedOnRemoveAssignment = useCallback(
     (subjectId: number) => {

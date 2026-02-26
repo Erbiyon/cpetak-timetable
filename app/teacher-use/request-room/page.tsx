@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -91,33 +91,7 @@ export default function RequestRoomPage() {
     }
   }, [status, router]);
 
-  useEffect(() => {
-    if (session?.user?.id && status === "authenticated") {
-      fetchTeacherInfo();
-    }
-  }, [session, status]);
-
-  // Fetch deadline
-  useEffect(() => {
-    const fetchDeadline = async () => {
-      try {
-        const response = await fetch("/api/room-request-deadline");
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.deadline) {
-            const deadlineDate = new Date(data.deadline);
-            setDeadline(deadlineDate);
-            setIsDeadlinePassed(new Date() > deadlineDate);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching deadline:", error);
-      }
-    };
-    fetchDeadline();
-  }, []);
-
-  const fetchTeacherInfo = async () => {
+  const fetchTeacherInfo = useCallback(async () => {
     try {
       console.log("Fetching teacher info for:", session?.user?.id);
       const response = await fetch(`/api/teacher/${session?.user?.id}`);
@@ -143,9 +117,35 @@ export default function RequestRoomPage() {
       console.error("Error fetching teacher info:", error);
       setLoading(false);
     }
-  };
+  }, [session?.user?.id]);
 
-  const fetchSubjects = async () => {
+  useEffect(() => {
+    if (session?.user?.id && status === "authenticated") {
+      fetchTeacherInfo();
+    }
+  }, [session, status, fetchTeacherInfo]);
+
+  // Fetch deadline
+  useEffect(() => {
+    const fetchDeadline = async () => {
+      try {
+        const response = await fetch("/api/room-request-deadline");
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.deadline) {
+            const deadlineDate = new Date(data.deadline);
+            setDeadline(deadlineDate);
+            setIsDeadlinePassed(new Date() > deadlineDate);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching deadline:", error);
+      }
+    };
+    fetchDeadline();
+  }, []);
+
+  const fetchSubjects = useCallback(async () => {
     if (accessDenied || !session?.user?.id) return;
 
     try {
@@ -166,7 +166,7 @@ export default function RequestRoomPage() {
         const mySubjects = data.filter(
           (subject: Subject) =>
             subject.teacherId &&
-            subject.teacherId.toString() === session?.user?.id
+            subject.teacherId.toString() === session?.user?.id,
         );
 
         setSubjects(mySubjects);
@@ -178,9 +178,9 @@ export default function RequestRoomPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessDenied, session?.user?.id, currentTermYear]);
 
-  const fetchRooms = async () => {
+  const fetchRooms = useCallback(async () => {
     if (accessDenied) return;
 
     try {
@@ -192,7 +192,7 @@ export default function RequestRoomPage() {
         const filteredRooms = data.filter(
           (room: Room) =>
             room.roomType == "อาคารสาขาวิศวกรรมคอมพิวเตอร์" ||
-            room.roomType == "ตึกวิศวกรรมศาสตร์"
+            room.roomType == "ตึกวิศวกรรมศาสตร์",
         );
         console.log("Rooms received:", filteredRooms);
         setRooms(filteredRooms);
@@ -202,7 +202,7 @@ export default function RequestRoomPage() {
     } catch (error) {
       console.error("Error fetching rooms:", error);
     }
-  };
+  }, [accessDenied]);
 
   useEffect(() => {
     async function fetchTermYear() {
@@ -237,7 +237,13 @@ export default function RequestRoomPage() {
       fetchSubjects();
       fetchRooms();
     }
-  }, [currentTermYear, accessDenied, session?.user?.id]);
+  }, [
+    currentTermYear,
+    accessDenied,
+    session?.user?.id,
+    fetchSubjects,
+    fetchRooms,
+  ]);
 
   const handleRoomUpdate = async (subjectId: number, roomId: string) => {
     if (accessDenied) return;
@@ -259,7 +265,7 @@ export default function RequestRoomPage() {
             (s) =>
               s.subjectCode === subject.subjectCode &&
               (s.planType === "DVE-MSIX" || s.planType === "DVE-LVC") &&
-              s.termYear === subject.termYear
+              s.termYear === subject.termYear,
           )
           .map((s) => s.id);
       }
@@ -272,8 +278,8 @@ export default function RequestRoomPage() {
             body: JSON.stringify({
               roomId: roomId === "none" ? null : parseInt(roomId),
             }),
-          })
-        )
+          }),
+        ),
       );
 
       await fetchSubjects();
@@ -282,7 +288,7 @@ export default function RequestRoomPage() {
       console.log(
         roomId === "none"
           ? "ลบการเลือกห้องเรียนแล้ว"
-          : `เลือกห้อง ${selectedRoom?.roomCode} แล้ว`
+          : `เลือกห้อง ${selectedRoom?.roomCode} แล้ว`,
       );
     } catch (error) {
       console.error("Error updating room:", error);

@@ -377,7 +377,7 @@ function AutoFullCurriculumButtonInternal({
     } finally {
       setIsScheduling(false);
     }
-  }, [termYear, planType, onScheduleComplete]);
+  }, [termYear, planType, onScheduleComplete, isScheduling]);
 
   return (
     <TooltipProvider>
