@@ -21,6 +21,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 interface CurriculumItem {
   id: number;
@@ -36,6 +38,7 @@ interface CurriculumItem {
 export default function CurriculumPage() {
   const [curriculum, setCurriculum] = useState<CurriculumItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchCurriculum = async () => {
     try {
@@ -54,10 +57,31 @@ export default function CurriculumPage() {
     fetchCurriculum();
   }, []);
 
+  const filterCurriculum = (items: CurriculumItem[]) => {
+    if (!searchQuery.trim()) return items;
+
+    const query = searchQuery.toLowerCase();
+    return items.filter(
+      (item) =>
+        item.id_sub.toLowerCase().includes(query) ||
+        item.subject_name.toLowerCase().includes(query),
+    );
+  };
+
   return (
     <div>
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-4">หลักสูตร</h1>
+
+        <div className="mb-4 relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="ค้นหารหัสวิชาหรือชื่อวิชา..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
 
         <Tabs defaultValue="dve" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2">
@@ -97,40 +121,46 @@ export default function CurriculumPage() {
                             กำลังโหลดข้อมูล...
                           </TableCell>
                         </TableRow>
-                      ) : curriculum.filter(
-                          (item) => item.curriculum_type === "DVE"
+                      ) : filterCurriculum(
+                          curriculum.filter(
+                            (item) => item.curriculum_type === "DVE",
+                          ),
                         ).length > 0 ? (
-                        curriculum
-                          .filter((item) => item.curriculum_type === "DVE")
-                          .map((item) => (
-                            <TableRow key={item.id}>
-                              <TableCell>{item.id_sub}</TableCell>
-                              <TableCell>{item.subject_name}</TableCell>
-                              <TableCell>{item.credit}</TableCell>
-                              <TableCell>{item.lacture_credit}</TableCell>
-                              <TableCell>{item.lab_credit}</TableCell>
-                              <TableCell>{item.out_credit}</TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  <EditCurriculumCustom
-                                    curriculum={item}
-                                    onSuccess={fetchCurriculum}
-                                  />
-                                  <DeleteCurriculumCustom
-                                    curriculum={item}
-                                    onSuccess={fetchCurriculum}
-                                  />
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))
+                        filterCurriculum(
+                          curriculum.filter(
+                            (item) => item.curriculum_type === "DVE",
+                          ),
+                        ).map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>{item.id_sub}</TableCell>
+                            <TableCell>{item.subject_name}</TableCell>
+                            <TableCell>{item.credit}</TableCell>
+                            <TableCell>{item.lacture_credit}</TableCell>
+                            <TableCell>{item.lab_credit}</TableCell>
+                            <TableCell>{item.out_credit}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <EditCurriculumCustom
+                                  curriculum={item}
+                                  onSuccess={fetchCurriculum}
+                                />
+                                <DeleteCurriculumCustom
+                                  curriculum={item}
+                                  onSuccess={fetchCurriculum}
+                                />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
                       ) : (
                         <TableRow>
                           <TableCell
                             colSpan={7}
                             className="text-center py-4 text-muted-foreground"
                           >
-                            ยังไม่มีวิชาในหลักสูตรปวส.
+                            {searchQuery
+                              ? "ไม่พบรายการที่ค้นหา"
+                              : "ยังไม่มีวิชาในหลักสูตรปวส."}
                           </TableCell>
                         </TableRow>
                       )}
@@ -176,40 +206,46 @@ export default function CurriculumPage() {
                             กำลังโหลดข้อมูล...
                           </TableCell>
                         </TableRow>
-                      ) : curriculum.filter(
-                          (item) => item.curriculum_type === "BACHELOR"
+                      ) : filterCurriculum(
+                          curriculum.filter(
+                            (item) => item.curriculum_type === "BACHELOR",
+                          ),
                         ).length > 0 ? (
-                        curriculum
-                          .filter((item) => item.curriculum_type === "BACHELOR")
-                          .map((item) => (
-                            <TableRow key={item.id}>
-                              <TableCell>{item.id_sub}</TableCell>
-                              <TableCell>{item.subject_name}</TableCell>
-                              <TableCell>{item.credit}</TableCell>
-                              <TableCell>{item.lacture_credit}</TableCell>
-                              <TableCell>{item.lab_credit}</TableCell>
-                              <TableCell>{item.out_credit}</TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  <EditCurriculumCustom
-                                    curriculum={item}
-                                    onSuccess={fetchCurriculum}
-                                  />
-                                  <DeleteCurriculumCustom
-                                    curriculum={item}
-                                    onSuccess={fetchCurriculum}
-                                  />
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))
+                        filterCurriculum(
+                          curriculum.filter(
+                            (item) => item.curriculum_type === "BACHELOR",
+                          ),
+                        ).map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>{item.id_sub}</TableCell>
+                            <TableCell>{item.subject_name}</TableCell>
+                            <TableCell>{item.credit}</TableCell>
+                            <TableCell>{item.lacture_credit}</TableCell>
+                            <TableCell>{item.lab_credit}</TableCell>
+                            <TableCell>{item.out_credit}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <EditCurriculumCustom
+                                  curriculum={item}
+                                  onSuccess={fetchCurriculum}
+                                />
+                                <DeleteCurriculumCustom
+                                  curriculum={item}
+                                  onSuccess={fetchCurriculum}
+                                />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
                       ) : (
                         <TableRow>
                           <TableCell
                             colSpan={7}
                             className="text-center py-4 text-muted-foreground"
                           >
-                            ยังไม่มีวิชาในหลักสูตรปริญญาตรี
+                            {searchQuery
+                              ? "ไม่พบรายการที่ค้นหา"
+                              : "ยังไม่มีวิชาในหลักสูตรปริญญาตรี"}
                           </TableCell>
                         </TableRow>
                       )}

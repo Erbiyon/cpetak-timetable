@@ -185,6 +185,21 @@ export function AddTeacherSubjectInCustom({
               planIds: [subjectId, otherPlan.id],
             }),
           });
+
+          // ลบตารางเรียนของทั้งสองวิชาออกด้วย
+          try {
+            const deletePromises = [
+              fetch(`/api/timetable/${subjectId}`, { method: "DELETE" }),
+              fetch(`/api/timetable/${otherPlan.id}`, { method: "DELETE" }),
+            ];
+
+            const deleteResults = await Promise.all(deletePromises);
+            if (deleteResults.every((res) => res.ok)) {
+              console.log(`ลบตารางเรียนของวิชาที่สอนร่วมทั้งสองวิชาสำเร็จ`);
+            }
+          } catch (error) {
+            console.error("เกิดข้อผิดพลาดในการลบตารางเรียน:", error);
+          }
         }
       }
 
