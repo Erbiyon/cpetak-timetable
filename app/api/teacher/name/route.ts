@@ -28,7 +28,5 @@ export async function GET(request: NextRequest) {
       { error: error.message || "เกิดข้อผิดพลาด" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

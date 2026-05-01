@@ -23,8 +23,6 @@ export async function DELETE(
       { error: error.message || "ไม่พบห้องหรือเกิดข้อผิดพลาด" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -62,7 +60,5 @@ export async function PUT(
       { error: "เกิดข้อผิดพลาดในการอัปเดตห้อง" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

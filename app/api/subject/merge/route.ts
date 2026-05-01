@@ -198,8 +198,6 @@ export async function POST(request: Request) {
       { error: "เกิดข้อผิดพลาดในการรวมวิชา" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

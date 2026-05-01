@@ -441,8 +441,6 @@ export async function POST(request: Request) {
       { error: "เกิดข้อผิดพลาดในการสร้างตารางเรียน" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -508,7 +506,5 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error("ผิดพลาดในการดึงข้อมูลตารางเรียน:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

@@ -50,21 +50,21 @@ export default function FourOneYear() {
   );
 
   const handleSubjectUpdate = useCallback(async () => {
-    console.log("Refreshing subjects and timetable data...");
-
     try {
       setIsLoading(true);
 
-      const timetableRes = await fetch(
-        `/api/timetable?termYear=${encodeURIComponent(termYear || "")}&yearLevel=${encodeURIComponent("ปี 1")}&planType=FOUR_YEAR`,
-      );
+      const [timetableRes, planRes] = await Promise.all([
+        fetch(`/api/timetable?termYear=${encodeURIComponent(termYear || "")}&yearLevel=${encodeURIComponent("ปี 1")}&planType=FOUR_YEAR`),
+        fetch(`/api/subject?termYear=${encodeURIComponent(termYear || "")}&yearLevel=${encodeURIComponent("ปี 1")}&planType=FOUR_YEAR`),
+      ]);
+
       if (timetableRes.ok) {
         const timetableData = await timetableRes.json();
+        setTimetableData(timetableData);
 
         const assignments: {
           [subjectId: number]: { day: number; periods: number[] };
         } = {};
-        setTimetableData(timetableData);
 
         timetableData.forEach((item: any) => {
           const periods: number[] = [];
@@ -72,25 +72,16 @@ export default function FourOneYear() {
             if (item.day === 2 && p >= 14 && p <= 17) continue;
             periods.push(p);
           }
-
-          assignments[item.planId] = {
-            day: item.day,
-            periods: periods,
-          };
+          assignments[item.planId] = { day: item.day, periods };
         });
 
         setTableAssignments(assignments);
-        console.log("Updated tableAssignments after refresh:", assignments);
       }
 
-      const planRes = await fetch(
-        `/api/subject?termYear=${encodeURIComponent(termYear || "")}&yearLevel=${encodeURIComponent("ปี 1")}&planType=FOUR_YEAR`,
-      );
       if (planRes.ok) {
         const planData = await planRes.json();
         if (Array.isArray(planData) && planData.length > 0) {
           setPlans(planData);
-          console.log("Updated plans after refresh:", planData.length);
         }
       }
     } catch (error) {
@@ -105,153 +96,41 @@ export default function FourOneYear() {
       setIsLoading(true);
       try {
         const termRes = await fetch("/api/term-year");
-        if (termRes.ok) {
-          const termData = await termRes.json();
-          console.log("Term data received:", termData);
-          setTermYear(termData.termYear);
+        if (!termRes.ok) {
+          console.error("Failed to fetch term year:", termRes.status);
+          return;
+        }
+        const termData = await termRes.json();
+        setTermYear(termData.termYear);
 
-          console.log("=== Testing API without filters ===");
-          const testRes = await fetch("/api/subject");
-          if (testRes.ok) {
-            const allData = await testRes.json();
-            console.log(`Total records in database: ${allData.length}`);
+        const [timetableRes, planRes] = await Promise.all([
+          fetch(`/api/timetable?termYear=${encodeURIComponent(termData.termYear)}&yearLevel=${encodeURIComponent("ปี 1")}&planType=FOUR_YEAR`),
+          fetch(`/api/subject?termYear=${encodeURIComponent(termData.termYear)}&yearLevel=${encodeURIComponent("ปี 1")}&planType=FOUR_YEAR`),
+        ]);
 
-            if (allData.length > 0) {
-              console.log("Sample record:", allData[0]);
+        if (timetableRes.ok) {
+          const timetableData = await timetableRes.json();
+          setTimetableData(timetableData);
 
-              const matchingRecords = allData.filter(
-                (record: any) =>
-                  record.termYear === termData.termYear &&
-                  record.yearLevel === "ปี 1" &&
-                  record.planType === "FOUR_YEAR",
-              );
+          const assignments: {
+            [subjectId: number]: { day: number; periods: number[] };
+          } = {};
 
-              console.log(`Matching records found: ${matchingRecords.length}`);
-              if (matchingRecords.length > 0) {
-                console.log("Sample matching record:", matchingRecords[0]);
-              }
+          timetableData.forEach((item: any) => {
+            const periods: number[] = [];
+            for (let p = item.startPeriod; p <= item.endPeriod; p++) {
+              if (item.day === 2 && p >= 14 && p <= 17) continue;
+              periods.push(p);
             }
-          }
+            assignments[item.planId] = { day: item.day, periods };
+          });
 
-          const timetableRes = await fetch(
-            `/api/timetable?termYear=${encodeURIComponent(termData.termYear)}&yearLevel=${encodeURIComponent("ปี 1")}&planType=FOUR_YEAR`,
-          );
-          if (timetableRes.ok) {
-            const timetableData = await timetableRes.json();
-            console.log("Loaded timetable data:", timetableData);
+          setTableAssignments(assignments);
+        }
 
-            setTimetableData(timetableData);
-
-            const assignments: {
-              [subjectId: number]: { day: number; periods: number[] };
-            } = {};
-
-            timetableData.forEach((item: any) => {
-              const periods: number[] = [];
-              for (let p = item.startPeriod; p <= item.endPeriod; p++) {
-                if (item.day === 2 && p >= 14 && p <= 17) continue;
-                periods.push(p);
-              }
-
-              assignments[item.planId] = {
-                day: item.day,
-                periods: periods,
-              };
-            });
-
-            setTableAssignments(assignments);
-          }
-
-          console.log("=== Testing different query combinations ===");
-
-          const query1 = `/api/subject?termYear=${encodeURIComponent(termData.termYear)}&yearLevel=${encodeURIComponent("ปี 1")}&planType=FOUR_YEAR`;
-          console.log("Query 1:", query1);
-
-          const query2 = `/api/subject?termYear=${encodeURIComponent(termData.termYear)}`;
-          console.log("Query 2:", query2);
-
-          const query3 = `/api/subject?planType=FOUR_YEAR`;
-          console.log("Query 3:", query3);
-
-          let finalData = [];
-
-          for (const [index, query] of [query1, query2, query3].entries()) {
-            console.log(`Testing query ${index + 1}:`, query);
-            const planRes = await fetch(query);
-            if (planRes.ok) {
-              const data = await planRes.json();
-              console.log(
-                `Query ${index + 1} results:`,
-                data.length,
-                "records",
-              );
-              if (data.length > 0 && finalData.length === 0) {
-                finalData = data;
-                console.log(`Using results from query ${index + 1}`);
-                break;
-              }
-            } else {
-              console.log(
-                `Query ${index + 1} failed:`,
-                planRes.status,
-                planRes.statusText,
-              );
-            }
-          }
-
-          if (finalData.length === 0) {
-            console.log(
-              "No data found with filters, trying without filters...",
-            );
-            const planRes = await fetch("/api/subject");
-            if (planRes.ok) {
-              const allData = await planRes.json();
-              console.log("Total data without filters:", allData.length);
-
-              finalData = allData.filter((record: any) => {
-                const matchTermYear =
-                  !termData.termYear || record.termYear === termData.termYear;
-                const matchYearLevel = record.yearLevel === "ปี 1";
-                const matchPlanType = record.planType === "FOUR_YEAR";
-
-                console.log("Filtering record:", {
-                  id: record.id,
-                  termYear: record.termYear,
-                  yearLevel: record.yearLevel,
-                  planType: record.planType,
-                  matchTermYear,
-                  matchYearLevel,
-                  matchPlanType,
-                  match: matchTermYear && matchYearLevel && matchPlanType,
-                });
-
-                return matchTermYear && matchYearLevel && matchPlanType;
-              });
-
-              console.log("Filtered data:", finalData.length, "records");
-            }
-          }
-
-          if (Array.isArray(finalData)) {
-            setPlans(finalData);
-            console.log("Set plans with", finalData.length, "records");
-          } else if (
-            finalData &&
-            finalData.plans &&
-            Array.isArray(finalData.plans)
-          ) {
-            setPlans(finalData.plans);
-            console.log("Set plans with", finalData.plans.length, "records");
-          } else {
-            console.warn("API ส่งข้อมูลในรูปแบบที่ไม่ถูกต้อง");
-            setPlans([]);
-          }
-        } else {
-          console.error(
-            "Failed to fetch term year:",
-            termRes.status,
-            termRes.statusText,
-          );
+        if (planRes.ok) {
+          const planData = await planRes.json();
+          setPlans(Array.isArray(planData) ? planData : []);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -263,20 +142,6 @@ export default function FourOneYear() {
 
     fetchData();
   }, []);
-
-  useEffect(() => {
-    if (plans.length > 0) {
-      console.log("ข้อมูลทั้งหมด:", plans.length);
-      const year1Plans = plans.filter(
-        (plan) => plan.yearLevel && plan.yearLevel.includes("ปี 1"),
-      );
-      console.log("วิชาปี 1:", year1Plans.length);
-      console.log(
-        "ตัวอย่างวิชาปี 1:",
-        year1Plans.length > 0 ? year1Plans[0] : "ไม่พบ",
-      );
-    }
-  }, [plans]);
 
   function handleDragStart(event: any) {
     const { active } = event;

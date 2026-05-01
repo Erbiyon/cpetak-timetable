@@ -54,8 +54,6 @@ export async function PUT(
       { error: "เกิดข้อผิดพลาดในการแก้ไขข้อมูล" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -78,7 +76,5 @@ export async function DELETE(
       { error: "เกิดข้อผิดพลาดในการลบข้อมูล" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

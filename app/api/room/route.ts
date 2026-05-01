@@ -56,7 +56,5 @@ export async function POST(request: NextRequest) {
       { error: "เกิดข้อผิดพลาดในการสร้างห้อง" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

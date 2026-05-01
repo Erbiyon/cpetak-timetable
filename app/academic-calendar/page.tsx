@@ -7,6 +7,15 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import React from "react";
 
 export default function AcademicCalendar() {
@@ -18,6 +27,15 @@ export default function AcademicCalendar() {
   const [selectedCurrentTerm, setSelectedCurrentTerm] = React.useState<
     number | null
   >(null);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [dialogMessage, setDialogMessage] = React.useState("");
+  const [dialogTitle, setDialogTitle] = React.useState("แจ้งเตือน");
+
+  function showDialog(message: string, title = "แจ้งเตือน") {
+    setDialogTitle(title);
+    setDialogMessage(message);
+    setDialogOpen(true);
+  }
 
   const terms = [
     { name: "ภาคเรียนที่ 1", start: term1.start, end: term1.end },
@@ -62,8 +80,9 @@ export default function AcademicCalendar() {
 
       if (res.ok) {
         setSelectedCurrentTerm(termNumber);
-        alert(
-          `กำหนดให้ภาคเรียนที่ ${termNumber}/${academicYear} เป็นภาคเรียนปัจจุบันแล้ว`
+        showDialog(
+          `กำหนดให้ภาคเรียนที่ ${termNumber}/${academicYear} เป็นภาคเรียนปัจจุบันแล้ว`,
+          "สำเร็จ",
         );
       }
     } catch (error) {
@@ -152,13 +171,13 @@ export default function AcademicCalendar() {
   function getAllOverlapTermNames(
     start: Date | undefined,
     end: Date | undefined,
-    otherTerms: { name: string; start?: Date; end?: Date }[]
+    otherTerms: { name: string; start?: Date; end?: Date }[],
   ): string[] {
     if (!start || !end) return [];
     return otherTerms
       .filter(
         (term) =>
-          term.start && term.end && start <= term.end && end >= term.start
+          term.start && term.end && start <= term.end && end >= term.start,
       )
       .map((term) => term.name);
   }
@@ -209,14 +228,16 @@ export default function AcademicCalendar() {
                         [
                           { name: "ภาคเรียนที่ 2", ...term2 },
                           { name: "ภาคเรียนที่ 3", ...term3 },
-                        ]
+                        ],
                       );
                       if (newStart && newEnd && overlaps.length > 0) {
-                        alert(`ช่วงเวลานี้ซ้ำกับ${overlaps.join(" และ ")}`);
+                        showDialog(
+                          `ช่วงเวลานี้ซ้ำกับ${overlaps.join(" และ ")}`,
+                        );
                         return;
                       }
                       if (newEnd && newStart && newEnd < newStart) {
-                        alert("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
+                        showDialog("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
                         return;
                       }
                       setTerm1((t) => ({ ...t, start: date }));
@@ -235,14 +256,16 @@ export default function AcademicCalendar() {
                         [
                           { name: "ภาคเรียนที่ 2", ...term2 },
                           { name: "ภาคเรียนที่ 3", ...term3 },
-                        ]
+                        ],
                       );
                       if (newStart && newEnd && overlaps.length > 0) {
-                        alert(`ช่วงเวลานี้ซ้ำกับ${overlaps.join(" และ ")}`);
+                        showDialog(
+                          `ช่วงเวลานี้ซ้ำกับ${overlaps.join(" และ ")}`,
+                        );
                         return;
                       }
                       if (newStart && newEnd && newEnd < newStart) {
-                        alert("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
+                        showDialog("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
                         return;
                       }
                       setTerm1((t) => ({ ...t, end: date }));
@@ -272,14 +295,16 @@ export default function AcademicCalendar() {
                         [
                           { name: "ภาคเรียนที่ 1", ...term1 },
                           { name: "ภาคเรียนที่ 3", ...term3 },
-                        ]
+                        ],
                       );
                       if (newStart && newEnd && overlaps.length > 0) {
-                        alert(`ช่วงเวลานี้ซ้ำกับ${overlaps.join(" และ ")}`);
+                        showDialog(
+                          `ช่วงเวลานี้ซ้ำกับ${overlaps.join(" และ ")}`,
+                        );
                         return;
                       }
                       if (newEnd && newStart && newEnd < newStart) {
-                        alert("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
+                        showDialog("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
                         return;
                       }
                       setTerm2((t) => ({ ...t, start: date }));
@@ -298,14 +323,16 @@ export default function AcademicCalendar() {
                         [
                           { name: "ภาคเรียนที่ 1", ...term1 },
                           { name: "ภาคเรียนที่ 3", ...term3 },
-                        ]
+                        ],
                       );
                       if (newStart && newEnd && overlaps.length > 0) {
-                        alert(`ช่วงเวลานี้ซ้ำกับ${overlaps.join(" และ ")}`);
+                        showDialog(
+                          `ช่วงเวลานี้ซ้ำกับ${overlaps.join(" และ ")}`,
+                        );
                         return;
                       }
                       if (newStart && newEnd && newEnd < newStart) {
-                        alert("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
+                        showDialog("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
                         return;
                       }
                       setTerm2((t) => ({ ...t, end: date }));
@@ -335,14 +362,16 @@ export default function AcademicCalendar() {
                         [
                           { name: "ภาคเรียนที่ 1", ...term1 },
                           { name: "ภาคเรียนที่ 2", ...term2 },
-                        ]
+                        ],
                       );
                       if (newStart && newEnd && overlaps.length > 0) {
-                        alert(`ช่วงเวลานี้ซ้ำกับ${overlaps.join(" และ ")}`);
+                        showDialog(
+                          `ช่วงเวลานี้ซ้ำกับ${overlaps.join(" และ ")}`,
+                        );
                         return;
                       }
                       if (newEnd && newStart && newEnd < newStart) {
-                        alert("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
+                        showDialog("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
                         return;
                       }
                       setTerm3((t) => ({ ...t, start: date }));
@@ -361,14 +390,16 @@ export default function AcademicCalendar() {
                         [
                           { name: "ภาคเรียนที่ 1", ...term1 },
                           { name: "ภาคเรียนที่ 2", ...term2 },
-                        ]
+                        ],
                       );
                       if (newStart && newEnd && overlaps.length > 0) {
-                        alert(`ช่วงเวลานี้ซ้ำกับ${overlaps.join(" และ ")}`);
+                        showDialog(
+                          `ช่วงเวลานี้ซ้ำกับ${overlaps.join(" และ ")}`,
+                        );
                         return;
                       }
                       if (newStart && newEnd && newEnd < newStart) {
-                        alert("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
+                        showDialog("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
                         return;
                       }
                       setTerm3((t) => ({ ...t, end: date }));
@@ -409,8 +440,8 @@ export default function AcademicCalendar() {
                       termNumber === 1
                         ? term1
                         : termNumber === 2
-                        ? term2
-                        : term3;
+                          ? term2
+                          : term3;
                     const isComplete = termData.start && termData.end;
                     const academicYear = term1.start
                       ? term1.start.getFullYear() + 543
@@ -456,6 +487,20 @@ export default function AcademicCalendar() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{dialogTitle}</AlertDialogTitle>
+            <AlertDialogDescription>{dialogMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setDialogOpen(false)}>
+              ตกลง
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
