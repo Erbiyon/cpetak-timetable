@@ -16,8 +16,6 @@ export async function GET(_req: NextRequest) {
       { error: "เกิดข้อผิดพลาดในการดึงข้อมูล" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -65,7 +63,5 @@ export async function POST(req: NextRequest) {
       { error: "เกิดข้อผิดพลาดในการเพิ่มข้อมูล" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

@@ -53,7 +53,5 @@ export async function PUT(
       { error: error.message || "เกิดข้อผิดพลาดในการอัปเดตข้อมูลวิชา" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

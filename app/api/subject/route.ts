@@ -145,8 +145,6 @@ export async function GET(req: NextRequest) {
       { error: "เกิดข้อผิดพลาดในการดึงข้อมูลวิชา" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -221,7 +219,5 @@ export async function PUT(req: NextRequest) {
       { error: "เกิดข้อผิดพลาดในการอัปเดตวิชา" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

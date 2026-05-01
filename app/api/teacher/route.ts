@@ -117,8 +117,6 @@ export async function POST(req: NextRequest) {
       { error: error.message || "เกิดข้อผิดพลาดในการสร้างข้อมูลอาจารย์" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -153,7 +151,5 @@ export async function GET(req: NextRequest) {
       { error: error.message || "Failed to fetch teachers" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

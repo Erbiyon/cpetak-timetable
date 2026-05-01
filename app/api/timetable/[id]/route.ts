@@ -30,8 +30,6 @@ export async function GET(
       { error: "เกิดข้อผิดพลาดในการดึงข้อมูลตารางเรียน" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -224,7 +222,5 @@ export async function DELETE(
       },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

@@ -10,19 +10,5 @@ export const prisma =
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
-
-// Ensure the connection is established
-if (process.env.NODE_ENV === "production") {
-  prisma.$connect().catch((err) => {
-    console.error("Failed to connect to database:", err);
-    process.exit(1);
-  });
-}
-
-// Graceful shutdown
-process.on("beforeExit", async () => {
-  await prisma.$disconnect();
-});
+// Cache instance in global scope for both dev (HMR safe) and production
+globalForPrisma.prisma = prisma;

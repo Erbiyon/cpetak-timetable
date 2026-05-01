@@ -160,8 +160,6 @@ export async function GET(
       { error: "เกิดข้อผิดพลาดในการดึงข้อมูลวิชา" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -192,8 +190,6 @@ export async function DELETE(
       { error: "เกิดข้อผิดพลาดในการลบวิชา" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -253,7 +249,5 @@ export async function PUT(
       { error: error.message || "เกิดข้อผิดพลาด" },
       { status: 500 },
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
