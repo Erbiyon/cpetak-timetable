@@ -414,9 +414,7 @@ const SimpleCell = React.memo(function SimpleCell({
       colSpan={colspan}
       onContextMenu={handleContextMenu}
     >
-      {subject ? (
-        <SubjectInCell subject={subject} />
-      ) : null}
+      {subject ? <SubjectInCell subject={subject} /> : null}
     </td>
   );
 });
