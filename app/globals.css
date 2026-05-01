@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Force grabbing cursor during drag on entire page */
+body.dragging-active,
+body.dragging-active * {
+  cursor: grabbing !important;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
