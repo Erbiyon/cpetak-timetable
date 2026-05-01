@@ -155,7 +155,8 @@ function TimeTableCustomInternal({
     if (!activeSubject || !dragOverCell) {
       return {
         startCell: null,
-        skipCells: [] as string[],
+        endCell: null,
+        highlightRange: null as Set<string> | null,
         colspan: 0,
         invalid: false,
       };
@@ -184,7 +185,8 @@ function TimeTableCustomInternal({
     if (periods.length === 0) {
       return {
         startCell: null,
-        skipCells: [],
+        endCell: null,
+        highlightRange: null as Set<string> | null,
         colspan: 0,
         invalid: true,
       };
@@ -202,9 +204,18 @@ function TimeTableCustomInternal({
       skipCells.push(`${day}-${p}`);
     }
 
+    // Build a Set of ALL cells in the highlight range.
+    // We no longer return null for these cells — keeping them in the DOM
+    // prevents dnd-kit from firing spurious dragOver events on unmount,
+    // which was causing the "Maximum update depth exceeded" infinite loop.
+    const highlightRange = new Set<string>();
+    highlightRange.add(`${day}-${firstPeriod}`);
+    for (const c of skipCells) highlightRange.add(c);
+
     return {
       startCell: `${day}-${firstPeriod}`,
-      skipCells,
+      endCell: `${day}-${lastPeriod}`,
+      highlightRange,
       colspan: lastPeriod - firstPeriod + 1,
       day,
       period: firstPeriod,
@@ -265,21 +276,30 @@ function TimeTableCustomInternal({
                   return null;
                 }
 
-                if (calculatedHighlight.skipCells?.includes(cellKey)) {
-                  return null;
-                }
-
                 const subject = cellToSubject[cellKey];
                 const colspan = cellColspan[cellKey] || 1;
 
+                // Use Set lookup (O(1)) — avoids returning null which unmounts
+                // droppable refs and triggers dnd-kit infinite dragOver loops.
+                const isHighlightCell =
+                  calculatedHighlight.highlightRange?.has(cellKey) ?? false;
                 const isHighlightStart =
                   cellKey === calculatedHighlight.startCell;
-                const highlightColspan =
-                  isHighlightStart && calculatedHighlight.colspan
-                    ? calculatedHighlight.colspan
-                    : 1;
+                const isHighlightEnd = cellKey === calculatedHighlight.endCell;
                 const isInvalidHighlight =
-                  isHighlightStart && calculatedHighlight.invalid;
+                  isHighlightCell && !!calculatedHighlight.invalid;
+
+                // Determine position within the highlighted range so SimpleCell
+                // can render seamless block-style borders (no gap between cells).
+                const highlightPosition = !isHighlightCell
+                  ? null
+                  : isHighlightStart && isHighlightEnd
+                    ? "single"
+                    : isHighlightStart
+                      ? "first"
+                      : isHighlightEnd
+                        ? "last"
+                        : "middle";
 
                 const uniqueCellKey = `cell-${rowIdx}-${colIdx}`;
 
@@ -289,11 +309,12 @@ function TimeTableCustomInternal({
                     id={`cell-${rowIdx}-${colIdx}`}
                     day={rowIdx}
                     period={colIdx}
-                    colspan={isHighlightStart ? highlightColspan : colspan}
+                    colspan={colspan}
                     subject={subject}
                     onRemoveAssignment={memoizedOnRemoveAssignment}
-                    isHighlighted={isHighlightStart}
+                    isHighlighted={isHighlightCell}
                     isInvalidHighlight={isInvalidHighlight}
+                    highlightPosition={highlightPosition}
                     activeSubject={isHighlightStart ? activeSubject : null}
                   />
                 );
@@ -315,6 +336,7 @@ const SimpleCell = React.memo(function SimpleCell({
   onRemoveAssignment,
   isHighlighted = false,
   isInvalidHighlight = false,
+  highlightPosition = null,
   activeSubject = null,
 }: {
   id: string;
@@ -325,24 +347,48 @@ const SimpleCell = React.memo(function SimpleCell({
   onRemoveAssignment?: (subjectId: number) => void;
   isHighlighted?: boolean;
   isInvalidHighlight?: boolean;
+  highlightPosition?: "first" | "middle" | "last" | "single" | null;
   activeSubject?: any;
 }) {
+  // Disable droppable on cells that already have a subject to prevent
+  // dnd-kit from repeatedly firing dragOver events and causing infinite re-renders
   const { setNodeRef, isOver } = useDroppable({
     id,
     data: { day, period },
+    disabled: !!subject,
   });
 
   let cellClasses =
-    "border text-center h-[36px] p-0 align-middle overflow-hidden text-xs transition-colors";
+    "border text-center h-[36px] p-0 align-middle overflow-hidden text-xs transition-all duration-100";
 
   if (isOver) {
+    // Brightest state: cursor is directly over this cell
     cellClasses += isInvalidHighlight
-      ? " bg-red-300 dark:bg-red-700 border-2 border-red-500 dark:border-red-500"
-      : " bg-green-300 dark:bg-green-700 border-2 border-green-500 dark:border-green-500";
+      ? " bg-red-300 dark:bg-red-700 border-2 border-red-600 dark:border-red-400"
+      : " bg-green-300 dark:bg-green-600 border-2 border-green-600 dark:border-green-400";
   } else if (isHighlighted) {
-    cellClasses += isInvalidHighlight
-      ? " bg-red-200 dark:bg-red-800 border border-red-400 dark:border-red-600"
-      : " bg-green-200 dark:bg-green-600 border border-green-400 dark:border-green-400";
+    // Build seamless block border: remove internal edges between adjacent
+    // highlighted cells so the range looks like one continuous block.
+    const isInvalid = isInvalidHighlight;
+    const bgColor = isInvalid
+      ? " bg-red-200 dark:bg-red-800"
+      : " bg-green-200 dark:bg-green-700";
+    const borderY = isInvalid
+      ? " border-y-2 border-y-red-500 dark:border-y-red-400"
+      : " border-y-2 border-y-green-500 dark:border-y-green-400";
+    const borderL =
+      highlightPosition === "first" || highlightPosition === "single"
+        ? isInvalid
+          ? " border-l-2 border-l-red-500 dark:border-l-red-400"
+          : " border-l-2 border-l-green-500 dark:border-l-green-400"
+        : " border-l-0";
+    const borderR =
+      highlightPosition === "last" || highlightPosition === "single"
+        ? isInvalid
+          ? " border-r-2 border-r-red-500 dark:border-r-red-400"
+          : " border-r-2 border-r-green-500 dark:border-r-green-400"
+        : " border-r-0";
+    cellClasses += bgColor + borderY + borderL + borderR;
   } else if (subject) {
     cellClasses +=
       " bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 p-0";
@@ -370,11 +416,6 @@ const SimpleCell = React.memo(function SimpleCell({
     >
       {subject ? (
         <SubjectInCell subject={subject} />
-      ) : isHighlighted && activeSubject ? (
-        <HighlightPreview
-          subject={activeSubject}
-          isInvalid={isInvalidHighlight}
-        />
       ) : null}
     </td>
   );
@@ -465,7 +506,7 @@ const SubjectInCell = React.memo(function SubjectInCell({
             ref={setNodeRef}
             {...listeners}
             {...attributes}
-            className={`w-full h-full p-1 cursor-grab ${isDragging ? "opacity-30" : ""}`}
+            className={`w-full h-full p-1 ${isDragging ? "cursor-grabbing opacity-30" : "cursor-grab"}`}
             title="คลิกลากเพื่อย้าย หรือคลิกขวาเพื่อนำออก"
           >
             <div className="text-center">

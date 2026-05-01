@@ -621,8 +621,8 @@ function SubjectCard({
             ref={setNodeRef}
             {...listeners}
             {...attributes}
-            className={`relative rounded border shadow-sm bg-card dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 w-[120px] h-[70px] flex items-center justify-center p-2 text-xs cursor-grab transition-all duration-300 ${
-              isDragging ? "opacity-30" : ""
+            className={`relative rounded border shadow-sm bg-card dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 w-[120px] h-[70px] flex items-center justify-center p-2 text-xs transition-all duration-300 ${
+              isDragging ? "cursor-grabbing opacity-30" : "cursor-grab"
             } ${
               isDragFailed
                 ? "bg-red-100 dark:bg-red-900/20 border-red-300 dark:border-red-700 animate-pulse"

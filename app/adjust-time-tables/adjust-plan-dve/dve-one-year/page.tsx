@@ -8,7 +8,7 @@ import {
   useSensors,
   PointerSensor,
 } from "@dnd-kit/core";
-import { snapCenterToCursor } from "@dnd-kit/modifiers";
+import { snapCenterToCursor, restrictToWindowEdges } from "@dnd-kit/modifiers";
 import PlansStatusCustom from "@/components/plans-status/plans-status-custom";
 import TimeTableCustom from "@/components/time-table/time-table-custom";
 import {
@@ -299,7 +299,8 @@ export default function DveLvcOneYear() {
     }
   }, [plans]);
 
-  function handleDragStart(event: any) {
+  function handleDragStart(event: any) {    document.body.classList.add("dragging-active");
+
     const { active } = event;
 
     const isFromTable = active.id.startsWith("table-subject-");
@@ -331,13 +332,18 @@ export default function DveLvcOneYear() {
 
     if (over && over.id.startsWith("cell-")) {
       const [_, day, period] = over.id.split("-").map(Number);
-      setDragOverCell({ day, period });
+      // Early return if same cell — prevents infinite setState loop
+      setDragOverCell((prev) => {
+        if (prev && prev.day === day && prev.period === period) return prev;
+        return { day, period };
+      });
     } else {
-      setDragOverCell(null);
+      setDragOverCell((prev) => (prev === null ? null : null));
     }
   }
 
-  async function handleDragEnd(event: any) {
+  async function handleDragEnd(event: any) {    document.body.classList.remove("dragging-active");
+
     const { active, over } = event;
 
     setDragOverCell(null);
@@ -856,7 +862,7 @@ export default function DveLvcOneYear() {
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
-      modifiers={[snapCenterToCursor]}
+      modifiers={[snapCenterToCursor, restrictToWindowEdges]}
     >
       <div className="mx-auto px-4">
         <div className="bg-card text-card-foreground rounded-xl border my-5 py-6 shadow-sm mx-auto max-w-7xl">
@@ -922,7 +928,7 @@ export default function DveLvcOneYear() {
                       : "border-green-400 dark:border-green-600 bg-green-100/80 dark:bg-green-800/80"
                   }`}
                   style={{
-                    width: `${Math.min(((activeSubject.lectureHour || 0) + (activeSubject.labHour || 0)) * 60, 300)}px`,
+                    width: "160px",
                     minWidth: "120px",
                     height: "70px",
                   }}
@@ -969,20 +975,6 @@ export default function DveLvcOneYear() {
                         คาบ
                       </span>
                     </div>
-
-                    {previewInfo && (
-                      <div
-                        className={`mt-1 text-[8px] px-1 rounded ${
-                          previewInfo.isValid
-                            ? "bg-green-300/30 dark:bg-green-600/30"
-                            : "bg-red-300/30 dark:bg-red-600/30"
-                        }`}
-                      >
-                        {previewInfo.isValid
-                          ? `${["จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา."][previewInfo.day]} คาบ ${previewInfo.periods.join(", ")}`
-                          : `⚠️ ${previewInfo.message}`}
-                      </div>
-                    )}
                   </div>
                 </div>
               </TooltipTrigger>
