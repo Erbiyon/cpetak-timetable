@@ -315,7 +315,6 @@ function TimeTableCustomInternal({
                     isHighlighted={isHighlightCell}
                     isInvalidHighlight={isInvalidHighlight}
                     highlightPosition={highlightPosition}
-                    activeSubject={isHighlightStart ? activeSubject : null}
                   />
                 );
               })}
@@ -337,7 +336,6 @@ const SimpleCell = React.memo(function SimpleCell({
   isHighlighted = false,
   isInvalidHighlight = false,
   highlightPosition = null,
-  activeSubject = null,
 }: {
   id: string;
   day: number;
@@ -348,7 +346,6 @@ const SimpleCell = React.memo(function SimpleCell({
   isHighlighted?: boolean;
   isInvalidHighlight?: boolean;
   highlightPosition?: "first" | "middle" | "last" | "single" | null;
-  activeSubject?: any;
 }) {
   // Disable droppable on cells that already have a subject to prevent
   // dnd-kit from repeatedly firing dragOver events and causing infinite re-renders
@@ -416,66 +413,6 @@ const SimpleCell = React.memo(function SimpleCell({
     >
       {subject ? <SubjectInCell subject={subject} /> : null}
     </td>
-  );
-});
-
-const HighlightPreview = React.memo(function HighlightPreview({
-  subject,
-  isInvalid = false,
-}: {
-  subject: any;
-  isInvalid?: boolean;
-}) {
-  const lectureHours = subject.lectureHour || 0;
-  const labHours = subject.labHour || 0;
-  const totalHours = lectureHours + labHours;
-  const totalPeriods = totalHours * 2;
-
-  return (
-    <div
-      className={`w-full h-full p-1 ${isInvalid ? "opacity-50" : "opacity-80"}`}
-    >
-      <div className="text-center">
-        <div
-          className={`font-medium ${isInvalid ? "text-red-950 dark:text-red-50" : "text-green-950 dark:text-green-50"}`}
-        >
-          {subject.subjectCode}
-          {subject.section && (
-            <span
-              className={`text-[9px] ml-1 px-1 py-0.5 rounded ${
-                isInvalid
-                  ? "bg-red-200 dark:bg-red-700"
-                  : "bg-green-200 dark:bg-green-700"
-              }`}
-            >
-              sec.{subject.section}
-            </span>
-          )}
-        </div>
-        <div
-          className={`text-[10px] truncate ${isInvalid ? "text-red-900 dark:text-red-100" : "text-green-900 dark:text-green-100"}`}
-        >
-          {subject.subjectName}
-        </div>
-        <div className="text-[8px] mt-1 flex items-center justify-center gap-1">
-          <span
-            className={`${isInvalid ? "bg-red-200/50 dark:bg-red-700/50" : "bg-green-200/50 dark:bg-green-700/50"} px-1 rounded`}
-          >
-            {totalHours} ชม. ({lectureHours}/{labHours})
-          </span>
-          <span
-            className={`${isInvalid ? "bg-red-300/30 dark:bg-red-600/30" : "bg-green-300/30 dark:bg-green-600/30"} px-1 rounded`}
-          >
-            {totalPeriods} คาบ
-          </span>
-        </div>
-        {isInvalid && (
-          <div className="text-[8px] mt-1 bg-red-300/30 dark:bg-red-600/30 px-1 rounded text-red-800 dark:text-red-200">
-            ไม่สามารถวางได้
-          </div>
-        )}
-      </div>
-    </div>
   );
 });
 
