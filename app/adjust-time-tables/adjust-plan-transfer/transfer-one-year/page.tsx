@@ -37,8 +37,10 @@ export default function TransferOneYear() {
   );
   const [timetableData, setTimetableData] = useState<any[]>([]);
 
+  // Term 3: assignments เป็น array ของ { id, day, periods } แต่ละ record ต่อวัน
+  type AssignmentEntry = { id?: number; day: number; periods: number[] };
   const [tableAssignments, setTableAssignments] = useState<{
-    [subjectId: number]: { day: number; periods: number[] } | null;
+    [subjectId: number]: AssignmentEntry[] | null;
   }>({});
 
   const sensors = useSensors(
@@ -64,7 +66,7 @@ export default function TransferOneYear() {
         setTimetableData(timetableData);
 
         const assignments: {
-          [subjectId: number]: { day: number; periods: number[] };
+          [subjectId: number]: AssignmentEntry[];
         } = {};
 
         timetableData.forEach((item: any) => {
@@ -74,10 +76,12 @@ export default function TransferOneYear() {
             periods.push(p);
           }
 
-          assignments[item.planId] = {
+          if (!assignments[item.planId]) assignments[item.planId] = [];
+          (assignments[item.planId] as AssignmentEntry[]).push({
+            id: item.id,
             day: item.day,
             periods: periods,
-          };
+          });
         });
 
         setTableAssignments(assignments);
@@ -144,7 +148,7 @@ export default function TransferOneYear() {
             setTimetableData(timetableData);
 
             const assignments: {
-              [subjectId: number]: { day: number; periods: number[] };
+              [subjectId: number]: AssignmentEntry[];
             } = {};
 
             timetableData.forEach((item: any) => {
@@ -154,10 +158,12 @@ export default function TransferOneYear() {
                 periods.push(p);
               }
 
-              assignments[item.planId] = {
+              if (!assignments[item.planId]) assignments[item.planId] = [];
+              (assignments[item.planId] as AssignmentEntry[]).push({
+                id: item.id,
                 day: item.day,
                 periods: periods,
-              };
+              });
             });
 
             setTableAssignments(assignments);
@@ -279,7 +285,8 @@ export default function TransferOneYear() {
     }
   }, [plans]);
 
-  function handleDragStart(event: any) {    document.body.classList.add("dragging-active");
+  function handleDragStart(event: any) {
+    document.body.classList.add("dragging-active");
 
     const { active } = event;
 
@@ -322,7 +329,8 @@ export default function TransferOneYear() {
     }
   }
 
-  async function handleDragEnd(event: any) {    document.body.classList.remove("dragging-active");
+  async function handleDragEnd(event: any) {
+    document.body.classList.remove("dragging-active");
 
     const { active, over } = event;
 
@@ -401,15 +409,21 @@ export default function TransferOneYear() {
           Object.entries(tableAssignments).forEach(
             ([existingSubjectId, assignment]) => {
               if (parseInt(existingSubjectId) === subjectId) return;
+              if (!assignment) return;
 
-              if (assignment && assignment.day === day) {
-                const overlap = periods.some((p) =>
-                  assignment.periods.includes(p),
-                );
-                if (overlap) {
-                  hasOverlap = true;
+              const entries = Array.isArray(assignment)
+                ? assignment
+                : [assignment];
+              entries.forEach((entry) => {
+                if (entry && entry.day === day) {
+                  const overlap = periods.some((p) =>
+                    entry.periods.includes(p),
+                  );
+                  if (overlap) {
+                    hasOverlap = true;
+                  }
                 }
-              }
+              });
             },
           );
 
@@ -422,11 +436,17 @@ export default function TransferOneYear() {
           }
         }
 
-        const newAssignment = { day, periods };
-        setTableAssignments((prev) => ({
-          ...prev,
-          [subjectId]: newAssignment,
-        }));
+        const isTerm3 =
+          typeof termYear === "string" && termYear.startsWith("3/");
+        const newAssignmentEntry: AssignmentEntry = { day, periods };
+        setTableAssignments((prev) => {
+          if (isTerm3) {
+            const existing = prev[subjectId] || [];
+            const filtered = existing.filter((e) => e.day !== day);
+            return { ...prev, [subjectId]: [...filtered, newAssignmentEntry] };
+          }
+          return { ...prev, [subjectId]: [newAssignmentEntry] };
+        });
 
         try {
           const startPeriod = Math.min(...periods);
@@ -493,6 +513,17 @@ export default function TransferOneYear() {
             setConflicts([]);
             setDragFailedSubjectId(null);
 
+            // Update the assignment entry with the DB record ID
+            if (data.id) {
+              setTableAssignments((prev) => {
+                const existing = (prev[subjectId] || []) as AssignmentEntry[];
+                const updated = existing.map((e) =>
+                  e.day === day ? { ...e, id: data.id } : e,
+                );
+                return { ...prev, [subjectId]: updated };
+              });
+            }
+
             await handleSubjectUpdate();
           }
         } catch (error) {
@@ -518,11 +549,15 @@ export default function TransferOneYear() {
     setActiveSubject(null);
   }
 
-  async function handleRemoveAssignment(subjectId: number) {
+  async function handleRemoveAssignment(subjectId: number, recordId?: number) {
     try {
       const isCoTeaching = await checkCoTeaching(subjectId);
 
-      const response = await fetch(`/api/timetable/${subjectId}`, {
+      // Term 3: if recordId provided, delete only that specific day's record
+      const url = recordId
+        ? `/api/timetable/record/${recordId}`
+        : `/api/timetable/${subjectId}`;
+      const response = await fetch(url, {
         method: "DELETE",
       });
 
@@ -530,7 +565,20 @@ export default function TransferOneYear() {
         const data = await response.json();
         console.log("ลบตารางเรียนสำเร็จ:", data);
 
-        if (isCoTeaching && data.deletedPlans) {
+        if (recordId) {
+          // Term 3: remove only the specific record from array
+          setTableAssignments((prev) => {
+            const existing = (prev[subjectId] || []) as AssignmentEntry[];
+            const updated = existing.filter((e) => e.id !== recordId);
+            const newState = { ...prev };
+            if (updated.length === 0) {
+              delete newState[subjectId];
+            } else {
+              newState[subjectId] = updated;
+            }
+            return newState;
+          });
+        } else if (isCoTeaching && data.deletedPlans) {
           setTableAssignments((prev) => {
             const newState = { ...prev };
             data.deletedPlans.forEach((planId: number) => {
@@ -714,9 +762,15 @@ export default function TransferOneYear() {
     );
   }
 
-  const assignedSubjectsCount = Object.values(tableAssignments).filter(
-    (assignment) => assignment !== null,
-  ).length;
+  const isTerm3Current =
+    typeof termYear === "string" && termYear.startsWith("3/");
+  const assignedSubjectsCount = isTerm3Current
+    ? Object.values(tableAssignments).filter(
+        (a) => Array.isArray(a) && a.length >= 3,
+      ).length
+    : Object.values(tableAssignments).filter(
+        (a) => a !== null && (!Array.isArray(a) || a.length > 0),
+      ).length;
 
   const getPreviewPeriods = () => {
     if (!activeSubject || !dragOverCell) return null;
@@ -756,19 +810,23 @@ export default function TransferOneYear() {
     Object.entries(tableAssignments).forEach(
       ([existingSubjectId, assignment]) => {
         if (parseInt(existingSubjectId) === activeSubject.id) return;
+        if (!assignment) return;
 
-        if (assignment && assignment.day === day) {
-          const overlap = periods.some((p) => assignment.periods.includes(p));
-          if (overlap) {
-            hasOverlap = true;
-            const overlappingSubject = plans.find(
-              (plan) => plan.id === parseInt(existingSubjectId),
-            );
-            if (overlappingSubject) {
-              overlapSubject = overlappingSubject.subjectCode;
+        const entries = Array.isArray(assignment) ? assignment : [assignment];
+        entries.forEach((entry) => {
+          if (entry && entry.day === day) {
+            const overlap = periods.some((p) => entry.periods.includes(p));
+            if (overlap) {
+              hasOverlap = true;
+              const overlappingSubject = plans.find(
+                (plan) => plan.id === parseInt(existingSubjectId),
+              );
+              if (overlappingSubject) {
+                overlapSubject = overlappingSubject.subjectCode;
+              }
             }
           }
-        }
+        });
       },
     );
 
@@ -826,6 +884,14 @@ export default function TransferOneYear() {
               assignments={tableAssignments}
               plans={plans}
               onRemoveAssignment={handleRemoveAssignment}
+              onRemoveRecord={(recordId) => {
+                const subjectId = Object.entries(tableAssignments).find(
+                  ([, val]) =>
+                    Array.isArray(val) && val.some((e) => e.id === recordId),
+                )?.[0];
+                if (subjectId)
+                  handleRemoveAssignment(parseInt(subjectId), recordId);
+              }}
               activeSubject={activeSubject}
               dragOverCell={dragOverCell}
             />

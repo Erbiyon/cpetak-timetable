@@ -44,3 +44,16 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export async function DELETE() {
+  try {
+    await prisma.roomRequestDeadline_tb.deleteMany({});
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting room request deadline:", error);
+    return NextResponse.json(
+      { error: "เกิดข้อผิดพลาดในการลบข้อมูล" },
+      { status: 500 },
+    );
+  }
+}

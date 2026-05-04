@@ -71,7 +71,7 @@ export default function CutButton({
     return nameMatch ? parseInt(nameMatch[1], 10) : 1;
   }, [subject?.subjectName]);
 
-  const [hoursPart1, setHoursPart1] = useState(Math.floor(totalHours / 2));
+  const [hoursPart1, setHoursPart1] = useState(totalLectureHours);
 
   const hoursPart2 = totalHours - hoursPart1;
 
@@ -265,8 +265,8 @@ export default function CutButton({
           <div className="grid gap-4">
             <div className="grid gap-2">
               <Label>
-                จำนวนชั่วโมงทั้งหมด: {totalHours} ชม. (บรรยาย{" "}
-                {totalLectureHours} ชม. / ปฏิบัติ {totalLabHours} ชม.)
+                จำนวนชั่วโมงทั้งหมด: {totalHours} ชม.
+                {/* (บรรยาย{" "} {totalLectureHours} ชม. / ปฏิบัติ {totalLabHours} ชม.) */}
               </Label>
               <div className="flex items-center gap-2 mt-2">
                 <div className="w-14 text-right font-medium">

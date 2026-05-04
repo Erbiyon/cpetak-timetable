@@ -15,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Loader2, Save } from "lucide-react";
+import { CalendarIcon, Loader2, Save, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -32,6 +32,7 @@ export default function InTeacherPage() {
   const [deadline, setDeadline] = useState<Date | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -53,6 +54,26 @@ export default function InTeacherPage() {
       toast.error("เกิดข้อผิดพลาดในการดึงข้อมูล");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClear = async () => {
+    try {
+      setClearing(true);
+      const response = await fetch("/api/room-request-deadline", {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        setDeadline(undefined);
+        toast.success("ลบวันที่กำหนดสำเร็จ");
+      } else {
+        throw new Error("Failed to delete deadline");
+      }
+    } catch (error) {
+      console.error("Error clearing deadline:", error);
+      toast.error("เกิดข้อผิดพลาดในการลบข้อมูล");
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -144,9 +165,14 @@ export default function InTeacherPage() {
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => setDeadline(undefined)}
-                  disabled={!deadline || saving}
+                  onClick={handleClear}
+                  disabled={!deadline || saving || clearing}
                 >
+                  {clearing ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-2 h-4 w-4" />
+                  )}
                   ล้างวันที่
                 </Button>
                 <Button onClick={handleSave} disabled={!deadline || saving}>
