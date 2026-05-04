@@ -84,7 +84,17 @@ export default function PlansStatusCustom({
 
   console.log(`จำนวนวิชาหลังกรอง: ${filteredPlans.length}`);
 
-  const unassignedPlans = filteredPlans.filter((plan) => !assignments[plan.id]);
+  const isTerm3 = typeof termYear === "string" && termYear.startsWith("3/");
+
+  const unassignedPlans = filteredPlans.filter((plan) => {
+    const val = assignments[plan.id];
+    if (isTerm3) {
+      // Term 3: วิชาหายจาก panel เมื่อวางครบ 3 วัน
+      const count = Array.isArray(val) ? val.length : val ? 1 : 0;
+      return count < 3;
+    }
+    return !val;
+  });
 
   useEffect(() => {
     const currentTime = Date.now();
@@ -211,16 +221,47 @@ export default function PlansStatusCustom({
               )}
             </div>
             <div className="flex flex-wrap gap-3 justify-center">
-              {unassignedPlans.map((plan) => (
-                <SubjectCard
-                  key={plan.id}
-                  subject={plan}
-                  onSplitSubject={handleSplitSubjectAdapter}
-                  onMergeSubject={onMergeSubject}
-                  onUpdate={onSubjectUpdate}
-                  isDragFailed={dragFailedSubjectId === plan.id}
-                />
-              ))}
+              {unassignedPlans.map((plan) => {
+                const val = assignments[plan.id];
+                const term3Count = isTerm3
+                  ? Array.isArray(val)
+                    ? val.length
+                    : val
+                      ? 1
+                      : 0
+                  : 0;
+                const baseSection = (section: string) =>
+                  (section || "").replace(/-\d+$/, "");
+                const baseSec = baseSection(plan.section || "");
+                const siblings = plans.filter(
+                  (p) =>
+                    p.subjectCode === plan.subjectCode &&
+                    baseSection(p.section || "") === baseSec,
+                );
+                const combinedLecture = siblings.reduce(
+                  (s, p) => s + (p.lectureHour || 0),
+                  0,
+                );
+                const combinedLab = siblings.reduce(
+                  (s, p) => s + (p.labHour || 0),
+                  0,
+                );
+                return (
+                  <SubjectCard
+                    key={plan.id}
+                    subject={plan}
+                    onSplitSubject={handleSplitSubjectAdapter}
+                    onMergeSubject={onMergeSubject}
+                    onUpdate={onSubjectUpdate}
+                    isDragFailed={dragFailedSubjectId === plan.id}
+                    term3Badge={
+                      isTerm3 && term3Count > 0 ? `${term3Count}/3` : undefined
+                    }
+                    combinedLectureHours={combinedLecture}
+                    combinedLabHours={combinedLab}
+                  />
+                );
+              })}
             </div>
           </div>
         </div>
@@ -536,12 +577,18 @@ function SubjectCard({
   onMergeSubject,
   onUpdate,
   isDragFailed = false,
+  term3Badge,
+  combinedLectureHours,
+  combinedLabHours,
 }: {
   subject: any;
   onSplitSubject?: ((subjectId: number, splitData: any) => void) | null;
   onMergeSubject?: (subjectId: number) => void;
   onUpdate?: () => void;
   isDragFailed?: boolean;
+  term3Badge?: string;
+  combinedLectureHours?: number;
+  combinedLabHours?: number;
 }) {
   const [updateTrigger, setUpdateTrigger] = useState(0);
 
@@ -568,6 +615,11 @@ function SubjectCard({
   const lectureHours = subject.lectureHour || 0;
   const labHours = subject.labHour || 0;
   const totalHours = lectureHours + labHours;
+  const isSplit = !!subject.subjectName?.includes("(ส่วนที่");
+  const tooltipLectureHours = isSplit
+    ? (combinedLectureHours ?? lectureHours)
+    : lectureHours;
+  const tooltipLabHours = isSplit ? (combinedLabHours ?? labHours) : labHours;
 
   const [openTooltip, setOpenTooltip] = useState<boolean>(false);
 
@@ -639,6 +691,14 @@ function SubjectCard({
               </div>
             )}
 
+            {term3Badge && (
+              <div className="absolute top-[-8px] left-[-8px] z-10">
+                <span className="text-[9px] bg-orange-500 text-white px-1 py-0.5 rounded-full font-bold">
+                  {term3Badge}
+                </span>
+              </div>
+            )}
+
             <div
               className="absolute top-[-8px] right-[-8px]"
               onClick={handleButtonClick}
@@ -692,7 +752,8 @@ function SubjectCard({
               )}
 
               <div className="text-[8px] mt-1 text-slate-600 dark:text-slate-400">
-                {totalHours} ชม. (บ {lectureHours} / ป {labHours})
+                {totalHours} ชม.
+                {/* (บ {lectureHours} / ป {labHours}) */}
               </div>
             </div>
           </div>
@@ -708,10 +769,12 @@ function SubjectCard({
             <div className="mt-2 grid grid-cols-2 gap-2">
               <div>จำนวนหน่วยกิต:</div>
               <div className="text-right">{subject.credit}</div>
-              <div>ชั่วโมงบรรยาย:</div>
-              <div className="text-right">{lectureHours} ชม.</div>
-              <div>ชั่วโมงปฏิบัติ:</div>
-              <div className="text-right">{labHours} ชม.</div>
+              <>
+                <div>ชั่วโมงบรรยาย:</div>
+                <div className="text-right">{tooltipLectureHours} ชม.</div>
+                <div>ชั่วโมงปฏิบัติ:</div>
+                <div className="text-right">{tooltipLabHours} ชม.</div>
+              </>
               <div>รวม:</div>
               <div className="text-right">
                 {totalHours} ชม. ({totalHours * 2} คาบ)

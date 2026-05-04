@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import {
@@ -37,8 +37,10 @@ export default function DveLvcTwoYear() {
   );
   const [timetableData, setTimetableData] = useState<any[]>([]);
 
+  // Term 3: assignments เป็น array ของ { id, day, periods } แต่ละ record ต่อวัน
+  type AssignmentEntry = { id?: number; day: number; periods: number[] };
   const [tableAssignments, setTableAssignments] = useState<{
-    [subjectId: number]: { day: number; periods: number[] } | null;
+    [subjectId: number]: AssignmentEntry[] | null;
   }>({});
 
   const sensors = useSensors(
@@ -62,7 +64,7 @@ export default function DveLvcTwoYear() {
         const timetableData = await timetableRes.json();
 
         const assignments: {
-          [subjectId: number]: { day: number; periods: number[] };
+          [subjectId: number]: AssignmentEntry[];
         } = {};
         setTimetableData(timetableData);
 
@@ -73,10 +75,12 @@ export default function DveLvcTwoYear() {
             periods.push(p);
           }
 
-          assignments[item.planId] = {
+          if (!assignments[item.planId]) assignments[item.planId] = [];
+          (assignments[item.planId] as AssignmentEntry[]).push({
+            id: item.id,
             day: item.day,
             periods: periods,
-          };
+          });
         });
 
         setTableAssignments(assignments);
@@ -151,7 +155,7 @@ export default function DveLvcTwoYear() {
             setTimetableData(timetableData);
 
             const assignments: {
-              [subjectId: number]: { day: number; periods: number[] };
+              [subjectId: number]: AssignmentEntry[];
             } = {};
 
             timetableData.forEach((item: any) => {
@@ -161,10 +165,12 @@ export default function DveLvcTwoYear() {
                 periods.push(p);
               }
 
-              assignments[item.planId] = {
+              if (!assignments[item.planId]) assignments[item.planId] = [];
+              (assignments[item.planId] as AssignmentEntry[]).push({
+                id: item.id,
                 day: item.day,
                 periods: periods,
-              };
+              });
             });
 
             setTableAssignments(assignments);
@@ -299,7 +305,8 @@ export default function DveLvcTwoYear() {
     }
   }, [plans]);
 
-  function handleDragStart(event: any) {    document.body.classList.add("dragging-active");
+  function handleDragStart(event: any) {
+    document.body.classList.add("dragging-active");
 
     const { active } = event;
 
@@ -342,7 +349,8 @@ export default function DveLvcTwoYear() {
     }
   }
 
-  async function handleDragEnd(event: any) {    document.body.classList.remove("dragging-active");
+  async function handleDragEnd(event: any) {
+    document.body.classList.remove("dragging-active");
 
     const { active, over } = event;
 
@@ -421,15 +429,19 @@ export default function DveLvcTwoYear() {
         Object.entries(tableAssignments).forEach(
           ([existingSubjectId, assignment]) => {
             if (parseInt(existingSubjectId) === subjectId) return;
+            if (!assignment) return;
 
-            if (assignment && assignment.day === day) {
-              const overlap = periods.some((p) =>
-                assignment.periods.includes(p),
-              );
-              if (overlap) {
-                hasOverlap = true;
+            const entries = Array.isArray(assignment)
+              ? assignment
+              : [assignment];
+            entries.forEach((entry) => {
+              if (entry && entry.day === day) {
+                const overlap = periods.some((p) => entry.periods.includes(p));
+                if (overlap) {
+                  hasOverlap = true;
+                }
               }
-            }
+            });
           },
         );
 
@@ -441,11 +453,17 @@ export default function DveLvcTwoYear() {
           return;
         }
 
-        const newAssignment = { day, periods };
-        setTableAssignments((prev) => ({
-          ...prev,
-          [subjectId]: newAssignment,
-        }));
+        const isTerm3 =
+          typeof termYear === "string" && termYear.startsWith("3/");
+        const newAssignmentEntry: AssignmentEntry = { day, periods };
+        setTableAssignments((prev) => {
+          if (isTerm3) {
+            const existing = prev[subjectId] || [];
+            const filtered = existing.filter((e) => e.day !== day);
+            return { ...prev, [subjectId]: [...filtered, newAssignmentEntry] };
+          }
+          return { ...prev, [subjectId]: [newAssignmentEntry] };
+        });
 
         try {
           const startPeriod = Math.min(...periods);
@@ -543,19 +561,37 @@ export default function DveLvcTwoYear() {
     setActiveSubject(null);
   }
 
-  async function handleRemoveAssignment(subjectId: number) {
+  async function handleRemoveAssignment(subjectId: number, recordId?: number) {
     try {
       const subject = plans.find((plan) => plan.id === subjectId);
 
-      await fetch(`/api/timetable/${subjectId}`, {
+      // Term 3: if recordId provided, delete only that specific day's record
+      const url = recordId
+        ? `/api/timetable/record/${recordId}`
+        : `/api/timetable/${subjectId}`;
+      await fetch(url, {
         method: "DELETE",
       });
 
-      setTableAssignments((prev) => {
-        const newAssignments = { ...prev };
-        delete newAssignments[subjectId];
-        return newAssignments;
-      });
+      if (recordId) {
+        setTableAssignments((prev) => {
+          const existing = (prev[subjectId] || []) as AssignmentEntry[];
+          const updated = existing.filter((e) => e.id !== recordId);
+          const newState = { ...prev };
+          if (updated.length === 0) {
+            delete newState[subjectId];
+          } else {
+            newState[subjectId] = updated;
+          }
+          return newState;
+        });
+      } else {
+        setTableAssignments((prev) => {
+          const newAssignments = { ...prev };
+          delete newAssignments[subjectId];
+          return newAssignments;
+        });
+      }
 
       setConflicts((prev) =>
         prev.filter(
@@ -782,9 +818,15 @@ export default function DveLvcTwoYear() {
     );
   }
 
-  const assignedSubjectsCount = Object.values(tableAssignments).filter(
-    (assignment) => assignment !== null,
-  ).length;
+  const isTerm3Current =
+    typeof termYear === "string" && termYear.startsWith("3/");
+  const assignedSubjectsCount = isTerm3Current
+    ? Object.values(tableAssignments).filter(
+        (a) => Array.isArray(a) && a.length >= 3,
+      ).length
+    : Object.values(tableAssignments).filter(
+        (a) => a !== null && (!Array.isArray(a) || a.length > 0),
+      ).length;
 
   const getPreviewPeriods = () => {
     if (!activeSubject || !dragOverCell) return null;
@@ -824,19 +866,23 @@ export default function DveLvcTwoYear() {
     Object.entries(tableAssignments).forEach(
       ([existingSubjectId, assignment]) => {
         if (parseInt(existingSubjectId) === activeSubject.id) return;
+        if (!assignment) return;
 
-        if (assignment && assignment.day === day) {
-          const overlap = periods.some((p) => assignment.periods.includes(p));
-          if (overlap) {
-            hasOverlap = true;
-            const overlappingSubject = plans.find(
-              (plan) => plan.id === parseInt(existingSubjectId),
-            );
-            if (overlappingSubject) {
-              overlapSubject = overlappingSubject.subjectCode;
+        const entries = Array.isArray(assignment) ? assignment : [assignment];
+        entries.forEach((entry) => {
+          if (entry && entry.day === day) {
+            const overlap = periods.some((p) => entry.periods.includes(p));
+            if (overlap) {
+              hasOverlap = true;
+              const overlappingSubject = plans.find(
+                (plan) => plan.id === parseInt(existingSubjectId),
+              );
+              if (overlappingSubject) {
+                overlapSubject = overlappingSubject.subjectCode;
+              }
             }
           }
-        }
+        });
       },
     );
 
@@ -894,6 +940,14 @@ export default function DveLvcTwoYear() {
               assignments={tableAssignments}
               plans={plans}
               onRemoveAssignment={handleRemoveAssignment}
+              onRemoveRecord={(recordId) => {
+                const subjectId = Object.entries(tableAssignments).find(
+                  ([, val]) =>
+                    Array.isArray(val) && val.some((e) => e.id === recordId),
+                )?.[0];
+                if (subjectId)
+                  handleRemoveAssignment(parseInt(subjectId), recordId);
+              }}
               activeSubject={activeSubject}
               dragOverCell={dragOverCell}
             />

@@ -287,9 +287,32 @@ export async function POST(request: Request) {
       return Response.json({ conflicts }, { status: 409 });
     }
 
-    await prisma.timetable_tb.deleteMany({
-      where: { planId },
-    });
+    // Term 3 (termYear starts with "3/"): วิชาเดียววางได้หลายวัน (สูงสุด 3 ครั้ง)
+    // แต่ละวันเก็บเป็น record แยก — ไม่ลบทั้งหมดก่อน
+    const isTerm3 = typeof termYear === "string" && termYear.startsWith("3/");
+
+    if (isTerm3) {
+      // ตรวจว่าวันนี้มี record อยู่แล้วไหม ถ้ามีให้ลบแค่วันนั้น (replace)
+      await prisma.timetable_tb.deleteMany({
+        where: { planId, day },
+      });
+
+      // ตรวจว่าวางครบ 3 วันแล้วหรือยัง
+      const existingCount = await prisma.timetable_tb.count({
+        where: { planId },
+      });
+      if (existingCount >= 3) {
+        return Response.json(
+          { error: "วิชานี้ถูกจัดตารางครบ 3 วันแล้ว" },
+          { status: 409 },
+        );
+      }
+    } else {
+      // ปกติ: ลบ record เก่าทั้งหมดก่อน create ใหม่
+      await prisma.timetable_tb.deleteMany({
+        where: { planId },
+      });
+    }
 
     const timetable = await prisma.timetable_tb.create({
       data: {

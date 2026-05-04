@@ -79,35 +79,58 @@ function ErrorDisplay({ error }: { error: Error | null }) {
   );
 }
 
+// assignments รองรับทั้งแบบ single ({ day, periods }) และ multi (array) สำหรับ Term 3
+type SingleAssignment = { id?: number; day: number; periods: number[] };
+type AssignmentValue = SingleAssignment | SingleAssignment[] | null;
+
 function TimeTableCustomInternal({
   plans = [],
   assignments = {},
   onRemoveAssignment = null,
+  onRemoveRecord = null,
   activeSubject = null,
   dragOverCell = null,
 }: {
   plans: any[];
-  assignments: {
-    [subjectId: number]: { day: number; periods: number[] } | null;
-  };
+  assignments: { [subjectId: number]: AssignmentValue };
   onRemoveAssignment?: ((subjectId: number) => void) | null;
+  onRemoveRecord?: ((recordId: number) => void) | null;
   activeSubject?: any;
   dragOverCell?: { day: number; period: number } | null;
 }) {
   const days = ["จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา."];
+
+  const baseSection = (section: string) => (section || "").replace(/-\d+$/, "");
+  const combinedHoursMap = useMemo(() => {
+    const map = new Map<string, { lectureHour: number; labHour: number }>();
+    plans.forEach((p) => {
+      const key = `${p.subjectCode}-${baseSection(p.section || "")}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          lectureHour: p.lectureHour || 0,
+          labHour: p.labHour || 0,
+        });
+      } else {
+        const existing = map.get(key)!;
+        existing.lectureHour += p.lectureHour || 0;
+        existing.labHour += p.labHour || 0;
+      }
+    });
+    return map;
+  }, [plans]);
 
   const { cellToSubject, cellColspan, cellSkip } = useMemo(() => {
     const cellToSubject: { [cellKey: string]: any } = {};
     const cellColspan: { [cellKey: string]: number } = {};
     const cellSkip: Set<string> = new Set();
 
-    Object.entries(assignments).forEach(([subjectId, assignment]) => {
-      if (!assignment) return;
-
-      const { day, periods } = assignment;
-      const subject = plans.find((plan) => plan.id === parseInt(subjectId));
-
-      if (!subject || periods.length === 0) return;
+    const placeAssignment = (
+      _subjectId: number,
+      entry: SingleAssignment,
+      subject: any,
+    ) => {
+      const { day, periods, id: recordId } = entry;
+      if (periods.length === 0) return;
 
       const sortedPeriods = [...periods].sort((a, b) => a - b);
       const firstPeriod = sortedPeriods[0];
@@ -116,7 +139,6 @@ function TimeTableCustomInternal({
       let isConsecutive = true;
       for (let i = firstPeriod; i < lastPeriod; i++) {
         if (day === 2 && i >= 14 && i <= 17) continue;
-
         if (!sortedPeriods.includes(i)) {
           isConsecutive = false;
           break;
@@ -125,14 +147,12 @@ function TimeTableCustomInternal({
 
       if (isConsecutive) {
         const colspan = lastPeriod - firstPeriod + 1;
-
         const startCellKey = `${day}-${firstPeriod}`;
         cellToSubject[startCellKey] = {
           ...subject,
-          assignmentData: { day, periods: sortedPeriods },
+          assignmentData: { day, periods: sortedPeriods, recordId },
         };
         cellColspan[startCellKey] = colspan;
-
         for (let p = firstPeriod + 1; p <= lastPeriod; p++) {
           cellSkip.add(`${day}-${p}`);
         }
@@ -141,10 +161,26 @@ function TimeTableCustomInternal({
           const cellKey = `${day}-${period}`;
           cellToSubject[cellKey] = {
             ...subject,
-            assignmentData: { day, periods: [period] },
+            assignmentData: { day, periods: [period], recordId },
           };
           cellColspan[cellKey] = 1;
         });
+      }
+    };
+
+    Object.entries(assignments).forEach(([subjectIdStr, assignment]) => {
+      if (!assignment) return;
+      const subjectId = parseInt(subjectIdStr);
+      const subject = plans.find((plan) => plan.id === subjectId);
+      if (!subject) return;
+
+      if (Array.isArray(assignment)) {
+        // Term 3: หลาย record ต่อวิชา
+        assignment.forEach((entry) =>
+          placeAssignment(subjectId, entry, subject),
+        );
+      } else {
+        placeAssignment(subjectId, assignment, subject);
       }
     });
 
@@ -232,6 +268,17 @@ function TimeTableCustomInternal({
     [onRemoveAssignment],
   );
 
+  const getPeriodTimeRange = (idx: number) => {
+    const startMinutes = 8 * 60 + idx * 30;
+    const endMinutes = startMinutes + 30;
+    const fmt = (m: number) => {
+      const h = Math.floor(m / 60);
+      const min = m % 60;
+      return `${h.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`;
+    };
+    return `${fmt(startMinutes)}-${fmt(endMinutes)}`;
+  };
+
   return (
     <div className="w-full overflow-x-auto">
       <table className="table-fixed border-collapse w-full">
@@ -241,10 +288,13 @@ function TimeTableCustomInternal({
             {Array.from({ length: 25 }, (_, i) => (
               <th
                 key={i}
-                className="border px-2 py-1 text-xs"
+                className="border px-1 py-1 text-xs"
                 style={{ width: `${100 / 25}%` }}
               >
-                {i + 1}
+                <div className="font-semibold text-center">{i + 1}</div>
+                <div className="text-[7px] font-normal text-muted-foreground leading-tight text-center">
+                  {getPeriodTimeRange(i)}
+                </div>
               </th>
             ))}
           </tr>
@@ -312,9 +362,11 @@ function TimeTableCustomInternal({
                     colspan={colspan}
                     subject={subject}
                     onRemoveAssignment={memoizedOnRemoveAssignment}
+                    onRemoveRecord={onRemoveRecord}
                     isHighlighted={isHighlightCell}
                     isInvalidHighlight={isInvalidHighlight}
                     highlightPosition={highlightPosition}
+                    combinedHoursMap={combinedHoursMap}
                   />
                 );
               })}
@@ -333,9 +385,11 @@ const SimpleCell = React.memo(function SimpleCell({
   colspan = 1,
   subject,
   onRemoveAssignment,
+  onRemoveRecord,
   isHighlighted = false,
   isInvalidHighlight = false,
   highlightPosition = null,
+  combinedHoursMap,
 }: {
   id: string;
   day: number;
@@ -343,9 +397,11 @@ const SimpleCell = React.memo(function SimpleCell({
   colspan?: number;
   subject?: any;
   onRemoveAssignment?: (subjectId: number) => void;
+  onRemoveRecord?: ((recordId: number) => void) | null;
   isHighlighted?: boolean;
   isInvalidHighlight?: boolean;
   highlightPosition?: "first" | "middle" | "last" | "single" | null;
+  combinedHoursMap?: Map<string, { lectureHour: number; labHour: number }>;
 }) {
   // Disable droppable on cells that already have a subject to prevent
   // dnd-kit from repeatedly firing dragOver events and causing infinite re-renders
@@ -395,12 +451,19 @@ const SimpleCell = React.memo(function SimpleCell({
 
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
-      if (subject && onRemoveAssignment) {
+      if (subject) {
         e.preventDefault();
-        onRemoveAssignment(subject.id);
+        const recordId = subject.assignmentData?.recordId;
+        if (recordId && onRemoveRecord) {
+          // Term 3: ลบเฉพาะ record นี้ (เฉพาะวันนั้น)
+          onRemoveRecord(recordId);
+        } else if (onRemoveAssignment) {
+          // ปกติ: ลบทุก record ของ subject
+          onRemoveAssignment(subject.id);
+        }
       }
     },
-    [subject, onRemoveAssignment],
+    [subject, onRemoveAssignment, onRemoveRecord],
   );
 
   return (
@@ -411,15 +474,19 @@ const SimpleCell = React.memo(function SimpleCell({
       colSpan={colspan}
       onContextMenu={handleContextMenu}
     >
-      {subject ? <SubjectInCell subject={subject} /> : null}
+      {subject ? (
+        <SubjectInCell subject={subject} combinedHoursMap={combinedHoursMap} />
+      ) : null}
     </td>
   );
 });
 
 const SubjectInCell = React.memo(function SubjectInCell({
   subject,
+  combinedHoursMap,
 }: {
   subject: any;
+  combinedHoursMap?: Map<string, { lectureHour: number; labHour: number }>;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `table-subject-${subject.id}`,
@@ -432,6 +499,13 @@ const SubjectInCell = React.memo(function SubjectInCell({
   const lectureHours = subject.lectureHour || 0;
   const labHours = subject.labHour || 0;
   const totalHours = lectureHours + labHours;
+  const isSplit = !!subject.subjectName?.includes("(ส่วนที่");
+  const baseSec = (subject.section || "").replace(/-\d+$/, "");
+  const combined = isSplit
+    ? combinedHoursMap?.get(`${subject.subjectCode}-${baseSec}`)
+    : undefined;
+  const tooltipLectureHours = combined ? combined.lectureHour : lectureHours;
+  const tooltipLabHours = combined ? combined.labHour : labHours;
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -458,7 +532,7 @@ const SubjectInCell = React.memo(function SubjectInCell({
               </div>
               <div className="text-[8px] mt-1 flex items-center justify-center gap-1">
                 <span className="bg-green-200/50 dark:bg-green-700/50 px-1 rounded">
-                  {totalHours} ชม. ({lectureHours}/{labHours})
+                  {totalHours} ชม. ({tooltipLectureHours}/{tooltipLabHours})
                 </span>
                 <span className="bg-green-300/30 dark:bg-green-600/30 px-1 rounded">
                   {totalHours * 2} คาบ
@@ -483,10 +557,12 @@ const SubjectInCell = React.memo(function SubjectInCell({
             <div className="mt-2 grid grid-cols-2 gap-2">
               <div>จำนวนหน่วยกิต:</div>
               <div className="text-right">{subject.credit}</div>
-              <div>ชั่วโมงบรรยาย:</div>
-              <div className="text-right">{lectureHours} ชม.</div>
-              <div>ชั่วโมงปฏิบัติ:</div>
-              <div className="text-right">{labHours} ชม.</div>
+              <>
+                <div>ชั่วโมงบรรยาย:</div>
+                <div className="text-right">{tooltipLectureHours} ชม.</div>
+                <div>ชั่วโมงปฏิบัติ:</div>
+                <div className="text-right">{tooltipLabHours} ชม.</div>
+              </>
               <div>รวม:</div>
               <div className="text-right">
                 {totalHours} ชม. ({totalHours * 2} คาบ)
@@ -527,14 +603,14 @@ export default function TimeTableCustom({
   plans = [],
   assignments = {},
   onRemoveAssignment = null,
+  onRemoveRecord = null,
   activeSubject = null,
   dragOverCell = null,
 }: {
   plans?: any[];
-  assignments?: {
-    [subjectId: number]: { day: number; periods: number[] } | null;
-  };
+  assignments?: { [subjectId: number]: AssignmentValue };
   onRemoveAssignment?: ((subjectId: number) => void) | null;
+  onRemoveRecord?: ((recordId: number) => void) | null;
   activeSubject?: any;
   dragOverCell?: { day: number; period: number } | null;
 }) {
@@ -548,6 +624,7 @@ export default function TimeTableCustom({
         plans={plans}
         assignments={assignments}
         onRemoveAssignment={onRemoveAssignment}
+        onRemoveRecord={onRemoveRecord}
         activeSubject={activeSubject}
         dragOverCell={dragOverCell}
       />
