@@ -42,8 +42,6 @@ export default function AutoTimetableButton({
       const isTerm3 = typeof termYear === "string" && termYear.startsWith("3/");
       const TERM3_SLOTS = 3;
 
-      // นับ record ที่มีอยู่แล้ว (currentAssignments เป็น array สำหรับ Term 3)
-      // แปลง currentAssignments เดิม (single entry per id) เป็น multi-entry map
       const multiAssignments: {
         [id: number]: { day: number; periods: number[] }[];
       } = {};
@@ -135,7 +133,6 @@ export default function AutoTimetableButton({
 
             if (!canScheduleHere) continue;
 
-            // Term 3: ตรวจว่าไม่ทับกับ slot เดิมของตัวเอง
             if (isTerm3) {
               const selfEntries = multiAssignments[subject.id] || [];
               const selfOverlap = selfEntries.some(
@@ -294,7 +291,6 @@ export default function AutoTimetableButton({
       );
 
       if (onScheduleComplete) {
-        // ส่ง assignments กลับ (flatten เป็น single entry เพื่อ compatibility)
         const result: {
           [subjectId: number]: { day: number; periods: number[] };
         } = {};
