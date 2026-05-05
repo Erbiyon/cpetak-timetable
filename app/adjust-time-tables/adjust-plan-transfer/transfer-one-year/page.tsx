@@ -443,7 +443,8 @@ export default function TransferOneYear() {
           const selfEntries = tableAssignments[subjectId];
           if (Array.isArray(selfEntries)) {
             const selfOverlap = selfEntries.some(
-              (e) => e.day === day && periods.some((p) => e.periods.includes(p)),
+              (e) =>
+                e.day === day && periods.some((p) => e.periods.includes(p)),
             );
             if (selfOverlap) {
               setDragFailedSubjectId(subjectId);
