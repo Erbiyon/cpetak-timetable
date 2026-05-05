@@ -54,20 +54,15 @@ function ClearFullCurriculumButtonInternal({
       console.log("🗑️ เริ่มการล้างตารางอัตโนมัติทั้งหลักสูตร");
       console.log(`ภาคเรียนที่: ${termYear}`);
 
-      // กำหนดหลักสูตรที่ต้องล้าง
-      // ถ้าระบุ planType มาจะล้างเฉพาะหลักสูตรนั้น
-      // ถ้าไม่ระบุจะล้างทุกหลักสูตร (DVE-MSIX จะถูก sync จาก DVE-LVC อัตโนมัติ)
       const planTypes = planType
         ? [planType]
         : ["FOUR_YEAR", "TRANSFER", "DVE-LVC"];
 
       let grandTotalCleared = 0;
 
-      // วนลูปแต่ละหลักสูตร
       for (const currentPlanType of planTypes) {
         console.log(`\n📋 กำลังล้างหลักสูตร: ${currentPlanType}`);
 
-        // กำหนดชั้นปีตามประเภทหลักสูตร
         let yearLevels: string[] = [];
         if (currentPlanType === "FOUR_YEAR") {
           yearLevels = ["ปี 1", "ปี 2", "ปี 3", "ปี 4"];
@@ -82,7 +77,6 @@ function ClearFullCurriculumButtonInternal({
 
         let totalClearedCount = 0;
 
-        // วนลูปล้างตารางแต่ละชั้นปีในภาคเรียนปัจจุบัน
         for (const yearLevel of yearLevels) {
           console.log(
             `\n📚 กำลังล้างตาราง ${yearLevel} ภาคเรียนที่ ${termYear}`,

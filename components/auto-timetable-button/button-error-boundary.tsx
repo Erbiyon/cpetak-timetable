@@ -34,7 +34,6 @@ function ButtonErrorDisplay({ error }: { error: Error | null }) {
 
   return (
     <>
-      {/* Fixed overlay for error popup */}
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
         <div className="bg-card rounded-lg border border-destructive/20 shadow-lg max-w-md w-full mx-4">
           <div className="p-6">
@@ -62,7 +61,6 @@ function ButtonErrorDisplay({ error }: { error: Error | null }) {
           </div>
         </div>
       </div>
-      {/* Render invisible placeholder to maintain layout */}
       <div className="opacity-0 pointer-events-none">Error occurred</div>
     </>
   );
