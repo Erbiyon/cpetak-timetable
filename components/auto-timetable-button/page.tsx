@@ -223,7 +223,6 @@ export default function AutoTimetableButton({
                   periods: neededPeriods,
                 });
 
-                // DVE sync (เฉพาะเทอมปกติ — Term 3 API จัดการเอง)
                 if (!isTerm3) {
                   const isDVEPlan =
                     planType === "DVE-MSIX" || planType === "DVE-LVC";

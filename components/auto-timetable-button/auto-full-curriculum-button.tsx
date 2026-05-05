@@ -31,9 +31,6 @@ function AutoFullCurriculumButtonInternal({
       console.log("🚀 เริ่มการจัดตารางอัตโนมัติทั้งหลักสูตร");
       console.log(`ภาคเรียนที่: ${termYear}`);
 
-      // กำหนดหลักสูตรที่ต้องจัด
-      // ถ้าระบุ planType มาจะจัดเฉพาะหลักสูตรนั้น
-      // ถ้าไม่ระบุจะจัดทุกหลักสูตร (DVE-MSIX จะถูก sync จาก DVE-LVC อัตโนมัติ)
       const planTypes = planType
         ? [planType]
         : ["FOUR_YEAR", "TRANSFER", "DVE-LVC"];
