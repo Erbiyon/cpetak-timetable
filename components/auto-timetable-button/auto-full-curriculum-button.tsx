@@ -51,11 +51,9 @@ function AutoFullCurriculumButtonInternal({
       let grandTotalSuccess = 0;
       let grandTotalFail = 0;
 
-      // วนลูปแต่ละหลักสูตร
       for (const currentPlanType of planTypes) {
         console.log(`\n📋 กำลังจัดหลักสูตร: ${currentPlanType}`);
 
-        // กำหนดชั้นปีตามประเภทหลักสูตร
         let yearLevels: string[] = [];
         if (currentPlanType === "FOUR_YEAR") {
           yearLevels = ["ปี 1", "ปี 2", "ปี 3", "ปี 4"];
@@ -71,14 +69,12 @@ function AutoFullCurriculumButtonInternal({
         let totalSuccessCount = 0;
         let totalFailCount = 0;
 
-        // วนลูปจัดตารางแต่ละชั้นปีในภาคเรียนปัจจุบัน
         for (const yearLevel of yearLevels) {
           console.log(
             `\n📚 กำลังจัดตาราง ${yearLevel} ภาคเรียนที่ ${termYear}`,
           );
 
           try {
-            // ดึงข้อมูลวิชาทั้งหมดของชั้นปีนี้
             const subjectResponse = await fetch(
               `/api/subject?termYear=${encodeURIComponent(termYear)}&yearLevel=${encodeURIComponent(yearLevel)}&planType=${currentPlanType}`,
             );
@@ -91,7 +87,6 @@ function AutoFullCurriculumButtonInternal({
             const plans = await subjectResponse.json();
             console.log(`   พบวิชาทั้งหมด ${plans.length} วิชา`);
 
-            // ดึงข้อมูลตารางที่มีอยู่แล้ว
             const timetableResponse = await fetch(
               `/api/timetable?termYear=${encodeURIComponent(termYear)}&yearLevel=${encodeURIComponent(yearLevel)}&planType=${currentPlanType}`,
             );
@@ -105,14 +100,12 @@ function AutoFullCurriculumButtonInternal({
               typeof termYear === "string" && termYear.startsWith("3/");
             const TERM3_SLOTS = 3;
 
-            // นับจำนวน record ที่มีอยู่แล้วต่อแผน
             const existingRecordCount: { [planId: number]: number } = {};
             for (const tt of existingTimetables) {
               existingRecordCount[tt.planId] =
                 (existingRecordCount[tt.planId] || 0) + 1;
             }
 
-            // Term 3: รวมวิชาที่มี record น้อยกว่า 3 รายการ, ปกติ: รวมวิชาที่ยังไม่มี record
             const unassignedPlans = plans.filter((plan: any) =>
               isTerm3
                 ? (existingRecordCount[plan.id] || 0) < TERM3_SLOTS
@@ -126,14 +119,12 @@ function AutoFullCurriculumButtonInternal({
 
             console.log(`   จำนวนวิชาที่ต้องจัด: ${unassignedPlans.length}`);
 
-            // เรียงลำดับวิชาตามจำนวนชั่วโมงเรียน (มากไปน้อย)
             const sortedPlans = [...unassignedPlans].sort((a, b) => {
               const totalHoursA = (a.lectureHour || 0) + (a.labHour || 0);
               const totalHoursB = (b.lectureHour || 0) + (b.labHour || 0);
               return totalHoursB - totalHoursA;
             });
 
-            // สร้าง multi-entry map สำหรับตรวจสอบความขัดแย้ง (รองรับ Term 3 หลาย slot)
             const currentAssignments: {
               [planId: number]: { day: number; periods: number[] }[];
             } = {};
@@ -151,7 +142,6 @@ function AutoFullCurriculumButtonInternal({
             let successCount = 0;
             let failCount = 0;
 
-            // จัดตารางแต่ละวิชา
             for (const subject of sortedPlans) {
               const totalHours =
                 (subject.lectureHour || 0) + (subject.labHour || 0);
@@ -164,7 +154,6 @@ function AutoFullCurriculumButtonInternal({
                 continue;
               }
 
-              // Term 3: ต้องวาง TERM3_SLOTS ครั้ง, ปกติ: 1 ครั้ง
               const slotsNeeded = isTerm3
                 ? TERM3_SLOTS - (existingRecordCount[subject.id] || 0)
                 : 1;
@@ -174,7 +163,6 @@ function AutoFullCurriculumButtonInternal({
                 `     กำลังจัดวิชา ${subject.subjectCode} (${totalPeriods} คาบ, ต้องการ ${slotsNeeded} slot)`,
               );
 
-              // ลองจัดตารางในแต่ละวัน
               for (
                 let day = 0;
                 day < MAX_DAYS && slotsPlaced < slotsNeeded;
@@ -205,7 +193,6 @@ function AutoFullCurriculumButtonInternal({
 
                   if (!canScheduleHere) continue;
 
-                  // Term 3: ตรวจสอบไม่ให้คาบซ้ำกับ slot เดิมของตัวเอง
                   if (isTerm3) {
                     const selfEntries = currentAssignments[subject.id] || [];
                     const selfOverlap = selfEntries.some(
@@ -216,7 +203,6 @@ function AutoFullCurriculumButtonInternal({
                     if (selfOverlap) continue;
                   }
 
-                  // ตรวจสอบความขัดแย้งกับวิชาอื่น
                   let hasConflict = false;
                   for (const [existingId, entries] of Object.entries(
                     currentAssignments,
@@ -231,7 +217,7 @@ function AutoFullCurriculumButtonInternal({
                         hasConflict = true;
                         break;
                       }
-                      // ตรวจสอบระยะห่าง 2 คาบ
+
                       const minNew = Math.min(...neededPeriods);
                       const maxNew = Math.max(...neededPeriods);
                       const minExisting = Math.min(...entry.periods);
@@ -249,7 +235,6 @@ function AutoFullCurriculumButtonInternal({
 
                   if (hasConflict) continue;
 
-                  // บันทึกตาราง
                   try {
                     const startPeriodSave = Math.min(...neededPeriods);
                     const endPeriodSave = Math.max(...neededPeriods);
@@ -277,7 +262,6 @@ function AutoFullCurriculumButtonInternal({
                       );
                       slotsPlaced++;
 
-                      // เพิ่มเข้า currentAssignments
                       if (!currentAssignments[subject.id])
                         currentAssignments[subject.id] = [];
                       currentAssignments[subject.id].push({
@@ -285,7 +269,6 @@ function AutoFullCurriculumButtonInternal({
                         periods: neededPeriods,
                       });
 
-                      // ซิงค์สำหรับ DVE (เฉพาะเทอมปกติ — Term 3 API จัดการเอง)
                       if (!isTerm3) {
                         const isDVEPlan =
                           currentPlanType === "DVE-MSIX" ||
