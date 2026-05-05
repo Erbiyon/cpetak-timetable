@@ -292,18 +292,36 @@ export async function POST(request: Request) {
     const isTerm3 = typeof termYear === "string" && termYear.startsWith("3/");
 
     if (isTerm3) {
-      // ตรวจว่าวันนี้มี record อยู่แล้วไหม ถ้ามีให้ลบแค่วันนั้น (replace)
-      await prisma.timetable_tb.deleteMany({
-        where: { planId, day },
+      // ตรวจว่าคาบซ้ำกับ record เดิมของวิชานี้ในวันเดียวกันหรือไม่
+      const selfOverlap = await prisma.timetable_tb.findFirst({
+        where: {
+          planId,
+          day,
+          OR: [
+            {
+              AND: [
+                { startPeriod: { lte: startPeriod } },
+                { endPeriod: { gte: startPeriod } },
+              ],
+            },
+            {
+              AND: [
+                { startPeriod: { lte: endPeriod } },
+                { endPeriod: { gte: endPeriod } },
+              ],
+            },
+            {
+              AND: [
+                { startPeriod: { gte: startPeriod } },
+                { endPeriod: { lte: endPeriod } },
+              ],
+            },
+          ],
+        },
       });
-
-      // ตรวจว่าวางครบ 3 วันแล้วหรือยัง
-      const existingCount = await prisma.timetable_tb.count({
-        where: { planId },
-      });
-      if (existingCount >= 3) {
+      if (selfOverlap) {
         return Response.json(
-          { error: "วิชานี้ถูกจัดตารางครบ 3 วันแล้ว" },
+          { error: "วิชานี้มีคาบซ้ำกันในวันเดียวกันแล้ว" },
           { status: 409 },
         );
       }
