@@ -455,12 +455,26 @@ export default function DveMsixTwoYear() {
 
         const isTerm3 =
           typeof termYear === "string" && termYear.startsWith("3/");
+        // Term 3: ตรวจว่าคาบซ้ำกับ record เดิมของวิชานี้ในวันเดียวกันหรือไม่
+        if (isTerm3) {
+          const selfEntries = tableAssignments[subjectId];
+          if (Array.isArray(selfEntries)) {
+            const selfOverlap = selfEntries.some(
+              (e) => e.day === day && periods.some((p) => e.periods.includes(p)),
+            );
+            if (selfOverlap) {
+              setDragFailedSubjectId(subjectId);
+              setConflicts([]);
+              setActiveSubject(null);
+              return;
+            }
+          }
+        }
         const newAssignmentEntry: AssignmentEntry = { day, periods };
         setTableAssignments((prev) => {
           if (isTerm3) {
             const existing = prev[subjectId] || [];
-            const filtered = existing.filter((e) => e.day !== day);
-            return { ...prev, [subjectId]: [...filtered, newAssignmentEntry] };
+            return { ...prev, [subjectId]: [...existing, newAssignmentEntry] };
           }
           return { ...prev, [subjectId]: [newAssignmentEntry] };
         });
