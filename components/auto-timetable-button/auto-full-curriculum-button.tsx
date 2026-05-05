@@ -104,11 +104,22 @@ function AutoFullCurriculumButtonInternal({
               existingTimetables = await timetableResponse.json();
             }
 
-            const assignedPlanIds = new Set(
-              existingTimetables.map((t) => t.planId),
-            );
-            const unassignedPlans = plans.filter(
-              (plan: any) => !assignedPlanIds.has(plan.id),
+            const isTerm3 =
+              typeof termYear === "string" && termYear.startsWith("3/");
+            const TERM3_SLOTS = 3;
+
+            // นับจำนวน record ที่มีอยู่แล้วต่อแผน
+            const existingRecordCount: { [planId: number]: number } = {};
+            for (const tt of existingTimetables) {
+              existingRecordCount[tt.planId] =
+                (existingRecordCount[tt.planId] || 0) + 1;
+            }
+
+            // Term 3: รวมวิชาที่มี record น้อยกว่า 3 รายการ, ปกติ: รวมวิชาที่ยังไม่มี record
+            const unassignedPlans = plans.filter((plan: any) =>
+              isTerm3
+                ? (existingRecordCount[plan.id] || 0) < TERM3_SLOTS
+                : !existingRecordCount[plan.id],
             );
 
             if (unassignedPlans.length === 0) {
@@ -125,21 +136,19 @@ function AutoFullCurriculumButtonInternal({
               return totalHoursB - totalHoursA;
             });
 
-            // สร้าง map ของตารางที่มีอยู่แล้ว
+            // สร้าง multi-entry map สำหรับตรวจสอบความขัดแย้ง (รองรับ Term 3 หลาย slot)
             const currentAssignments: {
-              [planId: number]: { day: number; periods: number[] };
+              [planId: number]: { day: number; periods: number[] }[];
             } = {};
             for (const tt of existingTimetables) {
-              if (!currentAssignments[tt.planId]) {
-                const periods: number[] = [];
-                for (let p = tt.startPeriod; p <= tt.endPeriod; p++) {
-                  periods.push(p);
-                }
-                currentAssignments[tt.planId] = {
-                  day: tt.day,
-                  periods: periods,
-                };
+              if (!currentAssignments[tt.planId])
+                currentAssignments[tt.planId] = [];
+              const periods: number[] = [];
+              for (let p = tt.startPeriod; p <= tt.endPeriod; p++) {
+                if (tt.day === 2 && p >= 14 && p <= 17) continue;
+                periods.push(p);
               }
+              currentAssignments[tt.planId].push({ day: tt.day, periods });
             }
 
             let successCount = 0;
@@ -158,30 +167,35 @@ function AutoFullCurriculumButtonInternal({
                 continue;
               }
 
+              // Term 3: ต้องวาง TERM3_SLOTS ครั้ง, ปกติ: 1 ครั้ง
+              const slotsNeeded = isTerm3
+                ? TERM3_SLOTS - (existingRecordCount[subject.id] || 0)
+                : 1;
+              let slotsPlaced = 0;
+
               console.log(
-                `     กำลังจัดวิชา ${subject.subjectCode} (${totalPeriods} คาบ)`,
+                `     กำลังจัดวิชา ${subject.subjectCode} (${totalPeriods} คาบ, ต้องการ ${slotsNeeded} slot)`,
               );
 
-              let scheduled = false;
-
               // ลองจัดตารางในแต่ละวัน
-              for (let day = 0; day < MAX_DAYS && !scheduled; day++) {
-                // ลองแต่ละช่วงเวลา
+              for (
+                let day = 0;
+                day < MAX_DAYS && slotsPlaced < slotsNeeded;
+                day++
+              ) {
                 for (
                   let startPeriod = 0;
-                  startPeriod < MAX_PERIODS - totalPeriods + 1 && !scheduled;
+                  startPeriod < MAX_PERIODS - totalPeriods + 1 &&
+                  slotsPlaced < slotsNeeded;
                   startPeriod++
                 ) {
                   const isWednesday = day === 2;
 
-                  // สร้างรายการคาบที่ต้องการ
                   const neededPeriods: number[] = [];
                   let canScheduleHere = true;
 
                   for (let i = 0; i < totalPeriods; i++) {
                     const currentPeriod = startPeriod + i;
-
-                    // ตรวจสอบว่าไม่ชนกับคาบกิจกรรมในวันพุธ
                     if (
                       isWednesday &&
                       activityPeriods.includes(currentPeriod)
@@ -189,91 +203,93 @@ function AutoFullCurriculumButtonInternal({
                       canScheduleHere = false;
                       break;
                     }
-
                     neededPeriods.push(currentPeriod);
                   }
 
-                  if (!canScheduleHere) {
-                    continue;
+                  if (!canScheduleHere) continue;
+
+                  // Term 3: ตรวจสอบไม่ให้คาบซ้ำกับ slot เดิมของตัวเอง
+                  if (isTerm3) {
+                    const selfEntries = currentAssignments[subject.id] || [];
+                    const selfOverlap = selfEntries.some(
+                      (e) =>
+                        e.day === day &&
+                        neededPeriods.some((p) => e.periods.includes(p)),
+                    );
+                    if (selfOverlap) continue;
                   }
 
-                  // ตรวจสอบความขัดแย้ง
+                  // ตรวจสอบความขัดแย้งกับวิชาอื่น
                   let hasConflict = false;
-
-                  for (const [existingId, assignment] of Object.entries(
+                  for (const [existingId, entries] of Object.entries(
                     currentAssignments,
                   )) {
-                    if (
-                      assignment &&
-                      assignment.day === day &&
-                      Number(existingId) !== subject.id
-                    ) {
-                      // ตรวจสอบการทับซ้อน
+                    if (Number(existingId) === subject.id) continue;
+                    for (const entry of entries) {
+                      if (entry.day !== day) continue;
                       const overlap = neededPeriods.some((p) =>
-                        assignment.periods.includes(p),
+                        entry.periods.includes(p),
                       );
                       if (overlap) {
                         hasConflict = true;
                         break;
                       }
-
                       // ตรวจสอบระยะห่าง 2 คาบ
                       const minNew = Math.min(...neededPeriods);
                       const maxNew = Math.max(...neededPeriods);
-                      const minExisting = Math.min(...assignment.periods);
-                      const maxExisting = Math.max(...assignment.periods);
-
-                      if (maxNew + 2 >= minExisting && maxNew < minExisting) {
-                        hasConflict = true;
-                        break;
-                      }
-
-                      if (minNew <= maxExisting + 2 && minNew > maxExisting) {
+                      const minExisting = Math.min(...entry.periods);
+                      const maxExisting = Math.max(...entry.periods);
+                      if (
+                        (maxNew + 2 >= minExisting && maxNew < minExisting) ||
+                        (minNew <= maxExisting + 2 && minNew > maxExisting)
+                      ) {
                         hasConflict = true;
                         break;
                       }
                     }
+                    if (hasConflict) break;
                   }
 
-                  if (!hasConflict) {
-                    // บันทึกตาราง
-                    try {
-                      const startPeriodSave = Math.min(...neededPeriods);
-                      const endPeriodSave = Math.max(...neededPeriods);
+                  if (hasConflict) continue;
 
-                      const response = await fetch("/api/timetable", {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                          planId: subject.id,
-                          termYear: termYear,
-                          yearLevel: yearLevel,
-                          planType: currentPlanType,
-                          day: day,
-                          startPeriod: startPeriodSave,
-                          endPeriod: endPeriodSave,
-                          roomId: subject.roomId || null,
-                          teacherId: subject.teacherId || null,
-                          section: subject.section || null,
-                        }),
+                  // บันทึกตาราง
+                  try {
+                    const startPeriodSave = Math.min(...neededPeriods);
+                    const endPeriodSave = Math.max(...neededPeriods);
+
+                    const response = await fetch("/api/timetable", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        planId: subject.id,
+                        termYear: termYear,
+                        yearLevel: yearLevel,
+                        planType: currentPlanType,
+                        day: day,
+                        startPeriod: startPeriodSave,
+                        endPeriod: endPeriodSave,
+                        roomId: subject.roomId || null,
+                        teacherId: subject.teacherId || null,
+                        section: subject.section || null,
+                      }),
+                    });
+
+                    if (response.ok) {
+                      console.log(
+                        `     บันทึกสำเร็จ: ${subject.subjectCode} ในวัน${dayNames[day]} คาบ ${neededPeriods.join(",")}`,
+                      );
+                      slotsPlaced++;
+
+                      // เพิ่มเข้า currentAssignments
+                      if (!currentAssignments[subject.id])
+                        currentAssignments[subject.id] = [];
+                      currentAssignments[subject.id].push({
+                        day,
+                        periods: neededPeriods,
                       });
 
-                      if (response.ok) {
-                        console.log(
-                          `     บันทึกสำเร็จ: ${subject.subjectCode} ในวัน${dayNames[day]} คาบ ${neededPeriods.join(",")}`,
-                        );
-                        scheduled = true;
-                        successCount++;
-
-                        // เพิ่มเข้า currentAssignments
-                        currentAssignments[subject.id] = {
-                          day,
-                          periods: neededPeriods,
-                        };
-
-                        // ซิงค์สำหรับ DVE
+                      // ซิงค์สำหรับ DVE (เฉพาะเทอมปกติ — Term 3 API จัดการเอง)
+                      if (!isTerm3) {
                         const isDVEPlan =
                           currentPlanType === "DVE-MSIX" ||
                           currentPlanType === "DVE-LVC";
@@ -282,12 +298,10 @@ function AutoFullCurriculumButtonInternal({
                             currentPlanType === "DVE-MSIX"
                               ? "DVE-LVC"
                               : "DVE-MSIX";
-
                           try {
                             const searchResponse = await fetch(
                               `/api/subject?subjectCode=${encodeURIComponent(subject.subjectCode)}&termYear=${encodeURIComponent(termYear)}&yearLevel=${encodeURIComponent(yearLevel)}&planType=${targetPlanType}`,
                             );
-
                             if (searchResponse.ok) {
                               const targetSubjects =
                                 await searchResponse.json();
@@ -295,7 +309,6 @@ function AutoFullCurriculumButtonInternal({
                                 (s: any) =>
                                   s.subjectCode === subject.subjectCode,
                               );
-
                               if (matchingSubject) {
                                 await fetch("/api/timetable", {
                                   method: "POST",
@@ -324,24 +337,26 @@ function AutoFullCurriculumButtonInternal({
                             );
                           }
                         }
-                      } else {
-                        const errorText = await response.text();
-                        console.log(
-                          `     บันทึกไม่สำเร็จ: ${response.status} - ${errorText}`,
-                        );
-                        continue;
                       }
-                    } catch (error) {
-                      console.log(`     เกิดข้อผิดพลาด: ${error}`);
-                      continue;
+                    } else {
+                      const errorText = await response.text();
+                      console.log(
+                        `     บันทึกไม่สำเร็จ: ${response.status} - ${errorText}`,
+                      );
                     }
+                  } catch (error) {
+                    console.log(`     เกิดข้อผิดพลาด: ${error}`);
                   }
                 }
               }
 
-              if (!scheduled) {
-                console.log(`     ไม่สามารถจัดวิชา ${subject.subjectCode} ได้`);
+              if (slotsPlaced < slotsNeeded) {
+                console.log(
+                  `     ไม่สามารถจัดวิชา ${subject.subjectCode} ได้ครบ (จัดได้ ${slotsPlaced}/${slotsNeeded})`,
+                );
                 failCount++;
+              } else {
+                successCount++;
               }
             }
 

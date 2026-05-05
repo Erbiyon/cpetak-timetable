@@ -389,9 +389,39 @@ export async function POST(request: Request) {
               `  📋 ซิ๊งค์ไปยัง: ${duplicatePlan.subjectName} (${duplicatePlan.planType}) planId: ${duplicatePlan.id}`,
             );
 
-            await prisma.timetable_tb.deleteMany({
-              where: { planId: duplicatePlan.id },
-            });
+            if (isTerm3) {
+              // Term 3: ลบเฉพาะ record ที่ทับกันใน duplicate แล้ว add ใหม่
+              await prisma.timetable_tb.deleteMany({
+                where: {
+                  planId: duplicatePlan.id,
+                  day,
+                  OR: [
+                    {
+                      AND: [
+                        { startPeriod: { lte: startPeriod } },
+                        { endPeriod: { gte: startPeriod } },
+                      ],
+                    },
+                    {
+                      AND: [
+                        { startPeriod: { lte: endPeriod } },
+                        { endPeriod: { gte: endPeriod } },
+                      ],
+                    },
+                    {
+                      AND: [
+                        { startPeriod: { gte: startPeriod } },
+                        { endPeriod: { lte: endPeriod } },
+                      ],
+                    },
+                  ],
+                },
+              });
+            } else {
+              await prisma.timetable_tb.deleteMany({
+                where: { planId: duplicatePlan.id },
+              });
+            }
 
             await prisma.timetable_tb.create({
               data: {
@@ -425,9 +455,38 @@ export async function POST(request: Request) {
           });
 
           for (const duplicatePlan of duplicatePlans) {
-            await prisma.timetable_tb.deleteMany({
-              where: { planId: duplicatePlan.id },
-            });
+            if (isTerm3) {
+              await prisma.timetable_tb.deleteMany({
+                where: {
+                  planId: duplicatePlan.id,
+                  day,
+                  OR: [
+                    {
+                      AND: [
+                        { startPeriod: { lte: startPeriod } },
+                        { endPeriod: { gte: startPeriod } },
+                      ],
+                    },
+                    {
+                      AND: [
+                        { startPeriod: { lte: endPeriod } },
+                        { endPeriod: { gte: endPeriod } },
+                      ],
+                    },
+                    {
+                      AND: [
+                        { startPeriod: { gte: startPeriod } },
+                        { endPeriod: { lte: endPeriod } },
+                      ],
+                    },
+                  ],
+                },
+              });
+            } else {
+              await prisma.timetable_tb.deleteMany({
+                where: { planId: duplicatePlan.id },
+              });
+            }
 
             await prisma.timetable_tb.create({
               data: {
