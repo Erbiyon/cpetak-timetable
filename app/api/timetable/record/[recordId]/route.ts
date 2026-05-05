@@ -1,8 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// DELETE /api/timetable/record/[recordId]
-// ลบ timetable record เดียวด้วย timetable.id (ใช้สำหรับ Term 3 ที่วิชาเดียวมีหลาย record)
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ recordId: string }> },
