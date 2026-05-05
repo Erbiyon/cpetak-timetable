@@ -19,7 +19,6 @@ export async function PUT(
     const { id: idParam } = await params;
     const id = parseInt(idParam);
 
-    // ตรวจสอบว่ามีรหัสวิชาซ้ำหรือไม่ (ยกเว้นตัวเอง)
     const existingCurriculum = await prisma.curriculum_tb.findFirst({
       where: {
         id_sub,

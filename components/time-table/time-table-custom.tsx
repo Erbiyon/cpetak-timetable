@@ -488,8 +488,10 @@ const SubjectInCell = React.memo(function SubjectInCell({
   subject: any;
   combinedHoursMap?: Map<string, { lectureHour: number; labHour: number }>;
 }) {
+  const slotDay = subject.assignmentData?.day ?? 0;
+  const slotPeriod = subject.assignmentData?.periods?.[0] ?? 0;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `table-subject-${subject.id}`,
+    id: `table-subject-${subject.id}-${slotDay}-${slotPeriod}`,
     data: {
       subject,
       fromTable: true,

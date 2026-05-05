@@ -32,7 +32,6 @@ export async function POST(req: NextRequest) {
       curriculum_type,
     } = body;
 
-    // ตรวจสอบว่ามีรหัสวิชาซ้ำหรือไม่
     const existingCurriculum = await prisma.curriculum_tb.findFirst({
       where: { id_sub },
     });

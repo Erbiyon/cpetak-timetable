@@ -287,12 +287,9 @@ export async function POST(request: Request) {
       return Response.json({ conflicts }, { status: 409 });
     }
 
-    // Term 3 (termYear starts with "3/"): วิชาเดียววางได้หลายวัน (สูงสุด 3 ครั้ง)
-    // แต่ละวันเก็บเป็น record แยก — ไม่ลบทั้งหมดก่อน
     const isTerm3 = typeof termYear === "string" && termYear.startsWith("3/");
 
     if (isTerm3) {
-      // ตรวจว่าคาบซ้ำกับ record เดิมของวิชานี้ในวันเดียวกันหรือไม่
       const selfOverlap = await prisma.timetable_tb.findFirst({
         where: {
           planId,
@@ -326,7 +323,6 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      // ปกติ: ลบ record เก่าทั้งหมดก่อน create ใหม่
       await prisma.timetable_tb.deleteMany({
         where: { planId },
       });

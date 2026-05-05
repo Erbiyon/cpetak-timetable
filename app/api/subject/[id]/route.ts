@@ -10,13 +10,10 @@ export async function PATCH(
     const planId = parseInt(id);
     const body = await request.json();
 
-    // แยก teacherId, roomId และ sectionNumber ออกจาก body
     const { teacherId, roomId, sectionNumber, ...restData } = body;
 
-    // สร้าง data object สำหรับ Prisma
     const updateData: any = { ...restData };
 
-    // จัดการ teacher relation
     if (teacherId !== undefined) {
       if (teacherId === null) {
         updateData.teacher = { disconnect: true };
@@ -25,7 +22,6 @@ export async function PATCH(
       }
     }
 
-    // จัดการ room relation
     if (roomId !== undefined) {
       if (roomId === null) {
         updateData.room = { disconnect: true };
@@ -34,7 +30,6 @@ export async function PATCH(
       }
     }
 
-    // เพิ่ม section ถ้ามี sectionNumber
     if (sectionNumber !== undefined) {
       updateData.section = sectionNumber.toString();
     }
@@ -96,7 +91,6 @@ export async function PATCH(
       }
     }
 
-    // Sync sectionNumber สำหรับวิชาที่สอนร่วม (เมื่อมี checkbox coTeaching)
     if (isCoTeaching && sectionNumber !== undefined) {
       const otherPlans = coTeachingGroup.plans.filter((p) => p.id !== planId);
 

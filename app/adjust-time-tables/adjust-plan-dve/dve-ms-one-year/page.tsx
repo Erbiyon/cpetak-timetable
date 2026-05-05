@@ -37,7 +37,6 @@ export default function DveMsixOneYear() {
   );
   const [timetableData, setTimetableData] = useState<any[]>([]);
 
-  // Term 3: assignments เป็น array ของ { id, day, periods } แต่ละ record ต่อวัน
   type AssignmentEntry = { id?: number; day: number; periods: number[] };
   const [tableAssignments, setTableAssignments] = useState<{
     [subjectId: number]: AssignmentEntry[] | null;
@@ -327,6 +326,7 @@ export default function DveMsixOneYear() {
           ...draggedSubject,
           fromTable: true,
           originalAssignment: tableAssignments[draggedSubject.id],
+          originalEntry: active.data.current?.subject?.assignmentData,
         });
       } else {
         setActiveSubject(draggedSubject);
@@ -358,7 +358,8 @@ export default function DveMsixOneYear() {
 
     if (!over) {
       if (activeSubject?.fromTable) {
-        handleRemoveAssignment(activeSubject.id);
+        const recordId = activeSubject.originalEntry?.recordId;
+        handleRemoveAssignment(activeSubject.id, recordId);
       }
       setConflicts([]);
       setActiveSubject(null);
@@ -550,6 +551,18 @@ export default function DveMsixOneYear() {
             setConflicts([]);
             setDragFailedSubjectId(null);
 
+            // Term 3: ถ้าลากจากตาราง ให้ลบ record เก่าออก
+            if (
+              isTerm3 &&
+              activeSubject?.fromTable &&
+              activeSubject.originalEntry?.recordId
+            ) {
+              await fetch(
+                `/api/timetable/record/${activeSubject.originalEntry.recordId}`,
+                { method: "DELETE" },
+              );
+            }
+
             await handleSubjectUpdate();
           }
         } catch (error) {
@@ -580,7 +593,6 @@ export default function DveMsixOneYear() {
     try {
       const subject = plans.find((plan) => plan.id === subjectId);
 
-      // Term 3: if recordId provided, delete only that specific day's record
       const url = recordId
         ? `/api/timetable/record/${recordId}`
         : `/api/timetable/${subjectId}`;

@@ -278,7 +278,8 @@ export default function FourTreeYear() {
     }
   }, [plans]);
 
-  function handleDragStart(event: any) {    document.body.classList.add("dragging-active");
+  function handleDragStart(event: any) {
+    document.body.classList.add("dragging-active");
 
     const { active } = event;
 
@@ -311,7 +312,6 @@ export default function FourTreeYear() {
 
     if (over && over.id.startsWith("cell-")) {
       const [_, day, period] = over.id.split("-").map(Number);
-      // Early return if same cell — prevents infinite setState loop
       setDragOverCell((prev) => {
         if (prev && prev.day === day && prev.period === period) return prev;
         return { day, period };
@@ -321,7 +321,8 @@ export default function FourTreeYear() {
     }
   }
 
-  async function handleDragEnd(event: any) {    document.body.classList.remove("dragging-active");
+  async function handleDragEnd(event: any) {
+    document.body.classList.remove("dragging-active");
 
     const { active, over } = event;
 

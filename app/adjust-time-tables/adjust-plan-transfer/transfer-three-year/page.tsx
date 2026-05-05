@@ -37,7 +37,6 @@ export default function TransferThreeYear() {
   );
   const [timetableData, setTimetableData] = useState<any[]>([]);
 
-  // Term 3: assignments เป็น array ของ { id, day, periods } แต่ละ record ต่อวัน
   type AssignmentEntry = { id?: number; day: number; periods: number[] };
   const [tableAssignments, setTableAssignments] = useState<{
     [subjectId: number]: AssignmentEntry[] | null;
@@ -305,6 +304,7 @@ export default function TransferThreeYear() {
           ...draggedSubject,
           fromTable: true,
           originalAssignment: tableAssignments[draggedSubject.id],
+          originalEntry: active.data.current?.subject?.assignmentData,
         });
       } else {
         setActiveSubject(draggedSubject);
@@ -336,7 +336,8 @@ export default function TransferThreeYear() {
 
     if (!over) {
       if (activeSubject?.fromTable) {
-        handleRemoveAssignment(activeSubject.id);
+        const recordId = activeSubject.originalEntry?.recordId;
+        handleRemoveAssignment(activeSubject.id, recordId);
       }
       setConflicts([]);
       setActiveSubject(null);
@@ -436,7 +437,6 @@ export default function TransferThreeYear() {
 
         const isTerm3 =
           typeof termYear === "string" && termYear.startsWith("3/");
-        // Term 3: ตรวจว่าคาบซ้ำกับ record เดิมของวิชานี้ในวันเดียวกันหรือไม่
         if (isTerm3) {
           const selfEntries = tableAssignments[subjectId];
           if (Array.isArray(selfEntries)) {
@@ -526,7 +526,6 @@ export default function TransferThreeYear() {
             setConflicts([]);
             setDragFailedSubjectId(null);
 
-            // Update the assignment entry with the DB record ID
             if (data.id) {
               setTableAssignments((prev) => {
                 const existing = (prev[subjectId] || []) as AssignmentEntry[];
@@ -538,6 +537,18 @@ export default function TransferThreeYear() {
                 );
                 return { ...prev, [subjectId]: updated };
               });
+            }
+
+            // Term 3: ถ้าลากจากตาราง ให้ลบ record เก่าออก
+            if (
+              isTerm3 &&
+              activeSubject?.fromTable &&
+              activeSubject.originalEntry?.recordId
+            ) {
+              await fetch(
+                `/api/timetable/record/${activeSubject.originalEntry.recordId}`,
+                { method: "DELETE" },
+              );
             }
 
             await handleSubjectUpdate();
@@ -570,7 +581,6 @@ export default function TransferThreeYear() {
     try {
       const isCoTeaching = await checkCoTeaching(subjectId);
 
-      // Term 3: if recordId provided, delete only that specific day's record
       const url = recordId
         ? `/api/timetable/record/${recordId}`
         : `/api/timetable/${subjectId}`;
@@ -583,7 +593,6 @@ export default function TransferThreeYear() {
         console.log("ลบตารางเรียนสำเร็จ:", data);
 
         if (recordId) {
-          // Term 3: remove only the specific record from array
           setTableAssignments((prev) => {
             const existing = (prev[subjectId] || []) as AssignmentEntry[];
             const updated = existing.filter((e) => e.id !== recordId);

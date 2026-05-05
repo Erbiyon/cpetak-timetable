@@ -185,7 +185,6 @@ export default function FourOneYear() {
 
     if (over && over.id.startsWith("cell-")) {
       const [_, day, period] = over.id.split("-").map(Number);
-      // Early return if same cell — prevents infinite setState loop
       setDragOverCell((prev) => {
         if (prev && prev.day === day && prev.period === period) return prev;
         return { day, period };

@@ -24,7 +24,6 @@ import { Loader2, CheckCircle, AlertCircle, Shield, Lock } from "lucide-react";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
 
-// Helper function to format date with Buddhist Era
 const formatThaiDate = (date: Date) => {
   const buddhistYear = date.getFullYear() + 543;
   const formatted = format(date, "d MMMM", { locale: th });
@@ -125,7 +124,6 @@ export default function RequestRoomPage() {
     }
   }, [session, status, fetchTeacherInfo]);
 
-  // Fetch deadline
   useEffect(() => {
     const fetchDeadline = async () => {
       try {
@@ -384,7 +382,6 @@ export default function RequestRoomPage() {
         )}
       </div>
 
-      {/* Deadline Warning */}
       {deadline && (
         <Card
           className={`mb-6 ${
