@@ -69,7 +69,13 @@ export default function FourTwoYear() {
         timetableData.forEach((item: any) => {
           const periods: number[] = [];
           for (let p = item.startPeriod; p <= item.endPeriod; p++) {
-            if (item.day === 2 && p >= 14 && p <= 17) continue;
+            if (
+              !termYear?.startsWith("3/") &&
+              item.day === 2 &&
+              p >= 14 &&
+              p <= 17
+            )
+              continue;
             periods.push(p);
           }
 
@@ -149,7 +155,13 @@ export default function FourTwoYear() {
             timetableData.forEach((item: any) => {
               const periods: number[] = [];
               for (let p = item.startPeriod; p <= item.endPeriod; p++) {
-                if (item.day === 2 && p >= 14 && p <= 17) continue;
+                if (
+                  !termYear?.startsWith("3/") &&
+                  item.day === 2 &&
+                  p >= 14 &&
+                  p <= 17
+                )
+                  continue;
                 periods.push(p);
               }
 
@@ -370,7 +382,10 @@ export default function FourTwoYear() {
         }
 
         const isWednesday = day === 2;
-        const activityPeriods = [14, 15, 16, 17];
+        const activityPeriods =
+          typeof termYear === "string" && termYear.startsWith("3/")
+            ? []
+            : [14, 15, 16, 17];
         const wouldOverlapActivity =
           isWednesday &&
           activityPeriods.some((actPeriod) => {
@@ -732,7 +747,10 @@ export default function FourTwoYear() {
       return { day, periods: [], isValid: false, message: "เกินขอบตาราง" };
     }
 
+    const isTerm3Preview =
+      typeof termYear === "string" && termYear.startsWith("3/");
     const hasMidweekActivity =
+      !isTerm3Preview &&
       day === 2 &&
       ((period <= 14 && lastPeriod >= 14) ||
         (period >= 14 && period <= 17) ||
@@ -745,7 +763,12 @@ export default function FourTwoYear() {
     const periods: number[] = [];
     for (let i = 0; i < totalPeriods; i++) {
       let currentPeriod = period + i;
-      if (day === 2 && currentPeriod >= 14 && currentPeriod <= 17) {
+      if (
+        !isTerm3Preview &&
+        day === 2 &&
+        currentPeriod >= 14 &&
+        currentPeriod <= 17
+      ) {
         continue;
       }
       periods.push(currentPeriod);
@@ -829,24 +852,25 @@ export default function FourTwoYear() {
               onRemoveAssignment={handleRemoveAssignment}
               activeSubject={activeSubject}
               dragOverCell={dragOverCell}
+              termYear={termYear || ""}
             />
           </div>
+          <PlansStatusCustom
+            termYear={termYear || ""}
+            yearLevel="ปี 2"
+            planType="FOUR_YEAR"
+            plans={plans}
+            assignments={tableAssignments}
+            assignedCount={assignedSubjectsCount}
+            onRemoveAssignment={handleRemoveAssignment}
+            onSplitSubject={handleSplitSubject}
+            onMergeSubject={handleMergeSubject}
+            conflicts={conflicts}
+            onSubjectUpdate={handleSubjectUpdate}
+            dragFailedSubjectId={dragFailedSubjectId}
+            onDragFailedReset={() => setDragFailedSubjectId(null)}
+          />
         </div>
-        <PlansStatusCustom
-          termYear={termYear || ""}
-          yearLevel="ปี 2"
-          planType="FOUR_YEAR"
-          plans={plans}
-          assignments={tableAssignments}
-          assignedCount={assignedSubjectsCount}
-          onRemoveAssignment={handleRemoveAssignment}
-          onSplitSubject={handleSplitSubject}
-          onMergeSubject={handleMergeSubject}
-          conflicts={conflicts}
-          onSubjectUpdate={handleSubjectUpdate}
-          dragFailedSubjectId={dragFailedSubjectId}
-          onDragFailedReset={() => setDragFailedSubjectId(null)}
-        />
       </div>
 
       <DragOverlay>

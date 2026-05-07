@@ -90,6 +90,7 @@ function TimeTableCustomInternal({
   onRemoveRecord = null,
   activeSubject = null,
   dragOverCell = null,
+  termYear,
 }: {
   plans: any[];
   assignments: { [subjectId: number]: AssignmentValue };
@@ -97,7 +98,9 @@ function TimeTableCustomInternal({
   onRemoveRecord?: ((recordId: number) => void) | null;
   activeSubject?: any;
   dragOverCell?: { day: number; period: number } | null;
+  termYear?: string;
 }) {
+  const isTerm3 = typeof termYear === "string" && termYear.startsWith("3/");
   const days = ["จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา."];
 
   const baseSection = (section: string) => (section || "").replace(/-\d+$/, "");
@@ -138,7 +141,7 @@ function TimeTableCustomInternal({
 
       let isConsecutive = true;
       for (let i = firstPeriod; i < lastPeriod; i++) {
-        if (day === 2 && i >= 14 && i <= 17) continue;
+        if (!isTerm3 && day === 2 && i >= 14 && i <= 17) continue;
         if (!sortedPeriods.includes(i)) {
           isConsecutive = false;
           break;
@@ -209,7 +212,7 @@ function TimeTableCustomInternal({
     for (let i = 0; i < totalPeriods; i++) {
       const currentPeriod = startPeriod + i;
 
-      if (day === 2 && currentPeriod >= 14 && currentPeriod <= 17) {
+      if (!isTerm3 && day === 2 && currentPeriod >= 14 && currentPeriod <= 17) {
         continue;
       }
 
@@ -236,7 +239,7 @@ function TimeTableCustomInternal({
 
     const skipCells: string[] = [];
     for (let p = firstPeriod + 1; p <= lastPeriod; p++) {
-      if (day === 2 && p >= 14 && p <= 17) continue;
+      if (!isTerm3 && day === 2 && p >= 14 && p <= 17) continue;
       skipCells.push(`${day}-${p}`);
     }
 
@@ -304,7 +307,7 @@ function TimeTableCustomInternal({
             <tr key={rowIdx}>
               <td className="border text-center text-xs w-[72px]">{day}</td>
               {Array.from({ length: 25 }, (_, colIdx) => {
-                if (rowIdx === 2 && colIdx === 14) {
+                if (!isTerm3 && rowIdx === 2 && colIdx === 14) {
                   return (
                     <td
                       key={`activity-${rowIdx}-${colIdx}`}
@@ -316,7 +319,7 @@ function TimeTableCustomInternal({
                   );
                 }
 
-                if (rowIdx === 2 && colIdx > 14 && colIdx < 18) {
+                if (!isTerm3 && rowIdx === 2 && colIdx > 14 && colIdx < 18) {
                   return null;
                 }
 
@@ -608,6 +611,7 @@ export default function TimeTableCustom({
   onRemoveRecord = null,
   activeSubject = null,
   dragOverCell = null,
+  termYear,
 }: {
   plans?: any[];
   assignments?: { [subjectId: number]: AssignmentValue };
@@ -615,6 +619,7 @@ export default function TimeTableCustom({
   onRemoveRecord?: ((recordId: number) => void) | null;
   activeSubject?: any;
   dragOverCell?: { day: number; period: number } | null;
+  termYear?: string;
 }) {
   return (
     <TimeTableErrorBoundary
@@ -629,6 +634,7 @@ export default function TimeTableCustom({
         onRemoveRecord={onRemoveRecord}
         activeSubject={activeSubject}
         dragOverCell={dragOverCell}
+        termYear={termYear}
       />
     </TimeTableErrorBoundary>
   );

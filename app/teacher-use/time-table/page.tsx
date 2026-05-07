@@ -226,6 +226,7 @@ export default function TimeTablePage() {
                 cellColspan={cellColspan}
                 cellSkip={cellSkip}
                 combinedHoursMap={combinedHoursMap}
+                termYear={currentTermYear}
               />
             ) : (
               <div className="text-center py-8">
@@ -255,12 +256,15 @@ function MyTimetable({
   cellColspan,
   cellSkip,
   combinedHoursMap,
+  termYear,
 }: {
   cellToSubject: { [cellKey: string]: any };
   cellColspan: { [cellKey: string]: number };
   cellSkip: Set<string>;
   combinedHoursMap: Map<string, { lectureHour: number; labHour: number }>;
+  termYear?: string;
 }) {
+  const isTerm3 = typeof termYear === "string" && termYear.startsWith("3/");
   const days = ["จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา."];
 
   return (
@@ -272,10 +276,22 @@ function MyTimetable({
             {Array.from({ length: 25 }, (_, i) => (
               <th
                 key={i}
-                className="border px-2 py-1 text-xs"
+                className="border px-1 py-1 text-xs"
                 style={{ width: `${100 / 25}%` }}
               >
-                {i + 1}
+                <div className="font-semibold text-center">{i + 1}</div>
+                <div className="text-[7px] font-normal text-muted-foreground leading-tight text-center">
+                  {(() => {
+                    const startMinutes = 8 * 60 + i * 30;
+                    const endMinutes = startMinutes + 30;
+                    const fmt = (m: number) => {
+                      const h = Math.floor(m / 60);
+                      const min = m % 60;
+                      return `${h.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`;
+                    };
+                    return `${fmt(startMinutes)}-${fmt(endMinutes)}`;
+                  })()}
+                </div>
               </th>
             ))}
           </tr>
@@ -289,7 +305,7 @@ function MyTimetable({
               {Array.from({ length: 25 }, (_, colIdx) => {
                 const period = colIdx;
 
-                if (dayIndex === 2 && period === 14) {
+                if (!isTerm3 && dayIndex === 2 && period === 14) {
                   return (
                     <td
                       key={`activity-${dayIndex}-${period}`}
@@ -301,7 +317,7 @@ function MyTimetable({
                   );
                 }
 
-                if (dayIndex === 2 && period > 14 && period <= 17) {
+                if (!isTerm3 && dayIndex === 2 && period > 14 && period <= 17) {
                   return null;
                 }
 
