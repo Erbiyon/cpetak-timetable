@@ -75,7 +75,7 @@ export default function AutoTimetableButton({
         return totalHoursB - totalHoursA;
       });
 
-      const activityPeriods = [14, 15, 16, 17];
+      const activityPeriods = isTerm3 ? [] : [14, 15, 16, 17];
       const MAX_DAYS = 7;
       const MAX_PERIODS = 25;
       const dayNames = [

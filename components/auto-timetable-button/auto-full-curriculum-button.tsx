@@ -35,7 +35,8 @@ function AutoFullCurriculumButtonInternal({
         ? [planType]
         : ["FOUR_YEAR", "TRANSFER", "DVE-LVC"];
 
-      const activityPeriods = [14, 15, 16, 17];
+      const isTerm3 = typeof termYear === "string" && termYear.startsWith("3/");
+      const activityPeriods = isTerm3 ? [] : [14, 15, 16, 17];
       const MAX_DAYS = 7;
       const MAX_PERIODS = 25;
       const dayNames = [
