@@ -128,7 +128,7 @@ export default function PlansStatusCustom({
 
   if (filteredPlans.length === 0) {
     return (
-      <div className="flex gap-4 mx-auto my-5 max-w-7xl">
+      <div className="mx-8 mt-4 mb-0">
         <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-6 flex-col gap-4">
           <div className="flex justify-between items-center mb-4">
             <div className="font-semibold">
@@ -163,7 +163,7 @@ export default function PlansStatusCustom({
 
   return (
     <>
-      <div className="mx-auto my-5 max-w-7xl">
+      <div className="mx-8 mt-4 mb-0">
         <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-6 flex-col gap-4">
           <div className="flex justify-between items-center mb-4">
             <div className="font-semibold">
