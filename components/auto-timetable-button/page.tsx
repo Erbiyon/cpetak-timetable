@@ -135,12 +135,20 @@ export default function AutoTimetableButton({
 
             if (isTerm3) {
               const selfEntries = multiAssignments[subject.id] || [];
-              const selfOverlap = selfEntries.some(
-                (e) =>
-                  e.day === day &&
-                  neededPeriods.some((p) => e.periods.includes(p)),
-              );
-              if (selfOverlap) continue;
+              const selfConflict = selfEntries.some((e) => {
+                if (e.day !== day) return false;
+                if (neededPeriods.some((p) => e.periods.includes(p)))
+                  return true;
+                const minNew = Math.min(...neededPeriods);
+                const maxNew = Math.max(...neededPeriods);
+                const minExisting = Math.min(...e.periods);
+                const maxExisting = Math.max(...e.periods);
+                return (
+                  (maxNew + 2 >= minExisting && maxNew < minExisting) ||
+                  (minNew <= maxExisting + 2 && minNew > maxExisting)
+                );
+              });
+              if (selfConflict) continue;
             }
 
             let hasConflict = false;

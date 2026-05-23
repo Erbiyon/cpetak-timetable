@@ -134,7 +134,7 @@ function AutoFullCurriculumButtonInternal({
                 currentAssignments[tt.planId] = [];
               const periods: number[] = [];
               for (let p = tt.startPeriod; p <= tt.endPeriod; p++) {
-                if (tt.day === 2 && p >= 14 && p <= 17) continue;
+                if (!isTerm3 && tt.day === 2 && p >= 14 && p <= 17) continue;
                 periods.push(p);
               }
               currentAssignments[tt.planId].push({ day: tt.day, periods });
@@ -196,12 +196,20 @@ function AutoFullCurriculumButtonInternal({
 
                   if (isTerm3) {
                     const selfEntries = currentAssignments[subject.id] || [];
-                    const selfOverlap = selfEntries.some(
-                      (e) =>
-                        e.day === day &&
-                        neededPeriods.some((p) => e.periods.includes(p)),
-                    );
-                    if (selfOverlap) continue;
+                    const selfConflict = selfEntries.some((e) => {
+                      if (e.day !== day) return false;
+                      if (neededPeriods.some((p) => e.periods.includes(p)))
+                        return true;
+                      const minNew = Math.min(...neededPeriods);
+                      const maxNew = Math.max(...neededPeriods);
+                      const minExisting = Math.min(...e.periods);
+                      const maxExisting = Math.max(...e.periods);
+                      return (
+                        (maxNew + 2 >= minExisting && maxNew < minExisting) ||
+                        (minNew <= maxExisting + 2 && minNew > maxExisting)
+                      );
+                    });
+                    if (selfConflict) continue;
                   }
 
                   let hasConflict = false;
