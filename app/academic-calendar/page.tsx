@@ -237,7 +237,7 @@ export default function AcademicCalendar() {
                         return;
                       }
                       if (newEnd && newStart && newEnd < newStart) {
-                        showDialog("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
+                        showDialog("วันเริ่มต้นต้องไม่ใหม่กว่าวันสิ้นสุด");
                         return;
                       }
                       setTerm1((t) => ({ ...t, start: date }));
@@ -304,7 +304,7 @@ export default function AcademicCalendar() {
                         return;
                       }
                       if (newEnd && newStart && newEnd < newStart) {
-                        showDialog("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
+                        showDialog("วันเริ่มต้นต้องไม่ใหม่กว่าวันสิ้นสุด");
                         return;
                       }
                       setTerm2((t) => ({ ...t, start: date }));
@@ -371,7 +371,7 @@ export default function AcademicCalendar() {
                         return;
                       }
                       if (newEnd && newStart && newEnd < newStart) {
-                        showDialog("วันสิ้นสุดต้องไม่เก่ากว่าวันเริ่มต้น");
+                        showDialog("วันเริ่มต้นต้องไม่ใหม่กว่าวันสิ้นสุด");
                         return;
                       }
                       setTerm3((t) => ({ ...t, start: date }));

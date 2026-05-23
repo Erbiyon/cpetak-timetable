@@ -157,7 +157,7 @@ export default function FourFourYear() {
               const periods: number[] = [];
               for (let p = item.startPeriod; p <= item.endPeriod; p++) {
                 if (
-                  !termYear?.startsWith("3/") &&
+                  !termData.termYear?.startsWith("3/") &&
                   item.day === 2 &&
                   p >= 14 &&
                   p <= 17
