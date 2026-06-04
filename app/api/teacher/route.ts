@@ -12,6 +12,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const duplicate = await prisma.teacher_tb.findFirst({
+      where: {
+        tName: body.tName.trim(),
+        tLastName: body.tLastName.trim(),
+      },
+    });
+
+    if (duplicate) {
+      return NextResponse.json(
+        { error: `อาจารย์ ${body.tName.trim()} ${body.tLastName.trim()} มีอยู่ในระบบแล้ว` },
+        { status: 409 },
+      );
+    }
+
     const teacherType = body.teacherType || "อาจารย์ภายนอกสาขา";
 
     let tId = body.tId;

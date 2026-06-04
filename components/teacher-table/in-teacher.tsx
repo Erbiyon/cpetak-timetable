@@ -173,7 +173,7 @@ export default function InTeacher() {
     <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-3 mx-5 py-5 shadow-sm">
       <div className="flex justify-between items-center mx-8">
         <h2 className="text-xl font-bold">
-          เพิ่มชื่ออาจารย์ให้วิชาภายในสาขา
+          กำหนดผู้สอนในแต่ละรายวิชาภายในสาขา
           {termYear && (
             <span className="text-sm font-normal text-muted-foreground ml-2">
               ({termYear})

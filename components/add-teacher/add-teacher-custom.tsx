@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -33,6 +33,24 @@ export function AddTeacherCustom({
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({})
     const closeRef = useRef<HTMLButtonElement>(null)
     const [open, setOpen] = useState(false)
+    const [existingNames, setExistingNames] = useState<{ tName: string; tLastName: string }[]>([])
+
+    useEffect(() => {
+        if (!open) return;
+        fetch("/api/teacher")
+            .then((r) => r.json())
+            .then((teachers: { tName: string; tLastName: string }[]) => setExistingNames(teachers))
+            .catch(() => setExistingNames([]));
+    }, [open]);
+
+    const isDuplicate =
+        form.tName.trim() !== "" &&
+        form.tLastName.trim() !== "" &&
+        existingNames.some(
+            (t) =>
+                t.tName.trim().toLowerCase() === form.tName.trim().toLowerCase() &&
+                t.tLastName.trim().toLowerCase() === form.tLastName.trim().toLowerCase()
+        );
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value })
@@ -117,6 +135,9 @@ export function AddTeacherCustom({
                             </div>
                         </div>
                         {fieldErrors.api && <span className="text-red-500 text-xs">{fieldErrors.api}</span>}
+                        {isDuplicate && (
+                            <span className="text-red-500 text-xs">อาจารย์ชื่อนี้มีอยู่ในระบบแล้ว</span>
+                        )}
 
                         <div className="text-xs text-muted-foreground mt-2 border-t pt-2">
                             หมายเหตุ: ข้อมูลจะถูกบันทึกเป็น{teacherType}
@@ -133,7 +154,7 @@ export function AddTeacherCustom({
                                 ยกเลิก
                             </Button>
                         </DialogClose>
-                        <Button type="submit" disabled={loading}>
+                        <Button type="submit" disabled={loading || isDuplicate}>
                             {loading ? "กำลังเพิ่ม..." : "เพิ่ม"}
                         </Button>
                     </DialogFooter>
