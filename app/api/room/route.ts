@@ -39,6 +39,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const existing = await prisma.room_tb.findFirst({
+      where: {
+        roomCode: roomCode.trim(),
+        roomType: roomType.trim(),
+      },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        { error: `ห้อง ${roomCode.trim()} ในอาคาร ${roomType.trim()} มีอยู่แล้ว` },
+        { status: 409 },
+      );
+    }
+
     const room = await prisma.room_tb.create({
       data: {
         roomCode: roomCode.trim(),

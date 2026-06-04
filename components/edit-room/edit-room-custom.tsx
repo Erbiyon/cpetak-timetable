@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -33,6 +33,26 @@ export default function EditRoomCustom({
     const [roomNumber, setRoomNumber] = useState(roomCode);
     const [roomCategory, setRoomCategory] = useState(roomCate || "บรรยาย");
     const [updating, setUpdating] = useState(false);
+    const [existingCodes, setExistingCodes] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (!open) return;
+        fetch("/api/room")
+            .then((r) => r.json())
+            .then((rooms: { roomCode: string; roomType: string }[]) => {
+                const buildingType = roomType.trim().toLowerCase();
+                setExistingCodes(
+                    rooms
+                        .filter((r) => r.roomType.trim().toLowerCase() === buildingType)
+                        .map((r) => r.roomCode.trim().toLowerCase())
+                );
+            })
+            .catch(() => setExistingCodes([]));
+    }, [open, roomType]);
+
+    const isDuplicate =
+        roomNumber.trim().toLowerCase() !== roomCode.trim().toLowerCase() &&
+        existingCodes.includes(roomNumber.trim().toLowerCase());
 
     const handleSubmit = async () => {
         if (!roomNumber.trim()) {
@@ -101,10 +121,15 @@ export default function EditRoomCustom({
                             id="roomNumber"
                             value={roomNumber}
                             onChange={(e) => setRoomNumber(e.target.value)}
-                            className="col-span-3"
+                            className={`col-span-3 ${isDuplicate ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                             placeholder="กรอกเลขห้อง"
                             disabled={updating}
                         />
+                        {isDuplicate && (
+                            <p className="col-span-3 col-start-2 text-xs text-red-500">
+                                ห้องนี้มีอยู่แล้ว
+                            </p>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -143,7 +168,7 @@ export default function EditRoomCustom({
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={updating || !roomNumber.trim()}
+                        disabled={updating || !roomNumber.trim() || isDuplicate}
                     >
                         {updating ? (
                             <>

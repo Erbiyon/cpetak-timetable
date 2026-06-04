@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -24,6 +24,26 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
     const [roomNumber, setRoomNumber] = useState("");
     const [roomCategory, setRoomCategory] = useState("บรรยาย");
     const [adding, setAdding] = useState(false);
+    const [existingCodes, setExistingCodes] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (!open) return;
+        fetch("/api/room")
+            .then((r) => r.json())
+            .then((rooms: { roomCode: string; roomType: string }[]) => {
+                const buildingType = (title || "ทั่วไป").trim().toLowerCase();
+                setExistingCodes(
+                    rooms
+                        .filter((r) => r.roomType.trim().toLowerCase() === buildingType)
+                        .map((r) => r.roomCode.trim().toLowerCase())
+                );
+            })
+            .catch(() => setExistingCodes([]));
+    }, [open, title]);
+
+    const isDuplicate =
+        roomNumber.trim() !== "" &&
+        existingCodes.includes(roomNumber.trim().toLowerCase());
 
     const handleSubmit = async () => {
         if (!roomNumber.trim()) {
@@ -44,17 +64,15 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
             });
 
             if (res.ok) {
-
                 setRoomNumber("");
                 setRoomCategory("บรรยาย");
                 setOpen(false);
-
-
                 if (onRoomAdded) {
                     onRoomAdded();
                 }
             } else {
-                alert("เกิดข้อผิดพลาดในการเพิ่มห้อง");
+                const data = await res.json().catch(() => ({}));
+                alert(data.error || "เกิดข้อผิดพลาดในการเพิ่มห้อง");
             }
         } catch (error) {
             console.error("Error adding room:", error);
@@ -64,8 +82,17 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
         }
     };
 
+    const handleOpenChange = (val: boolean) => {
+        if (!val) {
+            setRoomNumber("");
+            setRoomCategory("บรรยาย");
+            setExistingCodes([]);
+        }
+        setOpen(val);
+    };
+
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="outline">เพิ่มห้องใหม่</Button>
             </DialogTrigger>
@@ -84,10 +111,15 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
                             id="roomNumber"
                             value={roomNumber}
                             onChange={(e) => setRoomNumber(e.target.value)}
-                            className="col-span-3"
+                            className={`col-span-3 ${isDuplicate ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                             placeholder="กรอกเลขห้อง"
                             disabled={adding}
                         />
+                        {isDuplicate && (
+                            <p className="col-span-3 col-start-2 text-xs text-red-500">
+                                ห้องนี้มีอยู่แล้ว
+                            </p>
+                        )}
                     </div>
 
                     {title && (
@@ -132,7 +164,7 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={adding || !roomNumber.trim()}
+                        disabled={adding || !roomNumber.trim() || isDuplicate}
                     >
                         {adding ? (
                             <>

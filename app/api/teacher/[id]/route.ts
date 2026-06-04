@@ -62,6 +62,21 @@ export async function PUT(
       );
     }
 
+    const duplicate = await prisma.teacher_tb.findFirst({
+      where: {
+        tName: tName.trim(),
+        tLastName: tLastName.trim(),
+        NOT: { id: numId },
+      },
+    });
+
+    if (duplicate) {
+      return NextResponse.json(
+        { error: `อาจารย์ ${tName.trim()} ${tLastName.trim()} มีอยู่ในระบบแล้ว` },
+        { status: 409 },
+      );
+    }
+
     const updatedTeacher = await prisma.teacher_tb.update({
       where: { id: numId },
       data: {

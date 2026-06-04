@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Pencil } from "lucide-react"
 import {
@@ -34,6 +34,26 @@ export default function EditTeacherButtonCustom({
     const [loading, setLoading] = useState(false)
     const [open, setOpen] = useState(false)
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({})
+    const [existingNames, setExistingNames] = useState<{ tName: string; tLastName: string }[]>([])
+
+    useEffect(() => {
+        if (!open) return;
+        fetch("/api/teacher")
+            .then((r) => r.json())
+            .then((teachers: { tName: string; tLastName: string }[]) => setExistingNames(teachers))
+            .catch(() => setExistingNames([]));
+    }, [open]);
+
+    const isDuplicate =
+        form.tName.trim() !== "" &&
+        form.tLastName.trim() !== "" &&
+        (form.tName.trim().toLowerCase() !== teacher.tName.trim().toLowerCase() ||
+            form.tLastName.trim().toLowerCase() !== teacher.tLastName.trim().toLowerCase()) &&
+        existingNames.some(
+            (t) =>
+                t.tName.trim().toLowerCase() === form.tName.trim().toLowerCase() &&
+                t.tLastName.trim().toLowerCase() === form.tLastName.trim().toLowerCase()
+        );
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value })
@@ -115,6 +135,9 @@ export default function EditTeacherButtonCustom({
                         {fieldErrors.api && (
                             <div className="text-red-500 text-xs">{fieldErrors.api}</div>
                         )}
+                        {isDuplicate && (
+                            <div className="text-red-500 text-xs">อาจารย์ชื่อนี้มีอยู่ในระบบแล้ว</div>
+                        )}
                     </div>
                     <DialogFooter className="pt-4">
                         <DialogClose asChild>
@@ -126,7 +149,7 @@ export default function EditTeacherButtonCustom({
                                 ยกเลิก
                             </Button>
                         </DialogClose>
-                        <Button type="submit" disabled={loading}>
+                        <Button type="submit" disabled={loading || isDuplicate}>
                             {loading ? "กำลังบันทึก..." : "บันทึก"}
                         </Button>
                     </DialogFooter>

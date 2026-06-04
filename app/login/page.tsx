@@ -210,10 +210,6 @@ export default function LoginPage() {
                         )}
                       </Button>
                     </div>
-                    <div className="text-xs sm:text-sm text-gray-500">
-                      <span className="text-red-500">*</span>{" "}
-                      รหัสผ่านคือรหัสประจำตัวอาจารย์เดียวกัน
-                    </div>
                   </div>
                   <div className="flex items-center space-x-2 py-2">
                     <Checkbox
