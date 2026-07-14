@@ -349,26 +349,6 @@ pnpm prisma generate        # Regenerate Prisma Client
 
 ---
 
-## 🤝 Contributing
-
-### การเริ่มต้น Contribute
-
-1. Fork repository
-2. สร้าง feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit การเปลี่ยนแปลง (`git commit -m 'Add amazing feature'`)
-4. Push ไปที่ branch (`git push origin feature/amazing-feature`)
-5. เปิด Pull Request
-
-### แนวทางการเขียนโค้ด
-
-- ตั้งชื่อ component ตาม feature ที่รับผิดชอบ
-- แยก business logic ไว้ใน `utils/` หรือ `lib/`
-- ใช้ shadcn/ui components เป็นหลักสำหรับ UI
-- เขียน TypeScript types ไว้ใน `types/` สำหรับ shared types
-- ใช้ Prisma สำหรับ database operations ทั้งหมด
-
----
-
 ## 📝 Database Schema
 
 ### Entity Relationship
