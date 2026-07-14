@@ -400,6 +400,7 @@ erDiagram
         string subject_name
         int credit
     }
+    
 ```
 
 <p align="center">
