@@ -402,14 +402,6 @@ erDiagram
     }
 ```
 
----
-
-## 📄 License
-
-This project is private and proprietary.
-
----
-
 <p align="center">
   Made with ❤️ by <strong>DekCom</strong>
 </p>
