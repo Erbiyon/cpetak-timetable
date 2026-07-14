@@ -1,5 +1,14 @@
 # 📅 ระบบจัดตารางเรียน (Timetable System)
 
+![Next.js](https://img.shields.io/badge/Next.js-15.5.9-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![NextAuth.js](https://img.shields.io/badge/NextAuth.js-4.24-B845ED?style=for-the-badge&logo=auth0&logoColor=white)
+![pnpm](https://img.shields.io/badge/pnpm-latest-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
+
 ระบบจัดตารางเรียนอัตโนมัติ สำหรับสถาบันการศึกษา พัฒนาด้วย Next.js 15 และ Prisma ORM รองรับการจัดตารางเรียนหลายหลักสูตร (หลักสูตร 4 ปี, เทียบโอน, อาชีวศึกษา) พร้อมระบบจัดการห้องเรียน อาจารย์ผู้สอน และปฏิทินการศึกษา พร้อมรองรับ **การสอนร่วม (Co-Teaching)** และ **การ Export ตารางเป็น Excel**
 
 > จัดทำโดย **DekCom**
@@ -337,6 +346,26 @@ pnpm prisma generate        # Regenerate Prisma Client
 
 - ESLint กับ `next` configuration
 - ปิด `react/no-unescaped-entities` และ `@next/next/no-page-custom-font` rules
+
+---
+
+## 🤝 Contributing
+
+### การเริ่มต้น Contribute
+
+1. Fork repository
+2. สร้าง feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit การเปลี่ยนแปลง (`git commit -m 'Add amazing feature'`)
+4. Push ไปที่ branch (`git push origin feature/amazing-feature`)
+5. เปิด Pull Request
+
+### แนวทางการเขียนโค้ด
+
+- ตั้งชื่อ component ตาม feature ที่รับผิดชอบ
+- แยก business logic ไว้ใน `utils/` หรือ `lib/`
+- ใช้ shadcn/ui components เป็นหลักสำหรับ UI
+- เขียน TypeScript types ไว้ใน `types/` สำหรับ shared types
+- ใช้ Prisma สำหรับ database operations ทั้งหมด
 
 ---
 
