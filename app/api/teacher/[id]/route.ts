@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/api-auth";
+import { TeacherService } from "@/features/teachers/services/teacher.service";
+import { validateUpdateTeacherInput } from "@/features/teachers/validations";
 
 export async function GET(
   _request: NextRequest,
@@ -14,21 +15,12 @@ export async function GET(
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
     }
 
-    const teacher = await prisma.teacher_tb.findUnique({
-      where: { id: teacherId },
-      select: {
-        id: true,
-        tId: true,
-        tName: true,
-        tLastName: true,
-        teacherType: true,
-      },
-    });
+    const teacher = await TeacherService.getTeacherById(teacherId);
 
     if (!teacher) {
       return NextResponse.json(
         { error: "ไม่พบข้อมูลอาจารย์" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -37,7 +29,7 @@ export async function GET(
     console.error("Error fetching teacher:", error);
     return NextResponse.json(
       { error: "เกิดข้อผิดพลาดในการดึงข้อมูล" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -59,43 +51,29 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { tName, tLastName } = body;
+    const validation = validateUpdateTeacherInput(body);
 
-    if (!tName || !tLastName) {
+    if (!validation.success || !validation.data) {
       return NextResponse.json(
-        { error: "กรุณากรอกข้อมูลให้ครบถ้วน" },
-        { status: 400 },
+        { error: validation.error || "กรุณากรอกข้อมูลให้ครบถ้วน" },
+        { status: 400 }
       );
     }
 
-    const duplicate = await prisma.teacher_tb.findFirst({
-      where: {
-        tName: tName.trim(),
-        tLastName: tLastName.trim(),
-        NOT: { id: numId },
-      },
-    });
+    const result = await TeacherService.updateTeacher(numId, validation.data);
 
-    if (duplicate) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: `อาจารย์ ${tName.trim()} ${tLastName.trim()} มีอยู่ในระบบแล้ว` },
-        { status: 409 },
+        { error: result.error },
+        { status: result.statusCode || 400 }
       );
     }
 
-    const updatedTeacher = await prisma.teacher_tb.update({
-      where: { id: numId },
-      data: {
-        tName,
-        tLastName,
-      },
-    });
-
-    return NextResponse.json(updatedTeacher, { status: 200 });
+    return NextResponse.json(result.teacher, { status: 200 });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "เกิดข้อผิดพลาด" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -116,15 +94,13 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
     }
 
-    const deleted = await prisma.teacher_tb.delete({
-      where: { id: numId },
-    });
+    const result = await TeacherService.deleteTeacher(numId);
 
-    return NextResponse.json(deleted, { status: 200 });
+    return NextResponse.json(result.deletedTeacher, { status: 200 });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "เกิดข้อผิดพลาด" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
