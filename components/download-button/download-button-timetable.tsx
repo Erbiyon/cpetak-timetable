@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
-import ExcelJS from "exceljs";
-import { Download } from "lucide-react";
+import React, { useState } from "react";
+import type ExcelJS from "exceljs";
+import { Download, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 
 type ScheduleData = {
@@ -79,6 +79,7 @@ export default function DownloadButtonTimetable({
   timetables = [],
   onRefreshData,
 }: DownloadTeacherButtonProps) {
+  const [isExporting, setIsExporting] = useState(false);
   const getCurriculumInfo = () => {
     if (timetables.length === 0)
       return { curriculum: "หลักสูตรไม่ระบุ", filePrefix: "ตารางเรียน" };
@@ -721,6 +722,8 @@ export default function DownloadButtonTimetable({
   };
 
   const generateExcelDownload = async () => {
+    if (isExporting) return;
+
     try {
       if (onRefreshData) {
         await onRefreshData();
@@ -731,7 +734,13 @@ export default function DownloadButtonTimetable({
         return;
       }
 
-      const workbook = new ExcelJS.Workbook();
+      setIsExporting(true);
+
+      // On-demand dynamic loading of ExcelJS
+      const excelModule = await import("exceljs");
+      const ExcelJSClass = excelModule.default || excelModule;
+
+      const workbook = new ExcelJSClass.Workbook();
       const worksheet = initializeWorksheet(workbook);
 
       // Fetch out_credit from curriculum
@@ -758,6 +767,8 @@ export default function DownloadButtonTimetable({
     } catch (error) {
       console.error("Error generating Excel file:", error);
       alert("เกิดข้อผิดพลาดในการสร้างไฟล์ Excel กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -768,10 +779,18 @@ export default function DownloadButtonTimetable({
       variant="secondary"
       onClick={generateExcelDownload}
       className="flex items-center gap-2"
-      disabled={!hasData}
+      disabled={!hasData || isExporting}
     >
-      <Download className="h-4 w-4" />
-      {hasData ? "ดาวน์โหลดตารางสอน" : "ไม่มีข้อมูลตารางเรียน"}
+      {isExporting ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Download className="h-4 w-4" />
+      )}
+      {isExporting
+        ? "กำลังสร้างไฟล์ Excel..."
+        : hasData
+          ? "ดาวน์โหลดตารางสอน"
+          : "ไม่มีข้อมูลตารางเรียน"}
     </Button>
   );
 }
