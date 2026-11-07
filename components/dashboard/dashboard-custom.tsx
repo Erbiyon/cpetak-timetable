@@ -249,7 +249,7 @@ export default function DashboardCustom() {
                 <Clock className="h-3.5 w-3.5 text-foreground" />
                 เวลาปัจจุบัน
               </div>
-              <DashboardClock className="text-sm font-semibold text-foreground font-mono" />
+              <DashboardClock className="text-sm font-semibold text-foreground font-sans tracking-tight" />
               {currentTermYear && (
                 <div className="text-xs font-medium text-foreground mt-0.5">
                   ภาคการศึกษาที่ {currentTermYear}
