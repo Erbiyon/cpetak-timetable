@@ -2,6 +2,8 @@
  * Pure calculation utilities for timetable scheduling and validations.
  */
 
+import { AssignmentEntry } from "../types";
+
 export interface PeriodRange {
   startPeriod: number;
   endPeriod: number;
@@ -67,5 +69,34 @@ export function calculateAssignmentPeriods(
 
   return periods;
 }
+
+/**
+ * Checks if a candidate assignment (day, periods) overlaps with any existing multi-assignment entries.
+ * Ignores entries for the active subject itself unless checking self-overlap.
+ */
+export function hasMultiAssignmentOverlap(
+  tableAssignments: Record<number, AssignmentEntry[] | null>,
+  activeSubjectId: number,
+  day: number,
+  periods: number[]
+): { hasOverlap: boolean; overlappingSubjectId?: number } {
+  for (const [subjIdStr, entries] of Object.entries(tableAssignments)) {
+    const existingSubjectId = parseInt(subjIdStr, 10);
+    if (existingSubjectId === activeSubjectId || !entries) continue;
+
+    const list = Array.isArray(entries) ? entries : [entries];
+    for (const entry of list) {
+      if (entry && entry.day === day) {
+        const overlap = periods.some((p) => entry.periods.includes(p));
+        if (overlap) {
+          return { hasOverlap: true, overlappingSubjectId: existingSubjectId };
+        }
+      }
+    }
+  }
+
+  return { hasOverlap: false };
+}
+
 
 

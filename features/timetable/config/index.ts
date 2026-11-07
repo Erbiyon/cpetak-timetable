@@ -30,20 +30,20 @@ export const TIMETABLE_CONFIGS: Record<string, TimetableConfig> = {
   // Transfer Curriculum (เทียบโอน ปี 1 - 3)
   "transfer-one-year": {
     planType: "TRANSFER",
-    yearLevel: "1",
-    title: "จัดตารางสอน แผนเทียบโอน ชั้นปีที่ 1",
+    yearLevel: "ปี 1",
+    title: "ตารางเรียน เทียบโอน ปี 1",
     isMultiAssignment: true,
   },
   "transfer-two-year": {
     planType: "TRANSFER",
-    yearLevel: "2",
-    title: "จัดตารางสอน แผนเทียบโอน ชั้นปีที่ 2",
+    yearLevel: "ปี 2",
+    title: "ตารางเรียน เทียบโอน ปี 2",
     isMultiAssignment: true,
   },
   "transfer-three-year": {
     planType: "TRANSFER",
-    yearLevel: "3",
-    title: "จัดตารางสอน แผนเทียบโอน ชั้นปีที่ 3",
+    yearLevel: "ปี 3",
+    title: "ตารางเรียน เทียบโอน ปี 3",
     isMultiAssignment: true,
   },
 
