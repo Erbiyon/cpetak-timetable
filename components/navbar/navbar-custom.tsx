@@ -87,7 +87,7 @@ export function NavigationMenuCustom() {
     },
     {
       title: "จัดตารางเรียน เทียบโอน",
-      icon: <Table size={16} color="#0000ff" className="mr-2" />,
+      icon: <Table size={16} className="mr-2 text-blue-600 dark:text-blue-400" />,
       items: [
         {
           href: "/adjust-time-tables/adjust-plan-transfer/transfer-one-year",
@@ -167,69 +167,81 @@ export function NavigationMenuCustom() {
 
   return (
     <>
-      <div className="sticky top-0 left-0 w-full z-50 bg-card border-b p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center justify-between">
+      <div className="sticky top-0 left-0 w-full z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-xs px-4 py-3">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
+          <div className="flex items-center gap-3">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-6 w-6" />
+                <Button variant="outline" size="icon" className="h-9 w-9 border-border hover:bg-accent cursor-pointer" aria-label="เปิดเมนูหลัก">
+                  <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[300px] overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>เมนู</SheetTitle>
+              <SheetContent side="left" className="w-[310px] overflow-y-auto p-4 border-r border-border bg-card">
+                <SheetHeader className="pb-3 border-b border-border">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-md bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">
+                      CP
+                    </div>
+                    <div>
+                      <SheetTitle className="text-base font-semibold leading-none">ระบบจัดตารางเรียน</SheetTitle>
+                      <span className="text-xs text-muted-foreground">วิศวกรรมคอมพิวเตอร์</span>
+                    </div>
+                  </div>
                 </SheetHeader>
-                <div className="flex flex-col space-y-4 mt-6">
-                  <div className="px-3 py-2 border-b border-border">
-                    <div className="font-medium text-foreground flex items-center">
-                      <CircleUser className="mr-2 h-4 w-4" />
+                <div className="flex flex-col space-y-3 mt-4">
+                  <div className="p-3 bg-muted/50 rounded-lg border border-border/60">
+                    <div className="font-medium text-foreground flex items-center text-sm">
+                      <CircleUser className="mr-2 h-4 w-4 text-primary" />
                       {session?.user?.name || "ผู้ดูแลระบบ"}
                     </div>
-                    <div className="text-xs text-muted-foreground ml-6">
+                    <div className="text-xs text-muted-foreground ml-6 mt-0.5">
                       {session?.user?.role === "admin"
-                        ? "ผู้ดูแลระบบ"
-                        : "ผู้ใช้"}
+                        ? "สถานะ: ผู้ดูแลระบบ (Admin)"
+                        : "สถานะ: ผู้ใช้งาน"}
                     </div>
                   </div>
 
-                  {menuItems.map((menu) => (
-                    <Collapsible key={menu.title}>
-                      <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-accent rounded-md">
-                        <span className="text-sm font-medium flex">
-                          <span>{menu.icon}</span> {menu.title}
-                        </span>
-                        <span className="text-xs">▼</span>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="ml-4 mt-2 space-y-1">
-                        {menu.items.map((item) => (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setIsOpen(false)}
-                            className="block px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-md"
-                          >
-                            {item.label}
-                          </Link>
-                        ))}
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ))}
+                  <div className="space-y-1">
+                    {menuItems.map((menu) => (
+                      <Collapsible key={menu.title}>
+                        <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-accent/80 rounded-md transition-colors cursor-pointer group">
+                          <span className="text-sm font-medium flex items-center text-foreground group-hover:text-primary transition-colors">
+                            <span>{menu.icon}</span> {menu.title}
+                          </span>
+                          <span className="text-xs text-muted-foreground">▼</span>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="ml-4 mt-1 space-y-0.5 border-l-2 border-border pl-2">
+                          {menu.items.map((item) => (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              onClick={() => setIsOpen(false)}
+                              className="block px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground rounded-md transition-colors"
+                            >
+                              {item.label}
+                            </Link>
+                          ))}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ))}
+                  </div>
 
-                  {singleItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setIsOpen(false)}
-                      className="flex px-3 py-2 text-sm font-medium hover:bg-accent rounded-md"
-                    >
-                      <item.icon size={16} className="mr-2" /> {item.label}
-                    </Link>
-                  ))}
+                  <div className="pt-2 border-t border-border space-y-1">
+                    {singleItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center px-3 py-2 text-sm font-medium hover:bg-accent/80 rounded-md transition-colors text-foreground"
+                      >
+                        <item.icon size={16} className="mr-2 text-primary" /> {item.label}
+                      </Link>
+                    ))}
+                  </div>
 
                   <button
                     onClick={handleSignOut}
-                    className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950 rounded-md transition-colors mt-4"
+                    className="flex items-center w-full px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-md transition-colors mt-4 cursor-pointer"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     ออกจากระบบ
@@ -237,8 +249,11 @@ export function NavigationMenuCustom() {
                 </div>
               </SheetContent>
             </Sheet>
-            <Link href="/dashboard">
-              <h1 className="text-lg font-semibold">ระบบจัดตารางเรียน</h1>
+            <Link href="/dashboard" className="flex items-center gap-2 group">
+              <div className="h-7 w-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs group-hover:opacity-90 transition-opacity">
+                CP
+              </div>
+              <h1 className="text-base font-semibold tracking-tight text-foreground group-hover:text-primary transition-colors">ระบบจัดตารางเรียน</h1>
             </Link>
           </div>
           <div className="flex items-center gap-2">

@@ -130,23 +130,26 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-md mx-auto">
         <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2 dark:text-white">
+          <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-primary text-primary-foreground font-bold text-xl shadow-xs mb-3">
+            CP
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             ระบบจัดตารางเรียน
           </h1>
-          <p className="text-sm sm:text-base dark:text-white">
-            สาขาวิศวกรรมคอมพิวเตอร์
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            สาขาวิศวกรรมคอมพิวเตอร์ คณะวิศวกรรมศาสตร์
           </p>
         </div>
 
         <Tabs defaultValue="teacher-login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="teacher-login" className="text-xs sm:text-sm">
+          <TabsList className="grid w-full grid-cols-2 mb-4 bg-muted p-1 rounded-lg">
+            <TabsTrigger value="teacher-login" className="text-xs sm:text-sm font-medium cursor-pointer">
               อาจารย์
             </TabsTrigger>
-            <TabsTrigger value="admin-login" className="text-xs sm:text-sm">
+            <TabsTrigger value="admin-login" className="text-xs sm:text-sm font-medium cursor-pointer">
               ผู้ดูแลระบบ
             </TabsTrigger>
           </TabsList>

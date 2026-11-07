@@ -201,56 +201,67 @@ export default function DashboardCustom() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r bg-blue-600 dark:bg-card rounded-lg p-6 text-white dark:border">
-        <div className="flex justify-between items-start mb-4">
+      {/* Welcome & System Status Banner */}
+      <div className="bg-primary text-primary-foreground rounded-xl p-6 shadow-sm border border-primary/20">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <div>
-            <h1 className="text-2xl font-bold mb-2">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-medium uppercase tracking-wider text-primary-foreground/80">ระบบจัดตารางเรียนออนไลน์</span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-white">
               ยินดีต้อนรับ, {session?.user?.name || "ผู้ดูแลระบบ"}
             </h1>
-            <p className="text-white">
-              ระบบจัดตารางเรียน สาขาวิศวกรรมคอมพิวเตอร์
+            <p className="text-sm text-primary-foreground/80 mt-1">
+              สาขาวิศวกรรมคอมพิวเตอร์ คณะวิศวกรรมศาสตร์
             </p>
           </div>
-          <div className="text-right">
-            <DashboardClock className="text-sm text-white mb-1" />
+          <div className="text-left sm:text-right bg-black/15 p-3 rounded-lg border border-white/10">
+            <DashboardClock className="text-sm text-white font-medium mb-1" />
             {currentTermYear && (
-              <p className="text-sm text-white">
-                ภาคเรียนที่ {currentTermYear}
+              <p className="text-xs text-primary-foreground/80">
+                ภาคเรียนปัจจุบัน: <strong className="text-white font-semibold">{currentTermYear}</strong>
               </p>
             )}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/15">
           <Badge
             variant="secondary"
-            className="bg-white/20 text-white border-white/30"
+            className="bg-white/20 hover:bg-white/25 text-white border-white/20 font-medium text-xs px-2.5 py-0.5"
           >
-            {session?.user?.role === "admin" ? "ผู้ดูแลระบบ" : "ผู้ใช้"}
+            {session?.user?.role === "admin" ? "ผู้ดูแลระบบ (Admin)" : "ผู้ใช้ทั่วไป"}
           </Badge>
           {currentTermYear && (
             <Badge
-              variant="secondary"
-              className="bg-white/10 text-white border-white/20"
+              variant="outline"
+              className="bg-black/20 text-white border-white/20 font-mono text-xs px-2.5 py-0.5"
             >
-              ปัจจุบัน: {currentTermYear}
+              Term: {currentTermYear}
             </Badge>
           )}
+          <span className="text-xs text-white/70 ml-auto hidden md:inline">
+            สถานะระบบ: เชื่อมต่อฐานข้อมูลปกติ
+          </span>
         </div>
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-4">จัดการข้อมูล</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <h2 className="text-lg font-semibold tracking-tight text-foreground mb-3 flex items-center gap-2">
+          <NotebookPen className="h-5 w-5 text-primary" />
+          จัดการข้อมูลพื้นฐาน
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {quickActions.map((action) => (
-            <Card key={action.title}>
+            <Card key={action.title} className="border-border hover:shadow-xs transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-lg ${action.color}`}>
+                  <div className={`p-2.5 rounded-lg bg-muted border border-border/50 ${action.color}`}>
                     {action.icon}
                   </div>
                   <div>
-                    <CardTitle className="text-lg">{action.title}</CardTitle>
-                    <CardDescription className="text-sm dark:text-white text-black">
+                    <CardTitle className="text-base font-semibold">{action.title}</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">
                       {action.description}
                     </CardDescription>
                   </div>
@@ -263,7 +274,7 @@ export default function DashboardCustom() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full justify-start text-xs"
+                        className="w-full justify-start text-xs font-normal h-8 hover:bg-accent border-border/80 cursor-pointer"
                       >
                         {item.label}
                       </Button>
@@ -277,16 +288,19 @@ export default function DashboardCustom() {
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-4">จัดการตารางเรียน</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-foreground mb-3 flex items-center gap-2">
+          <Table className="h-5 w-5 text-primary" />
+          จัดการตารางเรียน
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {timetableActions.map((action) => (
             <Card
               key={action.title}
-              className={`cursor-pointer transition-all ${action.color}`}
+              className={`transition-all border-border hover:border-primary/50 hover:shadow-xs ${action.color}`}
             >
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
                     <span className={action.iconColor}>{action.icon}</span>
                     {action.title}
                   </CardTitle>
@@ -299,10 +313,10 @@ export default function DashboardCustom() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full justify-between text-xs h-8"
+                        className="w-full justify-between text-xs font-normal h-8 hover:bg-accent/80 cursor-pointer"
                       >
                         {item.label}
-                        <ArrowRight className="h-3 w-3" />
+                        <ArrowRight className="h-3 w-3 text-muted-foreground" />
                       </Button>
                     </Link>
                   ))}
@@ -314,24 +328,25 @@ export default function DashboardCustom() {
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-4">ตารางและปฏิทิน</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-foreground mb-3 flex items-center gap-2">
+          <Calendar className="h-5 w-5 text-primary" />
+          รายงานตารางและการใช้งาน
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {utilityActions.map((action) => (
-            <Link key={action.href} href={action.href}>
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium text-base mb-1">
-                        {action.title}
-                      </h3>
-                      <p className="text-sm">{action.description}</p>
-                    </div>
-                    <div
-                      className={`p-2 rounded-lg ${action.color} group-hover:scale-110 transition-transform`}
-                    >
-                      {action.icon}
-                    </div>
+            <Link key={action.href} href={action.href} className="group">
+              <Card className="border-border hover:border-primary/50 hover:shadow-xs transition-all h-full">
+                <CardContent className="p-5 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-sm text-foreground mb-0.5 group-hover:text-primary transition-colors">
+                      {action.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">{action.description}</p>
+                  </div>
+                  <div
+                    className={`p-2.5 rounded-lg bg-muted border border-border/50 ${action.color} group-hover:scale-105 transition-transform`}
+                  >
+                    {action.icon}
                   </div>
                 </CardContent>
               </Card>

@@ -17,11 +17,14 @@ export const TimetableHeader: React.FC<TimetableHeaderProps> = ({
   onRefresh,
 }) => {
   return (
-    <div className="flex justify-between items-center mx-8 pb-2 text-lg font-semibold">
-      <div className="flex items-center gap-4">
-        <span>{title} ภาคเรียนที่ {termYear}</span>
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mx-4 sm:mx-8 pb-3 mb-2 border-b border-border gap-3">
+      <div className="flex items-center gap-3">
+        <div className="h-2.5 w-2.5 rounded-full bg-primary" />
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+          {title} <span className="text-muted-foreground font-medium text-base ml-1">ภาคเรียนที่ {termYear}</span>
+        </h1>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <AutoFullCurriculumButton
           termYear={termYear || ""}
           onScheduleComplete={onRefresh}

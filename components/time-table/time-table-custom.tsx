@@ -283,19 +283,19 @@ function TimeTableCustomInternal({
   };
 
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="table-fixed border-collapse w-full">
+    <div className="w-full overflow-x-auto rounded-xl border border-border shadow-xs bg-card">
+      <table className="table-fixed border-collapse w-full min-w-[1000px]">
         <thead>
-          <tr>
-            <th className="border px-2 py-1 text-xs w-[72px]">วัน/คาบ</th>
+          <tr className="bg-muted/60">
+            <th className="border border-border/80 px-2 py-2 text-xs font-semibold text-foreground w-[72px] tracking-tight">วัน/คาบ</th>
             {Array.from({ length: 25 }, (_, i) => (
               <th
                 key={i}
-                className="border px-1 py-1 text-xs"
+                className="border border-border/80 px-1 py-1.5 text-xs font-medium"
                 style={{ width: `${100 / 25}%` }}
               >
-                <div className="font-semibold text-center">{i + 1}</div>
-                <div className="text-[7px] font-normal text-muted-foreground leading-tight text-center">
+                <div className="font-semibold text-center text-foreground">{i + 1}</div>
+                <div className="text-[7.5px] font-normal text-muted-foreground leading-tight text-center">
                   {getPeriodTimeRange(i)}
                 </div>
               </th>
@@ -304,8 +304,8 @@ function TimeTableCustomInternal({
         </thead>
         <tbody>
           {days.map((day, rowIdx) => (
-            <tr key={rowIdx}>
-              <td className="border text-center text-xs w-[72px]">{day}</td>
+            <tr key={rowIdx} className="hover:bg-muted/10 transition-colors">
+              <td className="border border-border/80 text-center text-xs font-medium text-foreground w-[72px] bg-muted/30">{day}</td>
               {Array.from({ length: 25 }, (_, colIdx) => {
                 if (!isTerm3 && rowIdx === 2 && colIdx === 14) {
                   return (
@@ -415,41 +415,41 @@ const SimpleCell = React.memo(function SimpleCell({
   });
 
   let cellClasses =
-    "border text-center h-[36px] p-0 align-middle overflow-hidden text-xs transition-all duration-100";
+    "border border-border/80 text-center h-[38px] p-0 align-middle overflow-hidden text-xs transition-colors duration-150";
 
   if (isOver) {
     // Brightest state: cursor is directly over this cell
     cellClasses += isInvalidHighlight
-      ? " bg-red-300 dark:bg-red-700 border-2 border-red-600 dark:border-red-400"
-      : " bg-green-300 dark:bg-green-600 border-2 border-green-600 dark:border-green-400";
+      ? " bg-destructive/30 border-2 border-destructive"
+      : " bg-emerald-500/30 border-2 border-emerald-600";
   } else if (isHighlighted) {
     // Build seamless block border: remove internal edges between adjacent
     // highlighted cells so the range looks like one continuous block.
     const isInvalid = isInvalidHighlight;
     const bgColor = isInvalid
-      ? " bg-red-200 dark:bg-red-800"
-      : " bg-green-200 dark:bg-green-700";
+      ? " bg-destructive/20"
+      : " bg-emerald-500/20";
     const borderY = isInvalid
-      ? " border-y-2 border-y-red-500 dark:border-y-red-400"
-      : " border-y-2 border-y-green-500 dark:border-y-green-400";
+      ? " border-y-2 border-y-destructive"
+      : " border-y-2 border-y-emerald-600";
     const borderL =
       highlightPosition === "first" || highlightPosition === "single"
         ? isInvalid
-          ? " border-l-2 border-l-red-500 dark:border-l-red-400"
-          : " border-l-2 border-l-green-500 dark:border-l-green-400"
+          ? " border-l-2 border-l-destructive"
+          : " border-l-2 border-l-emerald-600"
         : " border-l-0";
     const borderR =
       highlightPosition === "last" || highlightPosition === "single"
         ? isInvalid
-          ? " border-r-2 border-r-red-500 dark:border-r-red-400"
-          : " border-r-2 border-r-green-500 dark:border-r-green-400"
+          ? " border-r-2 border-r-destructive"
+          : " border-r-2 border-r-emerald-600"
         : " border-r-0";
     cellClasses += bgColor + borderY + borderL + borderR;
   } else if (subject) {
     cellClasses +=
-      " bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 p-0";
+      " bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 p-0";
   } else {
-    cellClasses += " bg-card hover:bg-slate-50 dark:hover:bg-slate-800";
+    cellClasses += " bg-card hover:bg-muted/40";
   }
 
   const handleContextMenu = useCallback(
@@ -524,22 +524,22 @@ const SubjectInCell = React.memo(function SubjectInCell({
             title="คลิกลากเพื่อย้าย หรือคลิกขวาเพื่อนำออก"
           >
             <div className="text-center">
-              <div className="font-medium text-green-950 dark:text-green-50">
+              <div className="font-semibold text-emerald-950 dark:text-emerald-100 tracking-tight">
                 {subject.subjectCode}
                 {subject.section && (
-                  <span className="text-[9px] ml-1 bg-green-200 dark:bg-green-700 px-1 py-0.5 rounded">
+                  <span className="text-[9px] ml-1 bg-emerald-200/80 dark:bg-emerald-800/80 text-emerald-900 dark:text-emerald-100 px-1 py-0.5 rounded font-mono font-medium">
                     sec.{subject.section}
                   </span>
                 )}
               </div>
-              <div className="text-[10px] truncate text-green-900 dark:text-green-100">
+              <div className="text-[10px] truncate text-emerald-900 dark:text-emerald-200 font-medium">
                 {subject.subjectName}
               </div>
-              <div className="text-[8px] mt-1 flex items-center justify-center gap-1">
-                <span className="bg-green-200/50 dark:bg-green-700/50 px-1 rounded">
+              <div className="text-[8.5px] mt-0.5 flex items-center justify-center gap-1 text-emerald-800 dark:text-emerald-300">
+                <span className="bg-emerald-200/50 dark:bg-emerald-800/50 px-1 py-0.2 rounded">
                   {totalHours} ชม. ({tooltipLectureHours}/{tooltipLabHours})
                 </span>
-                <span className="bg-green-300/30 dark:bg-green-600/30 px-1 rounded">
+                <span className="bg-emerald-300/40 dark:bg-emerald-700/40 px-1 py-0.2 rounded font-medium">
                   {totalHours * 2} คาบ
                 </span>
               </div>
