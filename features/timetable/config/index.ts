@@ -50,28 +50,28 @@ export const TIMETABLE_CONFIGS: Record<string, TimetableConfig> = {
   // DVE LVC (ปวช. ปี 1 - 2)
   "dve-one-year": {
     planType: "DVE-LVC",
-    yearLevel: "1",
-    title: "จัดตารางสอน แผน DVE (ปวช.) ชั้นปีที่ 1",
+    yearLevel: "ปี 1",
+    title: "ตารางเรียน ปวส. ปี 1 (ปวช.)",
     isMultiAssignment: true,
   },
   "dve-two-year": {
     planType: "DVE-LVC",
-    yearLevel: "2",
-    title: "จัดตารางสอน แผน DVE (ปวช.) ชั้นปีที่ 2",
+    yearLevel: "ปี 2",
+    title: "ตารางเรียน ปวส. ปี 2 (ปวช.)",
     isMultiAssignment: true,
   },
 
   // DVE MSIX (ม.6 ปี 1 - 2)
   "dve-ms-one-year": {
     planType: "DVE-MSIX",
-    yearLevel: "1",
-    title: "จัดตารางสอน แผน DVE (ม.6) ชั้นปีที่ 1",
+    yearLevel: "ปี 1",
+    title: "ตารางเรียน ปวส. ปี 1 (ม.6)",
     isMultiAssignment: true,
   },
   "dve-ms-two-year": {
     planType: "DVE-MSIX",
-    yearLevel: "2",
-    title: "จัดตารางสอน แผน DVE (ม.6) ชั้นปีที่ 2",
+    yearLevel: "ปี 2",
+    title: "ตารางเรียน ปวส. ปี 2 (ม.6)",
     isMultiAssignment: true,
   },
 };
