@@ -108,7 +108,7 @@ export default function DashboardCustom() {
   const dayDistribution = stats?.dayDistribution || {};
   const maxDaySlots = Math.max(...Object.values(dayDistribution), 1);
 
-  // ข้อมูลหลักสูตรและชั้นปี
+  // ข้อมูลหลักสูตรและชั้นปี พร้อมสีกรอบและป้ายกำกับเฉพาะแต่ละหลักสูตร
   const timetableCurriculums = [
     {
       title: "หลักสูตรเทียบโอน (3 ปี)",
@@ -119,6 +119,9 @@ export default function DashboardCustom() {
         { label: "ชั้นปีที่ 3", href: "/adjust-time-tables/adjust-plan-transfer/transfer-three-year" },
       ],
       planCount: stats?.planBreakdown.transfer || 0,
+      borderStyle: "border-sky-300/80 dark:border-sky-800/80 hover:border-sky-500 dark:hover:border-sky-400",
+      accentBg: "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800",
+      indicatorColor: "bg-sky-500",
     },
     ...(isTerm3
       ? []
@@ -133,6 +136,9 @@ export default function DashboardCustom() {
               { label: "ชั้นปีที่ 4", href: "/adjust-time-tables/adjust-plan-four-year/four-four-year" },
             ],
             planCount: stats?.planBreakdown.fourYear || 0,
+            borderStyle: "border-indigo-300/80 dark:border-indigo-800/80 hover:border-indigo-500 dark:hover:border-indigo-400",
+            accentBg: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+            indicatorColor: "bg-indigo-500",
           },
         ]),
     {
@@ -143,6 +149,9 @@ export default function DashboardCustom() {
         { label: "ชั้นปีที่ 2", href: "/adjust-time-tables/adjust-plan-dve/dve-two-year" },
       ],
       planCount: stats?.planBreakdown.dveLvc || 0,
+      borderStyle: "border-amber-300/80 dark:border-amber-800/80 hover:border-amber-500 dark:hover:border-amber-400",
+      accentBg: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+      indicatorColor: "bg-amber-500",
     },
     {
       title: "หลักสูตร ปวส. (ม.6)",
@@ -152,45 +161,60 @@ export default function DashboardCustom() {
         { label: "ชั้นปีที่ 2", href: "/adjust-time-tables/adjust-plan-dve/dve-ms-two-year" },
       ],
       planCount: stats?.planBreakdown.dveMsix || 0,
+      borderStyle: "border-emerald-300/80 dark:border-emerald-800/80 hover:border-emerald-500 dark:hover:border-emerald-400",
+      accentBg: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+      indicatorColor: "bg-emerald-500",
     },
   ];
 
-  // เมนูดำเนินงานหลัก (Quick Operations)
+  // เมนูดำเนินงานหลัก (Quick Operations) พร้อมสีกรอบแยกหมวดหมู่อย่างชัดเจน
   const quickOperations = [
     {
       title: "ตารางการใช้ห้องเรียน",
       description: "ตรวจสอบความหนาแน่นและช่วงเวลาการใช้ห้อง",
-      icon: <Building2 className="h-5 w-5 text-foreground" />,
+      icon: <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />,
+      borderStyle: "border-blue-200/90 dark:border-blue-900/60 hover:border-blue-500 dark:hover:border-blue-400",
+      iconBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50",
       href: "/rooms-use",
     },
     {
       title: "ตารางสอนอาจารย์",
       description: "ตรวจสอบภาระการสอนและส่งออกไฟล์ Excel",
-      icon: <CalendarCheck2 className="h-5 w-5 text-foreground" />,
+      icon: <CalendarCheck2 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />,
+      borderStyle: "border-indigo-200/90 dark:border-indigo-900/60 hover:border-indigo-500 dark:hover:border-indigo-400",
+      iconBg: "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-800/50",
       href: "/class-schedule",
     },
     {
       title: "จัดการข้อมูลอาจารย์",
       description: "รายชื่ออาจารย์ผู้สอนและการลงทะเบียนผู้ใช้",
-      icon: <SquareUser className="h-5 w-5 text-foreground" />,
+      icon: <SquareUser className="h-5 w-5 text-violet-600 dark:text-violet-400" />,
+      borderStyle: "border-violet-200/90 dark:border-violet-900/60 hover:border-violet-500 dark:hover:border-violet-400",
+      iconBg: "bg-violet-50 text-violet-600 dark:bg-violet-950/60 dark:text-violet-400 border-violet-200/50 dark:border-violet-800/50",
       href: "/teachers",
     },
     {
       title: "จัดการห้องเรียน",
       description: "เพิ่ม แก้ไข และกำหนดประเภทห้องเรียน",
-      icon: <Layers className="h-5 w-5 text-foreground" />,
+      icon: <Layers className="h-5 w-5 text-teal-600 dark:text-teal-400" />,
+      borderStyle: "border-teal-200/90 dark:border-teal-900/60 hover:border-teal-500 dark:hover:border-teal-400",
+      iconBg: "bg-teal-50 text-teal-600 dark:bg-teal-950/60 dark:text-teal-400 border-teal-200/50 dark:border-teal-800/50",
       href: "/rooms",
     },
     {
       title: "โครงสร้างหลักสูตร",
       description: "ตรวจสอบรายชื่อวิชาและหน่วยกิตตามแผน",
-      icon: <BookOpenText className="h-5 w-5 text-foreground" />,
+      icon: <BookOpenText className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
+      borderStyle: "border-amber-200/90 dark:border-amber-900/60 hover:border-amber-500 dark:hover:border-amber-400",
+      iconBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/50",
       href: "/curriculum",
     },
     {
       title: "ปฏิทินการศึกษา",
       description: "กำหนดการเปิด-ปิดภาคเรียนและกิจกรรมสาขา",
-      icon: <Calendar className="h-5 w-5 text-foreground" />,
+      icon: <Calendar className="h-5 w-5 text-rose-600 dark:text-rose-400" />,
+      borderStyle: "border-rose-200/90 dark:border-rose-900/60 hover:border-rose-500 dark:hover:border-rose-400",
+      iconBg: "bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 border-rose-200/50 dark:border-rose-800/50",
       href: "/academic-calendar",
     },
   ];
@@ -461,13 +485,16 @@ export default function DashboardCustom() {
               {timetableCurriculums.map((curr) => (
                 <div
                   key={curr.curriculumCode}
-                  className="rounded-lg border border-border p-4 hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors bg-card"
+                  className={`rounded-lg border p-4 transition-all duration-200 bg-card shadow-2xs ${curr.borderStyle}`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-sm text-foreground">
-                      {curr.title}
-                    </span>
-                    <Badge variant="secondary" className="text-[11px] font-normal bg-secondary text-secondary-foreground">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2.5 w-2.5 rounded-full ${curr.indicatorColor}`} />
+                      <span className="font-semibold text-sm text-foreground">
+                        {curr.title}
+                      </span>
+                    </div>
+                    <Badge variant="outline" className={`text-[11px] font-normal ${curr.accentBg}`}>
                       {curr.planCount} แผนการเรียน
                     </Badge>
                   </div>
@@ -552,7 +579,7 @@ export default function DashboardCustom() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {quickOperations.map((op) => (
             <Link key={op.href} href={op.href} className="group block">
-              <Card className="border border-border bg-card shadow-xs hover:border-zinc-400 dark:hover:border-zinc-600 transition-all h-full">
+              <Card className={`border bg-card shadow-xs transition-all duration-200 h-full ${op.borderStyle}`}>
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="space-y-0.5">
                     <div className="font-semibold text-sm text-foreground group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
@@ -562,7 +589,7 @@ export default function DashboardCustom() {
                       {op.description}
                     </div>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-secondary border border-border group-hover:bg-accent transition-colors shrink-0 ml-3">
+                  <div className={`p-2.5 rounded-lg border transition-colors shrink-0 ml-3 ${op.iconBg}`}>
                     {op.icon}
                   </div>
                 </CardContent>
