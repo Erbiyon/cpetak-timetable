@@ -61,6 +61,29 @@ export async function DELETE(
       return Response.json({ error: "Plan not found" }, { status: 404 });
     }
 
+    // Object-Level Authorization: Teachers can only delete timetable entries for plans assigned to them
+    if (auth.user.role === "teacher") {
+      const authenticatedTeacherId = auth.user.teacherId;
+      if (!authenticatedTeacherId) {
+        return Response.json(
+          { error: "ไม่พบข้อมูลอาจารย์ที่ล็อกอิน (Forbidden)" },
+          { status: 403 }
+        );
+      }
+
+      // Check if currentPlan is assigned to this teacher
+      const teacherRecord = await prisma.teacher_tb.findFirst({
+        where: { tId: authenticatedTeacherId },
+      });
+
+      if (!teacherRecord || currentPlan.teacherId !== teacherRecord.id) {
+        return Response.json(
+          { error: "คุณไม่มีสิทธิ์ลบตารางสอนของอาจารย์ท่านอื่น (Forbidden: Ownership required)" },
+          { status: 403 }
+        );
+      }
+    }
+
     const isDVE =
       currentPlan.planType === "DVE-MSIX" || currentPlan.planType === "DVE-LVC";
     const isTransferOrFourYear =

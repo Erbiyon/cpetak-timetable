@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/api-auth";
 
 export async function GET(
   _request: NextRequest,
@@ -46,6 +47,11 @@ export async function PUT(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireAdmin();
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await context.params;
     const numId = Number(id);
     if (isNaN(numId)) {
@@ -99,6 +105,11 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireAdmin();
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await context.params;
     const numId = Number(id);
     if (isNaN(numId)) {

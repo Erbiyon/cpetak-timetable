@@ -16,6 +16,9 @@ vi.mock("@/lib/prisma", () => ({
       findUnique: vi.fn(),
       findMany: vi.fn(),
     },
+    teacher_tb: {
+      findFirst: vi.fn(),
+    },
   },
 }));
 
@@ -43,7 +46,7 @@ describe("API Route Contract: /api/timetable (POST)", () => {
   it("returns 409 DUPLICATE_SECTION_CONFLICT when same subject and section already exists in same term", async () => {
     vi.spyOn(apiAuth, "requireTeacherOrAdmin").mockResolvedValueOnce({
       authorized: true,
-      user: { id: "1", role: "admin" },
+      user: { id: "admin", role: "admin" },
     });
 
     (prisma.coTeaching_tb.findFirst as any).mockResolvedValue(null);
@@ -98,7 +101,7 @@ describe("API Route Contract: /api/timetable (POST)", () => {
   it("returns 409 TIME_CONFLICT when time period overlaps with another class of same term/yearLevel/planType", async () => {
     vi.spyOn(apiAuth, "requireTeacherOrAdmin").mockResolvedValueOnce({
       authorized: true,
-      user: { id: "1", role: "teacher" },
+      user: { id: "admin", role: "admin" },
     });
 
     (prisma.coTeaching_tb.findFirst as any).mockResolvedValue(null);
@@ -150,12 +153,12 @@ describe("API Route Contract: /api/timetable (POST)", () => {
   it("returns 409 TEACHER_CONFLICT when teacher is already teaching in overlapping period", async () => {
     vi.spyOn(apiAuth, "requireTeacherOrAdmin").mockResolvedValueOnce({
       authorized: true,
-      user: { id: "1", role: "admin" },
+      user: { id: "admin", role: "admin" },
     });
 
     (prisma.coTeaching_tb.findFirst as any).mockResolvedValue(null);
     (prisma.timetable_tb.findMany as any)
-      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]) // timeConflicts empty
       .mockResolvedValueOnce([
         {
           id: 60,
@@ -168,8 +171,8 @@ describe("API Route Contract: /api/timetable (POST)", () => {
           room: null,
           section: "1",
         },
-      ])
-      .mockResolvedValueOnce([]);
+      ]) // teacherConflicts found
+      .mockResolvedValueOnce([]); // roomConflicts empty
 
     (prisma.plans_tb.findUnique as any).mockResolvedValueOnce({
       id: 1,

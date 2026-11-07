@@ -23,6 +23,49 @@ export async function POST(request: Request) {
       section,
     } = body;
 
+    // Object-Level Authorization: If logged in as Teacher, verify teacher can only schedule for themselves
+    if (auth.user.role === "teacher") {
+      const authenticatedTeacherId = auth.user.teacherId;
+      if (!authenticatedTeacherId) {
+        return Response.json(
+          { error: "ไม่พบข้อมูลอาจารย์ที่ล็อกอิน (Forbidden)" },
+          { status: 403 }
+        );
+      }
+
+      const teacherRecord = await prisma.teacher_tb.findFirst({
+        where: { tId: authenticatedTeacherId },
+      });
+
+      if (!teacherRecord) {
+        return Response.json(
+          { error: "ไม่พบบัญชีอาจารย์ในระบบ (Forbidden)" },
+          { status: 403 }
+        );
+      }
+
+      // If a teacherId is passed in body, it must match the authenticated teacher
+      if (teacherId && teacherId !== teacherRecord.id) {
+        return Response.json(
+          { error: "คุณไม่มีสิทธิ์จัดตารางสอนให้อาจารย์ท่านอื่น (Forbidden: Ownership required)" },
+          { status: 403 }
+        );
+      }
+
+      // Check plan ownership: verify the plan being scheduled belongs to this teacher
+      if (planId) {
+        const plan = await prisma.plans_tb.findUnique({
+          where: { id: planId },
+        });
+        if (plan && plan.teacherId && plan.teacherId !== teacherRecord.id) {
+          return Response.json(
+            { error: "วิชานี้เป็นของอาจารย์ท่านอื่น คุณไม่สามารถจัดตารางแทนได้ (Forbidden: Ownership required)" },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
     const isDVE = planType === "DVE-MSIX" || planType === "DVE-LVC";
     const isTransferOrFourYear =
       planType === "TRANSFER" || planType === "FOUR_YEAR";

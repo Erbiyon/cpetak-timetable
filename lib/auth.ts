@@ -47,14 +47,29 @@ export const authOptions: NextAuthOptions = {
         adminId: { label: "รหัสผู้ดูแล", type: "text" },
         password: { label: "รหัสผ่าน", type: "password" },
       },
-      async authorize(credentials) {
-        // Support env-based admin credentials with secure fallback
-        const configuredAdminId = process.env.ADMIN_USERNAME || "admin";
-        const configuredAdminPassword = process.env.ADMIN_PASSWORD || "admin123";
+      async authorize(credentials: Record<string, string> | undefined) {
+        const isProduction = process.env.NODE_ENV === "production";
+        const configuredAdminId = process.env.ADMIN_USERNAME;
+        const configuredAdminPassword = process.env.ADMIN_PASSWORD;
+
+        // In production, ADMIN_USERNAME and ADMIN_PASSWORD MUST be explicitly configured.
+        // Fail closed to prevent default or unset credentials from granting admin access.
+        if (isProduction && (!configuredAdminId || !configuredAdminPassword)) {
+          console.error(
+            "FATAL: ADMIN_USERNAME and ADMIN_PASSWORD environment variables are required in production."
+          );
+          return null;
+        }
+
+        // Development fallback: only allowed in non-production environments
+        const effectiveAdminId = configuredAdminId || "admin";
+        const effectiveAdminPassword = configuredAdminPassword || "admin123";
 
         if (
-          credentials?.adminId === configuredAdminId &&
-          credentials?.password === configuredAdminPassword
+          credentials?.adminId &&
+          credentials?.password &&
+          credentials.adminId === effectiveAdminId &&
+          credentials.password === effectiveAdminPassword
         ) {
           return {
             id: "admin",
