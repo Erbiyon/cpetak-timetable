@@ -9,6 +9,7 @@ import { Toaster } from "sonner";
 const sarabun = Sarabun({
   subsets: ["thai", "latin"],
   weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-sarabun",
   display: "swap",
 });
 
@@ -24,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${sarabun.className} antialiased`}>
+      <body className={`${sarabun.variable} ${sarabun.className} font-sans antialiased`}>
         <AuthSessionProvider>
           <ThemeProviderCustom>
             <HideNavbarCustom>{children}</HideNavbarCustom>

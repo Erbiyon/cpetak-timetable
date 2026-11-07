@@ -144,13 +144,6 @@ export default function CurriculumPage() {
               จัดการรายวิชา หน่วยกิต และสัดส่วนชั่วโมงบรรยาย/ปฏิบัติในหลักสูตรการศึกษา
             </p>
           </div>
-
-          <div className="flex items-center gap-2">
-            <AddCurriculumCustom
-              onSuccess={fetchCurriculum}
-              defaultCurriculumType={activeTab === "bachelor" ? "BACHELOR" : "DVE"}
-            />
-          </div>
         </div>
       </div>
 
