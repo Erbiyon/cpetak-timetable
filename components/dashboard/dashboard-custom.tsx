@@ -601,9 +601,9 @@ export default function DashboardCustom() {
         </CardContent>
       </Card>
 
-      {/* F. Quick Operations (เมนูดำเนินงาน) พร้อมเมนูย่อยเจาะลึก */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
+      {/* F. Quick Operations (เมนูดำเนินงาน) */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2 font-sans">
             <Layers className="h-4 w-4 text-foreground" />
             เมนูดำเนินงาน
@@ -613,53 +613,58 @@ export default function DashboardCustom() {
           </span>
         </div>
 
+        {/* แถวที่ 1: เมนูที่มีเมนูย่อย (3 การ์ด: อาจารย์, ห้องเรียน, แผนการเรียน) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {quickOperations.map((op) => {
-            if ("subItems" in op && op.subItems) {
-              return (
-                <Card
-                  key={op.title}
-                  className={`border bg-card shadow-xs transition-all duration-200 flex flex-col justify-between ${op.borderStyle}`}
-                >
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="font-semibold text-sm text-foreground font-sans">
-                          {op.title}
-                        </div>
-                        <div className="text-xs text-muted-foreground line-clamp-1 font-sans">
-                          {op.description}
-                        </div>
+          {quickOperations
+            .filter((op) => "subItems" in op && op.subItems)
+            .map((op) => (
+              <Card
+                key={op.title}
+                className={`border bg-card shadow-xs transition-all duration-200 flex flex-col justify-between ${op.borderStyle}`}
+              >
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="font-semibold text-sm text-foreground font-sans">
+                        {op.title}
                       </div>
-                      <div className={`p-2.5 rounded-lg border shrink-0 ${op.iconBg}`}>
-                        {op.icon}
+                      <div className="text-xs text-muted-foreground line-clamp-1 font-sans">
+                        {op.description}
                       </div>
                     </div>
-
-                    {/* เมนูย่อยเฉพาะหมวดที่กำหนด */}
-                    <div className="pt-2 border-t border-border/60 space-y-1">
-                      {op.subItems.map((sub) => (
-                        <Link
-                          key={sub.label}
-                          href={sub.href}
-                          className="flex items-center justify-between px-2.5 py-1.5 rounded-md hover:bg-secondary text-xs text-muted-foreground hover:text-foreground font-sans font-medium transition-colors group"
-                        >
-                          <span className="truncate">{sub.label}</span>
-                          <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5 shrink-0 ml-1" />
-                        </Link>
-                      ))}
+                    <div className={`p-2.5 rounded-lg border shrink-0 ${op.iconBg}`}>
+                      {op.icon}
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            }
+                  </div>
 
-            return (
+                  {/* รายการเมนูย่อย */}
+                  <div className="pt-2 border-t border-border/60 space-y-1">
+                    {op.subItems!.map((sub) => (
+                      <Link
+                        key={sub.label}
+                        href={sub.href}
+                        className="flex items-center justify-between px-2.5 py-1.5 rounded-md hover:bg-secondary text-xs text-muted-foreground hover:text-foreground font-sans font-medium transition-colors group"
+                      >
+                        <span className="truncate">{sub.label}</span>
+                        <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5 shrink-0 ml-1" />
+                      </Link>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+        </div>
+
+        {/* แถวที่ 2: เมนูที่ไม่มีเมนูย่อย (4 การ์ดในแถวเดียวบนหน้าจอขนาดใหญ่: โครงสร้างหลักสูตร, ตารางสอน, ตารางห้อง, ปฏิทิน) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {quickOperations
+            .filter((op) => !("subItems" in op && op.subItems))
+            .map((op) => (
               <Link key={op.title} href={op.href} className="group block focus:outline-none">
                 <Card
                   className={`border bg-card shadow-xs transition-all duration-200 h-full flex flex-col justify-between ${op.borderStyle}`}
                 >
-                  <CardContent className="p-4 space-y-3">
+                  <CardContent className="p-4 space-y-3 flex flex-col justify-between h-full">
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1">
                         <div className="font-semibold text-sm text-foreground font-sans flex items-center gap-1.5 group-hover:text-foreground">
@@ -681,8 +686,7 @@ export default function DashboardCustom() {
                   </CardContent>
                 </Card>
               </Link>
-            );
-          })}
+            ))}
         </div>
       </div>
     </div>
