@@ -167,8 +167,8 @@ export function NavigationMenuCustom() {
 
   return (
     <>
-      <div className="sticky top-0 left-0 w-full z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-xs px-4 py-3">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <div className="sticky top-0 left-0 w-full z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-xs px-4 sm:px-6 lg:px-8 py-3">
+        <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
