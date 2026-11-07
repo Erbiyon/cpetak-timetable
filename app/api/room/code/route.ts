@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { RoomService } from "@/features/rooms/services/room.service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,9 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "ต้องระบุรหัสห้อง" }, { status: 400 });
     }
 
-    const room = await prisma.room_tb.findFirst({
-      where: { roomCode: roomCode },
-    });
+    const room = await RoomService.getRoomByCode(roomCode);
 
     if (!room) {
       return NextResponse.json(null, { status: 200 });

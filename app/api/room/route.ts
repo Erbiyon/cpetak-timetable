@@ -1,21 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/api-auth";
+import { RoomService } from "@/features/rooms/services/room.service";
+import { validateCreateRoomInput } from "@/features/rooms/validations";
 
 export async function GET() {
   try {
-    const rooms = await prisma.room_tb.findMany({
-      select: {
-        id: true,
-        roomCode: true,
-        roomType: true,
-        roomCate: true,
-      },
-      orderBy: {
-        roomCode: "asc",
-      },
-    });
-
+    const rooms = await RoomService.getRooms();
     return NextResponse.json(rooms);
   } catch (error) {
     console.error("ผิดพลาดในการดึงข้อมูลห้อง:", error);
@@ -34,37 +24,29 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { roomCode, roomType, roomCate } = body;
+    const validation = validateCreateRoomInput(body);
 
-    console.log("ข้อมูลที่ได้รับ:", { roomCode, roomType, roomCate });
-
-    if (!roomCode || !roomType) {
+    if (!validation.isValid || !validation.data) {
       return NextResponse.json(
-        { error: "roomCode และ roomType เป็นข้อมูลที่จำเป็น" },
+        { error: validation.errors.join(", ") },
         { status: 400 },
       );
     }
 
-    const existing = await prisma.room_tb.findFirst({
-      where: {
-        roomCode: roomCode.trim(),
-        roomType: roomType.trim(),
-      },
-    });
+    const { roomCode, roomType, roomCate } = validation.data;
 
+    const existing = await RoomService.findDuplicate(roomCode, roomType);
     if (existing) {
       return NextResponse.json(
-        { error: `ห้อง ${roomCode.trim()} ในอาคาร ${roomType.trim()} มีอยู่แล้ว` },
+        { error: `ห้อง ${roomCode} ในอาคาร ${roomType} มีอยู่แล้ว` },
         { status: 409 },
       );
     }
 
-    const room = await prisma.room_tb.create({
-      data: {
-        roomCode: roomCode.trim(),
-        roomType: roomType.trim(),
-        roomCate: roomCate || null,
-      },
+    const room = await RoomService.createRoom({
+      roomCode,
+      roomType,
+      roomCate,
     });
 
     console.log("สร้างห้อง:", room);

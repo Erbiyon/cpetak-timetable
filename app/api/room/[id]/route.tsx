@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/api-auth";
+import { RoomService } from "@/features/rooms/services/room.service";
+import { validateUpdateRoomInput } from "@/features/rooms/validations";
 
 export async function DELETE(
   _request: NextRequest,
@@ -19,9 +20,7 @@ export async function DELETE(
       return NextResponse.json({ error: "ID ไม่ถูกต้อง" }, { status: 400 });
     }
 
-    const deleted = await prisma.room_tb.delete({
-      where: { id: numId },
-    });
+    const deleted = await RoomService.deleteRoom(numId);
 
     return NextResponse.json(deleted, { status: 200 });
   } catch (error: any) {
@@ -45,23 +44,26 @@ export async function PUT(
   const { id } = params;
   try {
     const body = await request.json();
-    const { roomCode, roomType, roomCate } = body;
     const roomId = parseInt(id);
 
-    if (!roomCode || !roomType) {
+    if (isNaN(roomId)) {
+      return NextResponse.json({ error: "ID ไม่ถูกต้อง" }, { status: 400 });
+    }
+
+    const validation = validateUpdateRoomInput(body);
+    if (!validation.isValid || !validation.data) {
       return NextResponse.json(
-        { error: "roomCode และ roomType เป็นข้อมูลที่จำเป็น" },
+        { error: validation.errors.join(", ") },
         { status: 400 },
       );
     }
 
-    const updatedRoom = await prisma.room_tb.update({
-      where: { id: roomId },
-      data: {
-        roomCode: roomCode.trim(),
-        roomType: roomType.trim(),
-        roomCate: roomCate || null,
-      },
+    const { roomCode, roomType, roomCate } = validation.data;
+
+    const updatedRoom = await RoomService.updateRoom(roomId, {
+      roomCode,
+      roomType,
+      roomCate,
     });
 
     return NextResponse.json(updatedRoom);
