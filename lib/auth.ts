@@ -1,6 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
+import { verifyPassword } from "@/lib/password";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -23,17 +24,26 @@ export const authOptions: NextAuthOptions = {
             },
           });
 
-          if (teacher && credentials.password === teacher.tId) {
-            return {
-              id: teacher.id.toString(),
-              name: `${teacher.tName} ${teacher.tLastName}`,
-              teacherId: teacher.tId,
-              teacherType: teacher.teacherType,
-              role: "teacher",
-            };
+          // Security Rule 1: The account must exist and must be securely enrolled
+          if (!teacher || !teacher.isEnrolled || !teacher.passwordHash) {
+            return null;
           }
 
-          return null;
+          // Security Rule 2: Insecure legacy password matching (password === teacher.tId) is strictly eliminated.
+          // Password must match the cryptographically derived hash.
+          const isValid = verifyPassword(credentials.password, teacher.passwordHash);
+          if (!isValid) {
+            return null;
+          }
+
+          return {
+            id: teacher.id.toString(),
+            name: `${teacher.tName} ${teacher.tLastName}`,
+            teacherId: teacher.tId,
+            teacherType: teacher.teacherType,
+            role: "teacher",
+            sessionVersion: teacher.sessionVersion,
+          };
         } catch (error) {
           console.error("Auth error:", error);
           return null;
@@ -91,6 +101,7 @@ export const authOptions: NextAuthOptions = {
         token.teacherId = user.teacherId;
         token.teacherType = user.teacherType;
         token.role = user.role || "teacher";
+        token.sessionVersion = user.sessionVersion;
       }
       return token;
     },
@@ -100,6 +111,7 @@ export const authOptions: NextAuthOptions = {
         session.user.teacherId = token.teacherId as string;
         session.user.teacherType = token.teacherType as string;
         session.user.role = token.role as string;
+        session.user.sessionVersion = token.sessionVersion as number;
       }
       return session;
     },
