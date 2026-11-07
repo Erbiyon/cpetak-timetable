@@ -83,37 +83,59 @@ body.dragging-active * {
 }
 
 .dark {
-    --background: #0b1120;
-    --foreground: #f8fafc;
-    --card: #131c2e;
-    --card-foreground: #f8fafc;
-    --popover: #131c2e;
-    --popover-foreground: #f8fafc;
-    --primary: #38bdf8;
-    --primary-foreground: #0b1120;
-    --secondary: #1e293b;
-    --secondary-foreground: #f8fafc;
-    --muted: #1e293b;
+    --background: #07090e;
+    --foreground: #f1f5f9;
+    --card: #0d121d;
+    --card-foreground: #f1f5f9;
+    --popover: #0d121d;
+    --popover-foreground: #f1f5f9;
+    --primary: #00f0ff;
+    --primary-foreground: #07090e;
+    --secondary: #131a29;
+    --secondary-foreground: #e2e8f0;
+    --muted: #131a29;
     --muted-foreground: #94a3b8;
-    --accent: #1e293b;
-    --accent-foreground: #f8fafc;
-    --destructive: #f87171;
+    --accent: #192236;
+    --accent-foreground: #00f0ff;
+    --destructive: #ff3366;
     --border: #1e293b;
     --input: #1e293b;
-    --ring: #38bdf8;
-    --chart-1: #38bdf8;
-    --chart-2: #2dd4bf;
-    --chart-3: #60a5fa;
+    --ring: #00f0ff;
+    --chart-1: #00f0ff;
+    --chart-2: #8b5cf6;
+    --chart-3: #10b981;
     --chart-4: #f59e0b;
-    --chart-5: #94a3b8;
-    --sidebar: #131c2e;
-    --sidebar-foreground: #f8fafc;
-    --sidebar-primary: #38bdf8;
-    --sidebar-primary-foreground: #0b1120;
-    --sidebar-accent: #1e293b;
-    --sidebar-accent-foreground: #f8fafc;
+    --chart-5: #ec4899;
+    --sidebar: #090d15;
+    --sidebar-foreground: #f1f5f9;
+    --sidebar-primary: #00f0ff;
+    --sidebar-primary-foreground: #07090e;
+    --sidebar-accent: #131a29;
+    --sidebar-accent-foreground: #00f0ff;
     --sidebar-border: #1e293b;
-    --sidebar-ring: #38bdf8;
+    --sidebar-ring: #00f0ff;
+}
+
+/* Futuristic Cyberpunk HUD Utility Styles */
+.glow-cyan {
+    box-shadow: 0 0 20px -3px rgba(0, 240, 255, 0.25), 0 0 8px -1px rgba(0, 240, 255, 0.4);
+}
+
+.glow-violet {
+    box-shadow: 0 0 20px -3px rgba(139, 92, 246, 0.25), 0 0 8px -1px rgba(139, 92, 246, 0.4);
+}
+
+.glow-emerald {
+    box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.25), 0 0 8px -1px rgba(16, 185, 129, 0.4);
+}
+
+.border-glow-cyan {
+    border-color: rgba(0, 240, 255, 0.35);
+}
+
+.hud-grid-pattern {
+    background-image: radial-gradient(rgba(0, 240, 255, 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
 }
 
 
