@@ -1,95 +1,102 @@
 # 📅 ระบบจัดตารางเรียน (Timetable System)
 
-![Next.js](https://img.shields.io/badge/Next.js-15.5.9-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-15.5.29-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
-![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-6.16.1-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
-![NextAuth.js](https://img.shields.io/badge/NextAuth.js-4.24-B845ED?style=for-the-badge&logo=auth0&logoColor=white)
-![pnpm](https://img.shields.io/badge/pnpm-latest-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
+![NextAuth.js](https://img.shields.io/badge/NextAuth.js-4.24.15-B845ED?style=for-the-badge&logo=auth0&logoColor=white)
+![pnpm](https://img.shields.io/badge/pnpm-11.x-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-157_Pass-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-37_Pass-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
 
-ระบบจัดตารางเรียนอัตโนมัติ สำหรับสถาบันการศึกษา พัฒนาด้วย Next.js 15 และ Prisma ORM รองรับการจัดตารางเรียนหลายหลักสูตร (หลักสูตร 4 ปี, เทียบโอน, อาชีวศึกษา) พร้อมระบบจัดการห้องเรียน อาจารย์ผู้สอน และปฏิทินการศึกษา พร้อมรองรับ **การสอนร่วม (Co-Teaching)** และ **การ Export ตารางเป็น Excel**
+ระบบจัดตารางเรียนอัตโนมัติ สำหรับสถาบันการศึกษา พัฒนาด้วย Next.js 15 และ Prisma ORM รองรับการจัดตารางเรียนหลายหลักสูตร (หลักสูตร 4 ปี, เทียบโอน, อาชีวศึกษา DVE-LVC และ DVE-MS) พร้อมระบบจัดการห้องเรียน อาจารย์ผู้สอน ปฏิทินการศึกษา ระบบป้องกันการชนกันของตารางแบบ Pessimistic Concurrency Locking, การยืนยันตัวตนผู้สอนความปลอดภัยสูงด้วย scrypt KDF และระบบ Export ไฟล์ Excel แบบ On-Demand โหลดเร็วระดับ Enterprise
 
-> จัดทำโดย **DekCom**
+> จัดทำโดย **DekCom** (พัฒนาและปรับปรุงสถาปัตยกรรมระดับ Production-Ready)
 
 ---
 
 ## 📋 สารบัญ
 
 - [Technology Stack](#-technology-stack)
-- [Project Architecture](#-project-architecture)
+- [Architecture & Feature Highlights](#-architecture--feature-highlights)
 - [Getting Started](#-getting-started)
 - [Project Structure](#-project-structure)
 - [Key Features](#-key-features)
-- [Development Workflow](#-development-workflow)
-- [Coding Standards](#-coding-standards)
-- [Contributing](#-contributing)
+- [Security & Concurrency Hardening](#-security--concurrency-hardening)
+- [Testing & Quality Assurance](#-testing--quality-assurance)
+- [Production Deployment](#-production-deployment)
+- [Database Schema](#-database-schema)
 - [License](#-license)
 
 ---
 
 ## 🛠 Technology Stack
 
-| Category | Technology | Version |
-|---|---|---|
-| **Framework** | Next.js (App Router) | 15.5.9 |
-| **Language** | TypeScript | ^5.8.3 |
-| **UI Library** | React | ^19.1.0 |
-| **Styling** | Tailwind CSS | ^4.1.10 |
-| **UI Components** | shadcn/ui (New York style) + Radix UI | — |
-| **Icons** | Lucide React | ^0.515.0 |
-| **ORM** | Prisma Client | 6 |
-| **Database** | MySQL | — |
-| **Authentication** | NextAuth.js (Credentials) | ^4.24.11 |
-| **Drag & Drop** | @dnd-kit | ^6.3.1 |
-| **Data Table** | TanStack React Table | ^8.21.3 |
-| **Date Utilities** | date-fns | ^4.1.0 |
-| **Excel Export** | ExcelJS | ^4.4.0 |
-| **HTTP Client** | Axios | ^1.10.0 |
-| **Toast Notifications** | Sonner | ^2.0.7 |
-| **Theme** | next-themes | ^0.4.6 |
-| **Package Manager** | pnpm | — |
-| **Font** | Sarabun (Thai + Latin) | Google Fonts |
+| หมวดหมู่ | เทคโนโลยี / เครื่องมือ | เวอร์ชัน | หมายเหตุ |
+|---|---|---|---|
+| **Framework** | Next.js (App Router) | 15.5.29 | Server Components, Turbopack Build |
+| **Language** | TypeScript | ^5.8.3 | Strict Mode 100% Type-Safe |
+| **UI Library** | React | 19.1.0 | Action Hooks, Optimized Memoization |
+| **Styling** | Tailwind CSS | ^4.1.10 | CSS Variables, Oklch Colors |
+| **UI Components** | shadcn/ui + Radix UI | — | Accessible, Themeable Components |
+| **Icons** | Lucide React | ^0.515.0 | Vector Icons |
+| **ORM** | Prisma Client | 6.16.1 | Versioned Migrations, Connection Pooling |
+| **Database** | MySQL | 8.0+ | InnoDB, ACID Transactions, UTF8MB4 |
+| **Authentication** | NextAuth.js (Credentials) | ^4.24.15 | JWT Session, Revocation Support |
+| **Password Hashing** | Node.js Crypto (scrypt) | Native | OWASP Option 4 ($N=16384, r=8, p=5$) |
+| **Drag & Drop** | @dnd-kit | ^6.3.1 | Core, Modifiers, Multi-assignment Grid |
+| **Data Table** | TanStack React Table | ^8.21.3 | Server & Client-side Sorting/Filtering |
+| **Date Utilities** | date-fns | ^4.1.0 | Thai Buddhist Year Calculations |
+| **Excel Export** | ExcelJS | ^4.4.0 | On-Demand Lazy Loaded (~193 kB bundle) |
+| **Unit/Integration Test** | Vitest | ^3.x | 157 Passing Tests (Mock & Real DB) |
+| **E2E Browser Test** | Playwright (Chromium) | ^1.58.x | 37 Passing Tests across 11 Timetable Pages |
+| **Package Manager** | pnpm | 11.x | Lockfile v9 strictly enforced |
 
 ---
 
-## 🏗 Project Architecture
+## 🏗 Architecture & Feature Highlights
 
 ```mermaid
 graph TB
-    subgraph Client["🖥 Client (React 19)"]
-        Pages["Pages (App Router)"]
-        Components["Components (shadcn/ui)"]
-        DnD["Drag & Drop (@dnd-kit)"]
+    subgraph Client["🖥 Client (React 19 / Next.js App Router)"]
+        Pages["11 Timetable Pages + Study Plans"]
+        DnD["Pointer Drag & Drop (@dnd-kit)"]
+        LazyExport["Dynamic On-Demand ExcelJS"]
+        Components["shadcn/ui Design System"]
     end
 
-    subgraph Server["⚙️ Server (Next.js 15)"]
-        API["API Routes"]
-        Middleware["Auth Middleware"]
-        Auth["NextAuth.js (JWT)"]
+    subgraph Server["⚙️ Server Layer (Next.js 15.5.29)"]
+        ServiceLayer["Domain Services (Timetable, Subject, Room, Teacher, Curriculum)"]
+        LockService["TimetableLockService (Transactional FOR UPDATE)"]
+        AuthSecurity["TeacherAuthService (scrypt KDF + Session Revocation)"]
+        AuthGuard["Route & Object-Level Authorization Guards"]
     end
 
-    subgraph Database["🗄 Database"]
-        MySQL["MySQL"]
-        Prisma["Prisma ORM"]
+    subgraph Database["🗄 Storage Layer (MySQL 8.0)"]
+        PrismaORM["Prisma Client 6.16.1"]
+        LockTable["TimetableLock_tb (Concurrency Locks)"]
+        AuthTable["TeacherToken_tb & Teacher_tb (Credentials)"]
+        TimetableDB["Timetable_tb & Plans_tb (Schedules)"]
     end
 
-    Pages --> Components
-    Pages --> DnD
-    Pages --> API
-    API --> Prisma
-    Prisma --> MySQL
-    Middleware --> Auth
-    Auth --> Prisma
+    Pages --> ServiceLayer
+    DnD --> ServiceLayer
+    LazyExport -.-> Pages
+    ServiceLayer --> LockService
+    ServiceLayer --> AuthSecurity
+    AuthSecurity --> AuthGuard
+    ServiceLayer --> PrismaORM
+    LockService --> LockTable
+    AuthSecurity --> AuthTable
+    PrismaORM --> TimetableDB
 ```
 
-### สถาปัตยกรรมหลัก
-
-- **App Router (Next.js 15)** — ใช้ระบบ routing แบบ file-based ของ Next.js App Router
-- **Server Components + Client Components** — ใช้ RSC สำหรับ data fetching และ client components สำหรับ interactivity
-- **JWT-based Authentication** — ใช้ NextAuth.js กับ Credentials Provider พร้อม JWT session strategy
-- **Role-based Access Control** — แบ่งสิทธิ์เป็น `admin` และ `teacher` ผ่าน middleware
+- **Domain-Driven Service Layer:** แยก Business Logic ชัดเจนภายใต้โฟลเดอร์ `features/*` (Service Layer, Types, Validations)
+- **Zero Double Booking Concurrency Engine:** ใช้ Pessimistic Locking (`SELECT ... FOR UPDATE` บน `TimetableLock_tb`) ร่วมกับ Natural Key Sorting ป้องกันการชนกันและการเกิด Deadlock
+- **Performance Optimized Bundles:** โหลดโมดูล ExcelJS ขนาดใหญ่แบบ On-Demand ทำให้ First Load JS ของหน้าจัดตารางลดลงจาก 447 kB เหลือเพียง **~193 kB**
+- **Dashboard Clock Isolation:** แยกคอมโพเนนต์นาฬิกา `DashboardClock` ทำให้ Dashboard ไม่ต้อง Re-render ทั้งหน้าทุกวินาที
 
 ---
 
@@ -97,9 +104,9 @@ graph TB
 
 ### Prerequisites
 
-- **Node.js** >= 18.x
-- **pnpm** (recommended package manager)
-- **MySQL** database server
+- **Node.js** >= 20.x หรือ 24.x LTS (แนะนำ v24.18.1)
+- **pnpm** >= 10.x / 11.x (แนะนำ pnpm 11.18.0)
+- **MySQL** 8.0+
 
 ### Installation
 
@@ -110,46 +117,48 @@ graph TB
    cd cpetak-timetable
    ```
 
-2. **Install dependencies**
+2. **Install dependencies** (บังคับใช้ pnpm เท่านั้น)
 
    ```bash
-   pnpm install
+   pnpm install --frozen-lockfile
    ```
 
 3. **Set up environment variables**
 
-   สร้างไฟล์ `.env` ที่ root ของโปรเจค:
+   คัดลอกไฟล์ `.env.production.example` ไปเป็น `.env`:
+
+   ```bash
+   cp .env.production.example .env
+   ```
+
+   กำหนดค่าตัวแปรใน `.env`:
 
    ```env
-   # Database
-   DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/DATABASE_NAME"
+   # Database Connection
+   DATABASE_URL="mysql://root:password@localhost:3306/timetable_db"
 
-   # NextAuth
-   NEXTAUTH_SECRET="your-secret-key"
+   # NextAuth Security
+   NEXTAUTH_SECRET="your-generated-openssl-base64-secret-min-32-chars"
    NEXTAUTH_URL="http://localhost:3000"
+
+   # Administrator Credentials
+   ADMIN_USERNAME="cpetak_admin"
+   ADMIN_PASSWORD="YourComplexPassword123!"
    ```
 
-4. **Run database migrations**
+4. **Deploy database migrations**
 
    ```bash
-   pnpm prisma migrate dev
+   pnpm exec prisma migrate deploy
    ```
 
-5. **Seed initial data**
+5. **Generate Prisma Client**
 
    ```bash
-   pnpm prisma db seed
+   pnpm exec prisma generate
    ```
 
-   > สร้างข้อมูลเริ่มต้นของชั้นปี (ปี 1 – ปี 4)
-
-6. **Generate Prisma Client**
-
-   ```bash
-   pnpm prisma generate
-   ```
-
-7. **Start development server**
+6. **Start development server**
 
    ```bash
    pnpm dev
@@ -157,215 +166,157 @@ graph TB
 
    เปิด [http://localhost:3000](http://localhost:3000) ในเบราว์เซอร์
 
-### Build for Production
-
-```bash
-pnpm build
-pnpm start
-```
-
 ---
 
 ## 📁 Project Structure
 
 ```
 cpetak-timetable/
-├── app/                          # Next.js App Router pages
-│   ├── api/                      # API routes
-│   │   ├── auth/                 #   NextAuth.js endpoints
-│   │   ├── curriculum/           #   Curriculum CRUD
-│   │   ├── dashboard/            #   Dashboard data
-│   │   ├── department-subjects/  #   Department subjects
-│   │   ├── room/                 #   Room management
-│   │   ├── room-request-deadline/#   Room request deadline
-│   │   ├── subject/              #   Subject management
-│   │   ├── teacher/              #   Teacher management
-│   │   ├── term/                 #   Academic term
-│   │   ├── term-year/            #   Term/year config
-│   │   ├── timetable/            #   Timetable CRUD & auto-generate
-│   │   └── year-level/           #   Year level management
-│   ├── academic-calendar/        # Academic calendar page
-│   ├── adjust-time-tables/       # Timetable adjustment pages
-│   │   ├── adjust-plan-dve/      #   DVE plan adjustment
-│   │   ├── adjust-plan-four-year/#   4-year plan adjustment
-│   │   └── adjust-plan-transfer/ #   Transfer plan adjustment
-│   ├── class-schedule/           # Class schedule view
-│   ├── curriculum/               # Curriculum management
-│   ├── dashboard/                # Admin dashboard
-│   ├── login/                    # Login page
-│   ├── rooms/                    # Room management
-│   ├── rooms-use/                # Room utilization view
-│   ├── study-plans/              # Study plans (by curriculum type)
-│   │   ├── dve-lvc-plan/         #   DVE-LVC plan
-│   │   ├── dve-msix-plan/        #   DVE-MSIX plan
-│   │   ├── four-year-plan/       #   4-year plan
-│   │   └── transfer-plan/        #   Transfer plan
-│   ├── teacher-use/              # Teacher portal
-│   │   ├── request-room/         #   Room request
-│   │   └── time-table/           #   Teacher's timetable view
-│   └── teachers/                 # Teacher management
-│       ├── in-teacher/           #   Internal teachers
-│       └── out-teacher/          #   External teachers
-├── components/                   # Reusable components
-│   ├── ui/                       # shadcn/ui base components
-│   ├── auto-timetable-button/    # Auto-generate timetable
-│   ├── conflict-details/         # Scheduling conflict display
-│   ├── co-teaching-Info/         # Co-teaching information
-│   ├── dashboard/                # Dashboard widgets
-│   ├── download-button/          # Excel export
-│   ├── navbar/                   # Navigation bar
-│   ├── table/                    # Data table components
-│   ├── time-table/               # Timetable grid components
-│   └── ...                       # Other feature components
-├── lib/                          # Utilities
-│   ├── prisma.ts                 # Prisma client singleton
-│   └── utils.ts                  # Helper functions (cn, etc.)
-├── prisma/                       # Prisma ORM
-│   ├── schema.prisma             # Database schema
-│   ├── seed.ts                   # Seed data
-│   └── migrations/               # Database migrations
-├── types/                        # TypeScript type definitions
-│   └── next-auth.d.ts            # NextAuth type augmentation
-├── utils/                        # Business logic utilities
-│   └── co-teaching-helper.ts     # Co-teaching helper functions
-└── middleware.ts                  # Auth middleware (route protection)
+├── app/                          # Next.js App Router (Pages & API Handlers)
+│   ├── api/                      # RESTful Route Handlers (Role-Protected)
+│   │   ├── auth/                 #   NextAuth Authentication API
+│   │   ├── teacher/              #   Teacher Enrollment & Password Reset API
+│   │   ├── timetable/            #   Timetable Mutations & Safe Clear API
+│   │   └── ...                   #   Curriculum, Room, Subject APIs
+│   ├── adjust-time-tables/       # หน้าจัดตารางสอนทั้ง 11 หน้า
+│   │   ├── adjust-plan-four-year/#   หลักสูตร 4 ปี (ปี 1 – ปี 4)
+│   │   ├── adjust-plan-transfer/ #   หลักสูตรเทียบโอน (ปี 1 – ปี 3)
+│   │   └── adjust-plan-dve/      #   หลักสูตรอาชีวะ DVE-LVC & DVE-MS (ปี 1 – ปี 2)
+│   ├── study-plans/              # หน้าแสดงแผนการเรียน 4 หมวดหมู่
+│   ├── dashboard/                # แดชบอร์ดผู้ดูแลระบบ
+│   └── login/                    # หน้าเข้าสู่ระบบ (Admin & Teacher)
+├── deploy/                       # แฟ้มการติดตั้งสำหรับเซิร์ฟเวอร์จริง
+│   └── nginx/                    #   Nginx Reverse Proxy, TLS & Rate Limiting Config
+├── docs/                         # เอกสารประกอบการพัฒนาและการส่งมอบ
+│   ├── release/                  #   Checklists, Runbooks, Rollback Procedures
+│   └── security/                 #   Teacher Auth RFC, Security Specifications
+├── features/                     # Domain-Driven Architecture (Service Layer)
+│   ├── timetable/                #   บริการจัดตาราง, Concurrency Lock, Retry Logic
+│   ├── subjects/                 #   วิชาเรียน, การสอนร่วม (Co-Teaching), Split/Merge
+│   ├── teachers/                 #   บริการข้อมูลผู้สอน และ Teacher Authentication
+│   ├── rooms/                    #   บริการห้องเรียน และการตรวจสอบความจุ
+│   ├── curriculum/               #   บริการหมวดหมู่และโครงสร้างหลักสูตร
+│   └── dashboard/                #   คอมโพเนนต์และการดึงข้อมูลสถิติ
+├── components/                   # UI Components ทั่วไปและ shadcn/ui
+├── lib/                          # Core Utilities & Singletons
+│   ├── auth.ts                   #   NextAuth Options & Dual Credentials Providers
+│   ├── password.ts               #   Node.js scrypt KDF Cryptography Helper
+│   ├── api-auth.ts               #   Session Revocation & Role Guards
+│   └── prisma.ts                 #   Prisma Client Singleton
+├── prisma/                       # Prisma Schema & Migrations
+│   ├── migrations/               #   6 Versioned Production Migrations
+│   └── schema.prisma             #   Database Schema
+└── tests/                        # Automated Test Suites
+    ├── unit/                     #   Unit Tests (Services, Helpers, Math)
+    ├── integration/              #   Integration Tests (Concurrency, Rollback, DB)
+    └── e2e/                      #   Playwright Browser Tests (DnD, Export, Modals)
 ```
 
 ---
 
 ## ✨ Key Features
 
-### 🔐 ระบบ Authentication & Authorization
+### 🔐 1. ความปลอดภัยและการยืนยันตัวตนระดับสูง
+- **Dual Role Access Control:** แยกสิทธิ์ `Admin` และ `Teacher` ชัดเจนผ่าน Server-Side Guard
+- **scrypt Option 4 KDF:** เข้ารหัสรหัสผ่านตามมาตรฐาน OWASP ($N=16384, r=8, p=5$, 16-byte salt, 64-byte key)
+- **Elimination of Legacy Passwords:** ยกเลิกการใช้รหัสประจำตัวอาจารย์ (`tId`) เป็นรหัสผ่าน 100%
+- **First-Time Enrollment Workflow:** อาจารย์ลงทะเบียนด้วย One-Time Token (SHA-256) ที่ออกโดยผู้ดูแลระบบ
+- **Real-Time Session Revocation:** ตรวจสอบ `sessionVersion` แบบเรียลไทม์ เซสชันเก่าจะถูกตัดสิทธิ์ทันทีเมื่อมีการรีเซ็ตรหัสผ่าน
 
-- เข้าสู่ระบบแบบ **Credentials** (รหัสอาจารย์ / รหัสผู้ดูแล)
-- **Role-based Access Control** — Admin และ Teacher มีสิทธิ์การเข้าถึงที่แตกต่างกัน
-- **JWT Session** พร้อม middleware ป้องกัน route
+### 📅 2. การจัดตารางสอนครบ 11 หน้าและระบบป้องกันความขัดแย้ง
+- **รองรับ 4 หลักสูตรการศึกษา:**
+  - **หลักสูตร 4 ปี:** ปี 1, ปี 2, ปี 3, ปี 4
+  - **หลักสูตรเทียบโอน:** ปี 1, ปี 2, ปี 3
+  - **หลักสูตร DVE-LVC:** ปี 1, ปี 2
+  - **หลักสูตร DVE-MS:** ปี 1, ปี 2
+- **Pointer Drag & Drop:** ลากวางรายวิชาลงตารางได้อย่างลื่นไหลและแม่นยำ
+- **Multi-Assignment:** รองรับการจัดวิชาแบบหลายหมู่เรียนพร้อมกัน
+- **Co-Teaching (การสอนร่วม):** รวมกลุ่มรายวิชาและซิงค์ตารางเรียนข้ามหลักสูตรอัตโนมัติ
+- **Wednesday Restrictions & Term 3 Rules:** บังคับใช้เงื่อนไขพิเศษของสถาบัน (เช่น บ่ายวันพุธ และภาคฤดูร้อน)
 
-### 📊 จัดตารางเรียนอัตโนมัติ
-
-- รองรับหลายหลักสูตร: **หลักสูตร 4 ปี**, **เทียบโอน**, **DVE-LVC**, **DVE-MSIX**
-- **Auto-generate** ตารางเรียนจากหลักสูตรอัตโนมัติ
-- **Drag & Drop** จัดวางรายวิชาลงตาราง (@dnd-kit)
-- ตรวจจับ **ความขัดแย้งของตาราง** (Conflict Detection)
-- ปรับแต่งตารางเรียนด้วยมือ
-
-### 👥 การสอนร่วม (Co-Teaching)
-
-- จัดกลุ่มวิชาสอนร่วมข้ามหลักสูตร
-- **Split / Merge** กลุ่มสอนร่วม
-- ซิงค์ตารางเรียนของกลุ่มสอนร่วมอัตโนมัติ
-
-### 🏫 จัดการข้อมูลพื้นฐาน
-
-- **อาจารย์** — เพิ่ม/แก้ไข/ลบ แบ่งเป็นอาจารย์ภายในและภายนอก
-- **ห้องเรียน** — จัดการห้องเรียน แบ่งประเภท, ดูการใช้งานห้อง
-- **รายวิชา** — จัดการรายวิชา, เครดิต, ชั่วโมงบรรยาย/ปฏิบัติ
-- **หลักสูตร** — จัดการหลักสูตรการศึกษา
-
-### 📅 ปฏิทินการศึกษา
-
-- จัดการ **ภาคเรียน** (เทอม) พร้อมวันเริ่มต้น-สิ้นสุด
-- กำหนด **ปีการศึกษา/ภาคเรียน** ปัจจุบัน
-- ตั้งค่า **deadline** การขอใช้ห้อง
-
-### 🧑‍🏫 พอร์ทัลอาจารย์ (Teacher Portal)
-
-- ดูตารางสอนส่วนตัว
-- ขอใช้ห้องเรียน
-
-### 📥 Export ข้อมูล
-
-- **Export ตารางเรียนเป็น Excel** (ExcelJS)
-- Export ตารางห้องเรียน
-- Export ตารางอาจารย์
-
-### 🎨 UI/UX
-
-- **Dark Mode / Light Mode** toggle
-- **Responsive Design**
-- UI Components จาก **shadcn/ui (New York style)**
-- ฟอนต์ **Sarabun** รองรับภาษาไทย
-- Toast notifications ด้วย **Sonner**
+### 📊 3. การส่งออกข้อมูล Excel บนความเร็วสูง
+- **On-Demand Dynamic Import:** โหลดโมดูล `exceljs` เฉพาะเมื่อคลิกปุ่มดาวน์โหลด
+- **ดาวน์โหลดครบวงจร:** ตารางเรียนรวม, ตารางประจำตัวผู้สอน และตารางการใช้ห้องเรียน
+- **รองรับภาษาไทย:** ฟอนต์และการจัดรูปแบบเซลล์ถูกต้อง ชัดเจน ไม่มีข้อมูลความลับหลุดรอด
 
 ---
 
-## 💻 Development Workflow
+## 🧪 Testing & Quality Assurance
 
-### Scripts ที่ใช้งานได้
+ระบบได้รับการทดสอบครอบคลุมทุกระดับชั้น รวม **194 Tests ผ่าน 100% (Green)**:
+
+### 1. Vitest Full Regression Suite (157 / 157 Passing)
+- **Unit Tests:** ทดสอบฟังก์ชันคำนวณคาบเรียน, ฟังก์ชันเข้ารหัส scrypt, การจัดการ Co-Teaching
+- **Integration Tests:** ทดสอบการย้อนกลับธุรกรรม (Transaction Rollback) สำหรับการแยก/รวมวิชา
+- **Concurrency Stress Tests:** ทดสอบจำลอง Race Condition แบบ 30 Iterations ต่อเนื่องเพื่อยืนยันว่าไม่มี Double Booking เกิดขึ้น
 
 ```bash
-# Development
-pnpm dev              # Start development server
-
-# Build
-pnpm build            # Generate Prisma client + Next.js build
-pnpm start            # Start production server
-
-# Linting
-pnpm lint             # Run ESLint
-
-# Database
-pnpm prisma migrate dev     # Run migrations (development)
-pnpm prisma migrate deploy  # Run migrations (production)
-pnpm prisma db seed         # Seed initial data
-pnpm prisma studio          # Open Prisma Studio (DB GUI)
-pnpm prisma generate        # Regenerate Prisma Client
+pnpm test
 ```
 
-### Database Management
+### 2. Playwright End-to-End Suite (37 / 37 Passing)
+- ทดสอบการล็อกอิน, การลงทะเบียนอาจารย์, และการรีเซ็ตรหัสผ่านผ่านเบราว์เซอร์จริง
+- ทดสอบ Pointer Drag & Drop, การตรวจจับการทับซ้อน (Collision Detection)
+- ทดสอบการดาวน์โหลดไฟล์ Excel ทั้ง 3 ประเภทบน Chromium
 
-- ใช้ **Prisma Studio** (`pnpm prisma studio`) เพื่อดูและจัดการข้อมูลผ่าน GUI
-- Schema อยู่ที่ `prisma/schema.prisma`
-- Migrations ถูกจัดเก็บที่ `prisma/migrations/`
-
----
-
-## 📏 Coding Standards
-
-### General
-
-- **TypeScript Strict Mode** — เปิดใช้งาน `strict: true` ใน tsconfig
-- **No Unused Variables** — เปิดใช้งาน `noUnusedLocals` และ `noUnusedParameters`
-- ใช้ `_` prefix สำหรับ parameters ที่ตั้งใจไม่ใช้งาน (เช่น `_req`)
-
-### Project Conventions
-
-- **Path Aliases** — ใช้ `@/*` สำหรับ import จาก root (เช่น `@/components/...`, `@/lib/...`)
-- **Components** — แต่ละ component อยู่ในโฟลเดอร์แยก พร้อมไฟล์หลัก
-- **API Routes** — ใช้ Next.js Route Handlers (`route.ts`)
-- **Prisma Client** — ใช้ singleton pattern ผ่าน `lib/prisma.ts` เพื่อป้องกัน connection leak ใน development (HMR)
-
-### Styling
-
-- ใช้ **Tailwind CSS v4** กับ `@import "tailwindcss"` syntax
-- ใช้ **CSS Variables** สำหรับ theming (oklch color space)
-- ใช้ `cn()` utility จาก `clsx` + `tailwind-merge` สำหรับ conditional class names
-- shadcn/ui components ใช้ **New York** style variant
-
-### Linting
-
-- ESLint กับ `next` configuration
-- ปิด `react/no-unescaped-entities` และ `@next/next/no-page-custom-font` rules
+```bash
+pnpm exec playwright test --project=chromium
+```
 
 ---
 
-## 📝 Database Schema
+## 🛡 Production Deployment
 
-### Entity Relationship
+สำหรับการขึ้นระบบ Production บนเซิร์ฟเวอร์จริง ให้ปฏิบัติตามคู่มือในโฟลเดอร์ `docs/release/`:
+- [`docs/release/PRODUCTION_GO_LIVE_CHECKLIST.md`](docs/release/PRODUCTION_GO_LIVE_CHECKLIST.md) — แผนและ Checklist ขั้นตอนการ Deploy แม่บท
+- [`deploy/nginx/cpetak-timetable.conf`](deploy/nginx/cpetak-timetable.conf) — คอนฟิกูเรชัน Nginx Reverse Proxy พร้อม TLS 1.3 และ Rate Limiting (จำกัด 10 req/m บน Auth Endpoints)
+- [`.env.production.example`](.env.production.example) — ตัวอย่างการตั้งค่า Environment Variables และคำสั่งแยกผู้ใช้งานฐานข้อมูล (Runtime vs Migration)
+
+---
+
+## 📝 Database Schema Overview
 
 ```mermaid
 erDiagram
-    Plans_tb ||--o{ Timetable_tb : has
-    Plans_tb }o--|| Room_tb : uses
+    Plans_tb ||--o{ Timetable_tb : "scheduled into"
+    Plans_tb }o--|| Room_tb : "assigned room"
     Plans_tb }o--|| Teacher_tb : "taught by"
-    Plans_tb }o--o{ CoTeaching_tb : "groups"
-    Timetable_tb }o--|| Room_tb : "scheduled in"
-    Timetable_tb }o--|| Teacher_tb : "assigned to"
-    Term_tb {
+    Plans_tb }o--o{ CoTeaching_tb : "grouped in"
+    Teacher_tb ||--o{ TeacherToken_tb : "auth tokens"
+    Timetable_tb }o--|| Room_tb : "uses room"
+    Timetable_tb }o--|| Teacher_tb : "instructed by"
+
+    Teacher_tb {
         int id PK
-        string name
-        datetime start
-        datetime end
+        string tId UK
+        string tName
+        string tLastName
+        string passwordHash
+        boolean isEnrolled
+        int sessionVersion
+    }
+    TeacherToken_tb {
+        int id PK
+        int teacherId FK
+        string tokenHash UK
+        string tokenType
+        datetime expiresAt
+        datetime consumedAt
+    }
+    TimetableLock_tb {
+        string lockKey PK
+        datetime createdAt
+    }
+    Timetable_tb {
+        int id PK
+        int planId FK
+        string termYear
+        int day
+        int startPeriod
+        int endPeriod
+        int roomId FK
+        int teacherId FK
+        string section
     }
     Plans_tb {
         int id PK
@@ -375,34 +326,11 @@ erDiagram
         string planType
         string termYear
     }
-    Room_tb {
-        int id PK
-        string roomCode
-        string roomType
-        string roomCate
-    }
-    Teacher_tb {
-        int id PK
-        string tId
-        string tName
-        string tLastName
-        string teacherType
-    }
-    Timetable_tb {
-        int id PK
-        int day
-        int startPeriod
-        int endPeriod
-    }
-    Curriculum_tb {
-        int id PK
-        string id_sub
-        string subject_name
-        int credit
-    }
-    
 ```
 
-<p align="center">
-  Made with ❤️ by <strong>DekCom</strong>
-</p>
+---
+
+## 📄 License & Credits
+
+- พัฒนาและดูแลระบบโดย: **ทีมงาน DekCom**
+- พัฒนาขึ้นเพื่อใช้ในการจัดตารางเรียนตารางสอนสำหรับสถาบันการศึกษา
