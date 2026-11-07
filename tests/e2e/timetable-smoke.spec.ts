@@ -11,3 +11,4 @@ test.describe("Timetable Navigation & Access Control Smoke Tests", () => {
     await expect(page).toHaveTitle(/.*timetable.*/i);
   });
 });
+

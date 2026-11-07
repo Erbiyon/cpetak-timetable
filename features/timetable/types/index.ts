@@ -46,3 +46,4 @@ export interface ConflictItem {
   conflicts?: any[];
   mainSubject?: any;
 }
+

@@ -42,3 +42,4 @@ export function formatPeriodRange(periods: number[]): string {
   if (sorted.length === 1) return `${sorted[0]}`;
   return `${sorted[0]}-${sorted[sorted.length - 1]}`;
 }
+

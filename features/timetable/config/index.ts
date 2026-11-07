@@ -75,3 +75,4 @@ export const TIMETABLE_CONFIGS: Record<string, TimetableConfig> = {
     isMultiAssignment: true,
   },
 };
+

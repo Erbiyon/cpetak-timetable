@@ -38,3 +38,4 @@ describe("Timetable Pure Calculations (features/timetable/utils)", () => {
     });
   });
 });
+
