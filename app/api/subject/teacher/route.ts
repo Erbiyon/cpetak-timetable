@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
 export async function PUT(request: NextRequest) {
   try {
+    const auth = await requireAdmin(request);
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { subjectId, teacherId } = await request.json();
 
     if (!subjectId) {

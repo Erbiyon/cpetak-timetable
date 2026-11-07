@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireTeacherOrAdmin } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
 export async function PATCH(
@@ -6,19 +7,52 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = await context.params;
-    const subjectId = parseInt(id);
-    const { roomId } = await request.json();
+    const auth = await requireTeacherOrAdmin(request);
+    if (!auth.authorized) {
+      return auth.response;
+    }
 
-    console.log("กำลังอัปเดตห้องเรียนของวิชา:", { subjectId, roomId });
+    const { id } = await context.params;
+    const subjectId = parseInt(id, 10);
+    const { roomId } = await request.json();
 
     if (isNaN(subjectId)) {
       return NextResponse.json({ error: "ID วิชาไม่ถูกต้อง" }, { status: 400 });
     }
 
+    const currentPlan = await prisma.plans_tb.findUnique({
+      where: { id: subjectId },
+    });
+
+    if (!currentPlan) {
+      return NextResponse.json({ error: "ไม่พบข้อมูลวิชาที่ระบุ" }, { status: 404 });
+    }
+
+    // Ownership check for Teachers
+    if (auth.user.role === "teacher") {
+      const authenticatedTeacherId = auth.user.teacherId;
+      if (!authenticatedTeacherId) {
+        return NextResponse.json(
+          { error: "ไม่พบข้อมูลอาจารย์ที่ล็อกอิน (Forbidden)" },
+          { status: 403 },
+        );
+      }
+
+      const teacherRecord = await prisma.teacher_tb.findFirst({
+        where: { tId: authenticatedTeacherId },
+      });
+
+      if (!teacherRecord || currentPlan.teacherId !== teacherRecord.id) {
+        return NextResponse.json(
+          { error: "คุณไม่มีสิทธิ์กำหนดห้องเรียนของวิชาที่สอนโดยอาจารย์ท่านอื่น (Forbidden: Ownership required)" },
+          { status: 403 },
+        );
+      }
+    }
+
     const updatedSubject = await prisma.plans_tb.update({
       where: { id: subjectId },
-      data: { roomId: roomId },
+      data: { roomId: roomId ? Number(roomId) : null },
       include: {
         room: {
           select: {
@@ -38,7 +72,6 @@ export async function PATCH(
       },
     });
 
-    console.log("ห้องเรียนของวิชาได้รับการอัปเดตแล้ว:", updatedSubject);
     return NextResponse.json(updatedSubject);
   } catch (error) {
     console.error("ผิดพลาดในการอัปเดตห้องเรียนของวิชา:", error);

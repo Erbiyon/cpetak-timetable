@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/api-auth";
 import { SubjectService } from "@/features/subjects/services/subject.service";
 import {
   validateCreateSubjectInput,
@@ -7,6 +8,11 @@ import {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireAdmin(req);
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const body = await req.json();
     const validation = validateCreateSubjectInput(body);
 
@@ -54,6 +60,11 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    const auth = await requireAdmin(req);
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const body = await req.json();
     const validation = validateUpdateSubjectInput(body);
 

@@ -4,7 +4,7 @@ import { SplitPartInput } from "../types";
 
 export class SubjectSplitService {
   /**
-   * Splits a single subject plan record into two distinct parts.
+   * Splits a single subject plan record into two distinct parts within a given Prisma client or transaction.
    */
   static async splitSingleSubject(
     originalSubject: any,
@@ -67,74 +67,34 @@ export class SubjectSplitService {
 
   /**
    * Coordinates subject split workflow for single, DVE synchronized, or Co-Teaching subjects.
+   * Guarantees atomic execution via prisma.$transaction.
    */
   static async splitSubject(
     subjectId: number,
     splitData: { part1: SplitPartInput; part2: SplitPartInput },
   ) {
-    const originalSubject = await prisma.plans_tb.findUnique({
-      where: { id: subjectId },
-      include: {
-        room: true,
-        teacher: true,
-      },
-    });
-
-    if (!originalSubject) {
-      return { success: false, error: "ไม่พบวิชาที่ระบุ", statusCode: 404 };
-    }
-
-    const coTeachingGroup = await checkCoTeachingGroup(subjectId);
-
-    const allUpdatedSubjects: any[] = [];
-    const allNewSubjects: any[] = [];
-
-    if (coTeachingGroup) {
-      const coTeachingSubjects = await prisma.plans_tb.findMany({
-        where: {
-          id: { in: coTeachingGroup.planIds },
-        },
+    return prisma.$transaction(async (tx) => {
+      const originalSubject = await tx.plans_tb.findUnique({
+        where: { id: subjectId },
         include: {
           room: true,
           teacher: true,
         },
       });
 
-      const part1Ids: number[] = [];
-      const part2Ids: number[] = [];
-
-      for (const subject of coTeachingSubjects) {
-        const result = await this.splitSingleSubject(subject, splitData);
-        allUpdatedSubjects.push(result.updatedSubject);
-        allNewSubjects.push(result.newSubject);
-        part1Ids.push(result.updatedSubject.id);
-        part2Ids.push(result.newSubject.id);
+      if (!originalSubject) {
+        return { success: false, error: "ไม่พบวิชาที่ระบุ", statusCode: 404 };
       }
 
-      await handleCoTeachingSplit(
-        coTeachingGroup.groupKey,
-        { part1Ids, part2Ids },
-        originalSubject.subjectCode,
-        originalSubject.termYear || "",
-        {
-          part1: splitData.part1.partNumber,
-          part2: splitData.part2.partNumber,
-        },
-      );
-    } else {
-      const isDVEPlan =
-        originalSubject.planType === "DVE-MSIX" ||
-        originalSubject.planType === "DVE-LVC";
+      const coTeachingGroup = await checkCoTeachingGroup(subjectId);
 
-      if (isDVEPlan) {
-        const sameSubjects = await prisma.plans_tb.findMany({
+      const allUpdatedSubjects: any[] = [];
+      const allNewSubjects: any[] = [];
+
+      if (coTeachingGroup) {
+        const coTeachingSubjects = await tx.plans_tb.findMany({
           where: {
-            subjectCode: originalSubject.subjectCode,
-            termYear: originalSubject.termYear,
-            yearLevel: originalSubject.yearLevel,
-            planType: {
-              in: ["DVE-MSIX", "DVE-LVC"],
-            },
+            id: { in: coTeachingGroup.planIds },
           },
           include: {
             room: true,
@@ -142,26 +102,69 @@ export class SubjectSplitService {
           },
         });
 
-        for (const subject of sameSubjects) {
-          const result = await this.splitSingleSubject(subject, splitData);
+        const part1Ids: number[] = [];
+        const part2Ids: number[] = [];
+
+        for (const subject of coTeachingSubjects) {
+          const result = await this.splitSingleSubject(subject, splitData, tx);
+          allUpdatedSubjects.push(result.updatedSubject);
+          allNewSubjects.push(result.newSubject);
+          part1Ids.push(result.updatedSubject.id);
+          part2Ids.push(result.newSubject.id);
+        }
+
+        await handleCoTeachingSplit(
+          coTeachingGroup.groupKey,
+          { part1Ids, part2Ids },
+          originalSubject.subjectCode,
+          originalSubject.termYear || "",
+          {
+            part1: splitData.part1.partNumber,
+            part2: splitData.part2.partNumber,
+          },
+        );
+      } else {
+        const isDVEPlan =
+          originalSubject.planType === "DVE-MSIX" ||
+          originalSubject.planType === "DVE-LVC";
+
+        if (isDVEPlan) {
+          const sameSubjects = await tx.plans_tb.findMany({
+            where: {
+              subjectCode: originalSubject.subjectCode,
+              termYear: originalSubject.termYear,
+              yearLevel: originalSubject.yearLevel,
+              planType: {
+                in: ["DVE-MSIX", "DVE-LVC"],
+              },
+            },
+            include: {
+              room: true,
+              teacher: true,
+            },
+          });
+
+          for (const subject of sameSubjects) {
+            const result = await this.splitSingleSubject(subject, splitData, tx);
+            allUpdatedSubjects.push(result.updatedSubject);
+            allNewSubjects.push(result.newSubject);
+          }
+        } else {
+          const result = await this.splitSingleSubject(originalSubject, splitData, tx);
           allUpdatedSubjects.push(result.updatedSubject);
           allNewSubjects.push(result.newSubject);
         }
-      } else {
-        const result = await this.splitSingleSubject(originalSubject, splitData);
-        allUpdatedSubjects.push(result.updatedSubject);
-        allNewSubjects.push(result.newSubject);
       }
-    }
 
-    return {
-      success: true,
-      statusCode: 200,
-      updatedSubject: allUpdatedSubjects[0],
-      newSubject: allNewSubjects[0],
-      allUpdatedSubjects,
-      allNewSubjects,
-      isCoTeaching: !!coTeachingGroup,
-    };
+      return {
+        success: true,
+        statusCode: 200,
+        updatedSubject: allUpdatedSubjects[0],
+        newSubject: allNewSubjects[0],
+        allUpdatedSubjects,
+        allNewSubjects,
+        isCoTeaching: !!coTeachingGroup,
+      };
+    });
   }
 }

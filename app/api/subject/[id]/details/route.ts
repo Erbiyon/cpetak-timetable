@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireTeacherOrAdmin } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
 export async function PUT(
@@ -6,6 +7,11 @@ export async function PUT(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireTeacherOrAdmin(req);
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id: paramId } = await context.params;
     const id = parseInt(paramId, 10);
     if (isNaN(id)) {
@@ -26,15 +32,37 @@ export async function PUT(
       );
     }
 
+    // Ownership check for Teachers
+    if (auth.user.role === "teacher") {
+      const authenticatedTeacherId = auth.user.teacherId;
+      if (!authenticatedTeacherId) {
+        return NextResponse.json(
+          { error: "ไม่พบข้อมูลอาจารย์ที่ล็อกอิน (Forbidden)" },
+          { status: 403 },
+        );
+      }
+
+      const teacherRecord = await prisma.teacher_tb.findFirst({
+        where: { tId: authenticatedTeacherId },
+      });
+
+      if (!teacherRecord || subject.teacherId !== teacherRecord.id) {
+        return NextResponse.json(
+          { error: "คุณไม่มีสิทธิ์แก้ไขข้อมูลวิชาของอาจารย์ท่านอื่น (Forbidden: Ownership required)" },
+          { status: 403 },
+        );
+      }
+    }
+
     const body = await req.json();
-    console.log("ข้อมูลที่ได้รับ:", body);
 
     const updateData: any = {};
 
     if (body.roomId !== undefined) {
       updateData.roomId = body.roomId;
     }
-    if (body.teacherId !== undefined) {
+    // Only Admin can reassign teacherId on details endpoint
+    if (body.teacherId !== undefined && auth.user.role === "admin") {
       updateData.teacherId = body.teacherId;
     }
     if (body.section !== undefined) {
@@ -48,9 +76,8 @@ export async function PUT(
 
     return NextResponse.json(updatedSubject);
   } catch (error: any) {
-    console.error("ผิดพลาดในการอัปเดตข้อมูลวิชา:", error);
     return NextResponse.json(
-      { error: error.message || "เกิดข้อผิดพลาดในการอัปเดตข้อมูลวิชา" },
+      { error: error.message || "เกิดข้อผิดพลาดในการแก้ไขข้อมูลวิชา" },
       { status: 500 },
     );
   }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
 export async function PATCH(
@@ -6,11 +7,14 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = await context.params;
-    const subjectId = parseInt(id);
-    const { teacherId } = await request.json();
+    const auth = await requireAdmin(request);
+    if (!auth.authorized) {
+      return auth.response;
+    }
 
-    console.log("กำลังอัปเดตอาจารย์ของวิชา:", { subjectId, teacherId });
+    const { id } = await context.params;
+    const subjectId = parseInt(id, 10);
+    const { teacherId } = await request.json();
 
     if (isNaN(subjectId)) {
       return NextResponse.json({ error: "ID วิชาไม่ถูกต้อง" }, { status: 400 });
@@ -18,7 +22,7 @@ export async function PATCH(
 
     const updatedSubject = await prisma.plans_tb.update({
       where: { id: subjectId },
-      data: { teacherId: teacherId },
+      data: { teacherId: teacherId ? Number(teacherId) : null },
       include: {
         room: {
           select: {
@@ -38,7 +42,6 @@ export async function PATCH(
       },
     });
 
-    console.log("วิชาได้รับการอัปเดตแล้ว:", updatedSubject);
     return NextResponse.json(updatedSubject);
   } catch (error) {
     console.error("ผิดพลาดในการอัปเดตอาจารย์ของวิชา:", error);
