@@ -24,32 +24,12 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { DashboardClock } from "@/features/dashboard/components/DashboardClock";
 
 export default function DashboardCustom() {
   const { data: session } = useSession();
   const [isTerm3, setIsTerm3] = useState<boolean>(false);
-  const [currentTime, setCurrentTime] = useState<string>("");
   const [currentTermYear, setCurrentTermYear] = useState<string>("");
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const timeString = now.toLocaleString("th-TH", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-      setCurrentTime(timeString);
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     const fetchCurrentTermYear = async () => {
@@ -233,7 +213,7 @@ export default function DashboardCustom() {
             </p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-white mb-1">{currentTime}</p>
+            <DashboardClock className="text-sm text-white mb-1" />
             {currentTermYear && (
               <p className="text-sm text-white">
                 ภาคเรียนที่ {currentTermYear}
