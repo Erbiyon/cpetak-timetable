@@ -43,3 +43,29 @@ export function formatPeriodRange(periods: number[]): string {
   return `${sorted[0]}-${sorted[sorted.length - 1]}`;
 }
 
+/**
+ * Calculates occupied period numbers starting from `period` for `totalPeriods` slots,
+ * automatically skipping Wednesday activity periods (14-17) unless term starts with "3/".
+ */
+export function calculateAssignmentPeriods(
+  day: number,
+  startPeriod: number,
+  totalPeriods: number,
+  isTerm3: boolean = false
+): number[] {
+  const isWednesday = day === 2;
+  const activityPeriods = isTerm3 ? [] : [14, 15, 16, 17];
+  const periods: number[] = [];
+
+  for (let i = 0; i < totalPeriods; i++) {
+    const currentPeriod = startPeriod + i;
+    if (isWednesday && activityPeriods.includes(currentPeriod)) {
+      continue;
+    }
+    periods.push(currentPeriod);
+  }
+
+  return periods;
+}
+
+

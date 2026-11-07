@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -18,15 +18,29 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
-import DownloadButtonTimetable from "@/components/download-button/download-button-timetable";
-import AutoFullCurriculumButton from "@/components/auto-timetable-button/auto-full-curriculum-button";
-import ClearFullCurriculumButton from "@/components/auto-timetable-button/clear-full-curriculum-button";
+import { TIMETABLE_CONFIGS } from "@/features/timetable/config";
+import { useTimetableData } from "@/features/timetable/hooks/useTimetableData";
+import { TimetableHeader } from "@/features/timetable/components/TimetableHeader";
+import { calculateAssignmentPeriods } from "@/features/timetable/utils/timetable-calculations";
+
+const CONFIG = TIMETABLE_CONFIGS["four-one-year"];
 
 export default function FourOneYear() {
-  const [termYear, setTermYear] = useState<string | undefined>(undefined);
-  const [plans, setPlans] = useState<any[]>([]);
+  const {
+    termYear,
+    plans,
+    setPlans,
+    timetableData,
+    tableAssignments,
+    setTableAssignments,
+    isLoading,
+    refreshData,
+  } = useTimetableData({
+    yearLevel: CONFIG.yearLevel,
+    planType: CONFIG.planType,
+  });
+
   const [activeSubject, setActiveSubject] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [dragOverCell, setDragOverCell] = useState<{
     day: number;
     period: number;
@@ -35,11 +49,6 @@ export default function FourOneYear() {
   const [dragFailedSubjectId, setDragFailedSubjectId] = useState<number | null>(
     null,
   );
-  const [timetableData, setTimetableData] = useState<any[]>([]);
-
-  const [tableAssignments, setTableAssignments] = useState<{
-    [subjectId: number]: { day: number; periods: number[] } | null;
-  }>({});
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -49,127 +58,12 @@ export default function FourOneYear() {
     }),
   );
 
-  const handleSubjectUpdate = useCallback(async () => {
-    try {
-      setIsLoading(true);
-
-      const [timetableRes, planRes] = await Promise.all([
-        fetch(
-          `/api/timetable?termYear=${encodeURIComponent(termYear || "")}&yearLevel=${encodeURIComponent("ปี 1")}&planType=FOUR_YEAR`,
-        ),
-        fetch(
-          `/api/subject?termYear=${encodeURIComponent(termYear || "")}&yearLevel=${encodeURIComponent("ปี 1")}&planType=FOUR_YEAR`,
-        ),
-      ]);
-
-      if (timetableRes.ok) {
-        const timetableData = await timetableRes.json();
-        setTimetableData(timetableData);
-
-        const assignments: {
-          [subjectId: number]: { day: number; periods: number[] };
-        } = {};
-
-        timetableData.forEach((item: any) => {
-          const periods: number[] = [];
-          for (let p = item.startPeriod; p <= item.endPeriod; p++) {
-            if (
-              !termYear?.startsWith("3/") &&
-              item.day === 2 &&
-              p >= 14 &&
-              p <= 17
-            )
-              continue;
-            periods.push(p);
-          }
-          assignments[item.planId] = { day: item.day, periods };
-        });
-
-        setTableAssignments(assignments);
-      }
-
-      if (planRes.ok) {
-        const planData = await planRes.json();
-        if (Array.isArray(planData) && planData.length > 0) {
-          setPlans(planData);
-        }
-      }
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [termYear]);
-
-  useEffect(() => {
-    async function fetchData() {
-      setIsLoading(true);
-      try {
-        const termRes = await fetch("/api/term-year");
-        if (!termRes.ok) {
-          console.error("Failed to fetch term year:", termRes.status);
-          return;
-        }
-        const termData = await termRes.json();
-        setTermYear(termData.termYear);
-
-        const [timetableRes, planRes] = await Promise.all([
-          fetch(
-            `/api/timetable?termYear=${encodeURIComponent(termData.termYear)}&yearLevel=${encodeURIComponent("ปี 1")}&planType=FOUR_YEAR`,
-          ),
-          fetch(
-            `/api/subject?termYear=${encodeURIComponent(termData.termYear)}&yearLevel=${encodeURIComponent("ปี 1")}&planType=FOUR_YEAR`,
-          ),
-        ]);
-
-        if (timetableRes.ok) {
-          const timetableData = await timetableRes.json();
-          setTimetableData(timetableData);
-
-          const assignments: {
-            [subjectId: number]: { day: number; periods: number[] };
-          } = {};
-
-          timetableData.forEach((item: any) => {
-            const periods: number[] = [];
-            for (let p = item.startPeriod; p <= item.endPeriod; p++) {
-              if (
-                !termData.termYear?.startsWith("3/") &&
-                item.day === 2 &&
-                p >= 14 &&
-                p <= 17
-              )
-                continue;
-              periods.push(p);
-            }
-            assignments[item.planId] = { day: item.day, periods };
-          });
-
-          setTableAssignments(assignments);
-        }
-
-        if (planRes.ok) {
-          const planData = await planRes.json();
-          setPlans(Array.isArray(planData) ? planData : []);
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setPlans([]);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
   function handleDragStart(event: any) {
     document.body.classList.add("dragging-active");
 
     const { active } = event;
-
     const isFromTable = active.id.startsWith("table-subject-");
-    let subjectId;
+    let subjectId: number;
 
     if (isFromTable) {
       subjectId = parseInt(active.id.replace("table-subject-", ""));
@@ -202,7 +96,7 @@ export default function FourOneYear() {
         return { day, period };
       });
     } else {
-      setDragOverCell((prev) => (prev === null ? null : null));
+      setDragOverCell(null);
     }
   }
 
@@ -222,7 +116,7 @@ export default function FourOneYear() {
       return;
     }
 
-    let subjectId;
+    let subjectId: number;
     if (active.id.startsWith("table-subject-")) {
       subjectId = parseInt(active.id.replace("table-subject-", ""));
     } else {
@@ -235,12 +129,6 @@ export default function FourOneYear() {
 
       if (subject) {
         const isCoTeaching = await checkCoTeaching(subjectId);
-
-        console.log("กำลังวางวิชา:", {
-          subjectCode: subject.subjectCode,
-          subjectName: subject.subjectName,
-          isCoTeaching: isCoTeaching,
-        });
 
         const totalHours = (subject.lectureHour || 0) + (subject.labHour || 0);
         const totalPeriods = totalHours * 2;
@@ -255,10 +143,9 @@ export default function FourOneYear() {
         }
 
         const isWednesday = day === 2;
-        const activityPeriods =
-          typeof termYear === "string" && termYear.startsWith("3/")
-            ? []
-            : [14, 15, 16, 17];
+        const isTerm3 =
+          typeof termYear === "string" && termYear.startsWith("3/");
+        const activityPeriods = isTerm3 ? [] : [14, 15, 16, 17];
         const wouldOverlapActivity =
           isWednesday &&
           activityPeriods.some((actPeriod) => {
@@ -275,14 +162,12 @@ export default function FourOneYear() {
           return;
         }
 
-        const periods: number[] = [];
-        for (let i = 0; i < totalPeriods; i++) {
-          let currentPeriod = period + i;
-          if (isWednesday && activityPeriods.includes(currentPeriod)) {
-            continue;
-          }
-          periods.push(currentPeriod);
-        }
+        const periods = calculateAssignmentPeriods(
+          day,
+          period,
+          totalPeriods,
+          isTerm3,
+        );
 
         if (!isCoTeaching) {
           let hasOverlap = false;
@@ -291,7 +176,7 @@ export default function FourOneYear() {
               if (parseInt(existingSubjectId) === subjectId) return;
 
               if (assignment && assignment.day === day) {
-                const overlap = periods.some((p) =>
+                const overlap = periods.some((p: number) =>
                   assignment.periods.includes(p),
                 );
                 if (overlap) {
@@ -328,8 +213,8 @@ export default function FourOneYear() {
             body: JSON.stringify({
               planId: subjectId,
               termYear: termYear || "1",
-              yearLevel: "ปี 1",
-              planType: "FOUR_YEAR",
+              yearLevel: CONFIG.yearLevel,
+              planType: CONFIG.planType,
               day,
               startPeriod,
               endPeriod,
@@ -380,12 +265,10 @@ export default function FourOneYear() {
             console.log("บันทึกตารางเรียนสำเร็จ", data);
             setConflicts([]);
             setDragFailedSubjectId(null);
-
-            await handleSubjectUpdate();
+            await refreshData();
           }
         } catch (error) {
           console.error("เกิดข้อผิดพลาดในการบันทึกตารางเรียน:", error);
-
           setTableAssignments((prev) => {
             const newState = { ...prev };
             if (activeSubject?.fromTable && activeSubject.originalAssignment) {
@@ -435,7 +318,7 @@ export default function FourOneYear() {
           });
         }
 
-        await handleSubjectUpdate();
+        await refreshData();
       } else {
         console.error("เกิดข้อผิดพลาดในการลบตารางเรียน");
       }
@@ -446,11 +329,6 @@ export default function FourOneYear() {
 
   async function handleSplitSubject(subjectId: number, splitData: any) {
     try {
-      setIsLoading(true);
-
-      const originalSubject = plans.find((plan) => plan.id === subjectId);
-      console.log("Original subject before split:", originalSubject);
-
       const response = await fetch("/api/subject/split", {
         method: "POST",
         headers: {
@@ -469,16 +347,10 @@ export default function FourOneYear() {
 
       const { updatedSubject, newSubject } = await response.json();
 
-      console.log("Split results received:", {
-        updated: updatedSubject,
-        new: newSubject,
-      });
-
       setPlans((prevPlans) => {
         const updatedPlans = prevPlans.map((plan) =>
           plan.id === subjectId ? updatedSubject : plan,
         );
-
         return [...updatedPlans, newSubject];
       });
 
@@ -487,26 +359,13 @@ export default function FourOneYear() {
         delete newAssignments[subjectId];
         return newAssignments;
       });
-
-      console.log(
-        "Split successful - Updated: ",
-        updatedSubject,
-        "New: ",
-        newSubject,
-      );
     } catch (error) {
       console.error("Error splitting subject:", error);
-    } finally {
-      setIsLoading(false);
     }
   }
 
   async function handleMergeSubject(subjectId: number) {
     try {
-      setIsLoading(true);
-
-      console.log("Starting merge for subject ID:", subjectId);
-
       const response = await fetch("/api/subject/merge", {
         method: "POST",
         headers: {
@@ -522,75 +381,32 @@ export default function FourOneYear() {
 
       const { mergedSubject, deletedParts } = await response.json();
 
-      console.log("Merge response:", {
-        mergedSubject,
-        deletedParts,
-      });
-
       setPlans((prevPlans) => {
-        console.log("Previous plans:", prevPlans.length);
-
         let updatedPlans = prevPlans.filter(
           (plan) => !deletedParts.includes(plan.id),
         );
 
-        console.log("After filtering deleted parts:", updatedPlans.length);
-
         updatedPlans = updatedPlans.map((plan) => {
           if (plan.id === mergedSubject.id) {
-            console.log("Updating merged subject:", {
-              old: {
-                id: plan.id,
-                name: plan.subjectName,
-                room: plan.room,
-                teacher: plan.teacher,
-                section: plan.section,
-              },
-              new: {
-                id: mergedSubject.id,
-                name: mergedSubject.subjectName,
-                room: mergedSubject.room,
-                teacher: mergedSubject.teacher,
-                section: mergedSubject.section,
-              },
-            });
             return mergedSubject;
           }
           return plan;
         });
 
-        console.log("Final plans count:", updatedPlans.length);
         return updatedPlans;
       });
 
       setTableAssignments((prev) => {
         const newAssignments = { ...prev };
-
         deletedParts.forEach((partId: number) => {
-          console.log("Removing assignment for deleted part:", partId);
           delete newAssignments[partId];
         });
-
-        console.log(
-          "Removing assignment for merged subject:",
-          mergedSubject.id,
-        );
         delete newAssignments[mergedSubject.id];
-
         return newAssignments;
       });
-
-      console.log(
-        "Merge successful - Merged: ",
-        mergedSubject,
-        "Deleted: ",
-        deletedParts,
-      );
     } catch (error: any) {
       console.error("Error merging subject:", error);
       alert(`เกิดข้อผิดพลาด: ${error.message}`);
-    } finally {
-      setIsLoading(false);
     }
   }
 
@@ -633,19 +449,12 @@ export default function FourOneYear() {
       return { day, periods: [], isValid: false, message: "ทับช่วงกิจกรรม" };
     }
 
-    const periods: number[] = [];
-    for (let i = 0; i < totalPeriods; i++) {
-      let currentPeriod = period + i;
-      if (
-        !isTerm3Preview &&
-        day === 2 &&
-        currentPeriod >= 14 &&
-        currentPeriod <= 17
-      ) {
-        continue;
-      }
-      periods.push(currentPeriod);
-    }
+    const periods = calculateAssignmentPeriods(
+      day,
+      period,
+      totalPeriods,
+      isTerm3Preview,
+    );
 
     let hasOverlap = false;
     let overlapSubject = null;
@@ -655,7 +464,7 @@ export default function FourOneYear() {
         if (parseInt(existingSubjectId) === activeSubject.id) return;
 
         if (assignment && assignment.day === day) {
-          const overlap = periods.some((p) => assignment.periods.includes(p));
+          const overlap = periods.some((p: number) => assignment.periods.includes(p));
           if (overlap) {
             hasOverlap = true;
             const overlappingSubject = plans.find(
@@ -695,29 +504,12 @@ export default function FourOneYear() {
     >
       <div className="mx-auto px-4">
         <div className="bg-card text-card-foreground rounded-xl border my-5 py-6 shadow-sm mx-auto max-w-7xl">
-          <div className="flex justify-between items-center mx-8 pb-2 text-lg font-semibold">
-            <div className="flex items-center gap-4">
-              <span>ตารางเรียน 4 ปี ปี 1 ภาคเรียนที่ {termYear}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <AutoFullCurriculumButton
-                termYear={termYear || ""}
-                onScheduleComplete={() => {
-                  handleSubjectUpdate();
-                }}
-              />
-              <ClearFullCurriculumButton
-                termYear={termYear || ""}
-                onClearComplete={() => {
-                  handleSubjectUpdate();
-                }}
-              />
-              <DownloadButtonTimetable
-                currentTermYear={termYear}
-                timetables={timetableData}
-              />
-            </div>
-          </div>
+          <TimetableHeader
+            title={CONFIG.title}
+            termYear={termYear}
+            timetableData={timetableData}
+            onRefresh={refreshData}
+          />
           <div className="bg-card text-card-foreground px-8">
             <TimeTableCustom
               assignments={tableAssignments}
@@ -730,8 +522,8 @@ export default function FourOneYear() {
           </div>
           <PlansStatusCustom
             termYear={termYear || ""}
-            yearLevel="ปี 1"
-            planType="FOUR_YEAR"
+            yearLevel={CONFIG.yearLevel}
+            planType={CONFIG.planType}
             plans={plans}
             assignments={tableAssignments}
             assignedCount={assignedSubjectsCount}
@@ -739,7 +531,7 @@ export default function FourOneYear() {
             onSplitSubject={handleSplitSubject}
             onMergeSubject={handleMergeSubject}
             conflicts={conflicts}
-            onSubjectUpdate={handleSubjectUpdate}
+            onSubjectUpdate={refreshData}
             dragFailedSubjectId={dragFailedSubjectId}
             onDragFailedReset={() => setDragFailedSubjectId(null)}
           />

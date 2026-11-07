@@ -1,6 +1,6 @@
 export type PlanType = "FOUR_YEAR" | "TRANSFER" | "DVE-MSIX" | "DVE-LVC";
 
-export type YearLevel = "1" | "2" | "3" | "4";
+export type YearLevel = "1" | "2" | "3" | "4" | "ปี 1" | "ปี 2" | "ปี 3" | "ปี 4";
 
 export interface TimetableConfig {
   planType: PlanType;
@@ -23,6 +23,10 @@ export interface TimetableSubject {
   lectureHour: number;
   labHour: number;
   section?: string | null;
+  roomId?: number | null;
+  teacherId?: number | null;
+  yearLevel?: string;
+  planType?: string;
   teacher?: {
     id: number;
     tId: string;

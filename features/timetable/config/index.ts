@@ -1,29 +1,29 @@
-import { PlanType, YearLevel, TimetableConfig } from "../types";
+import { TimetableConfig } from "../types";
 
 export const TIMETABLE_CONFIGS: Record<string, TimetableConfig> = {
   // Four-Year Curriculum (ปี 1 - 4)
   "four-one-year": {
     planType: "FOUR_YEAR",
-    yearLevel: "1",
-    title: "จัดตารางสอน แผน 4 ปี ชั้นปีที่ 1",
+    yearLevel: "ปี 1",
+    title: "ตารางเรียน 4 ปี ปี 1",
     isMultiAssignment: false,
   },
   "four-two-year": {
     planType: "FOUR_YEAR",
-    yearLevel: "2",
-    title: "จัดตารางสอน แผน 4 ปี ชั้นปีที่ 2",
+    yearLevel: "ปี 2",
+    title: "ตารางเรียน 4 ปี ปี 2",
     isMultiAssignment: false,
   },
   "four-three-year": {
     planType: "FOUR_YEAR",
-    yearLevel: "3",
-    title: "จัดตารางสอน แผน 4 ปี ชั้นปีที่ 3",
+    yearLevel: "ปี 3",
+    title: "ตารางเรียน 4 ปี ปี 3",
     isMultiAssignment: false,
   },
   "four-four-year": {
     planType: "FOUR_YEAR",
-    yearLevel: "4",
-    title: "จัดตารางสอน แผน 4 ปี ชั้นปีที่ 4",
+    yearLevel: "ปี 4",
+    title: "ตารางเรียน 4 ปี ปี 4",
     isMultiAssignment: false,
   },
 

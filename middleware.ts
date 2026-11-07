@@ -16,6 +16,10 @@ export default withAuth(
                 return !!token
             },
         },
+        pages: {
+            signIn: "/login",
+        },
+        secret: process.env.NEXTAUTH_SECRET || "development-secret-key-not-for-production",
     }
 )
 
