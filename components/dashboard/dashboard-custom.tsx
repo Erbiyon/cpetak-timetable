@@ -393,7 +393,7 @@ export default function DashboardCustom() {
                 รายการที่ต้องดำเนินการ
               </CardTitle>
               <Badge variant="outline" className="text-xs border-border bg-muted/40">
-                {unassignedPlans > 0 ? `${unassignedPlans} รายการ` : "ครบถ้วน"}
+                {totalPlans === 0 ? "ไม่มีแผนวิชา" : unassignedPlans > 0 ? `${unassignedPlans} รายการ` : "ครบถ้วน"}
               </Badge>
             </div>
             <CardDescription className="text-xs">
@@ -401,7 +401,22 @@ export default function DashboardCustom() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 pt-1">
-            {unassignedPlans > 0 ? (
+            {totalPlans === 0 ? (
+              <div className="rounded-lg border border-border bg-secondary/30 p-4 text-center">
+                <CalendarRange className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                <div className="text-sm font-semibold text-foreground">
+                  ไม่พบข้อมูลแผนการเรียนในระบบ
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 mb-3">
+                  ยังไม่มีรายวิชาในแผนการเรียนประจำภาคการศึกษานี้ สามารถเริ่มต้นเพิ่มแผนการเรียนหรือนำเข้าหลักสูตร
+                </div>
+                <Link href="/curriculum">
+                  <Button variant="outline" size="sm" className="text-xs h-8">
+                    ตรวจสอบโครงสร้างหลักสูตร
+                  </Button>
+                </Link>
+              </div>
+            ) : unassignedPlans > 0 ? (
               <div className="space-y-2">
                 <div className="rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-500/5 p-3">
                   <div className="flex items-start gap-2.5">
