@@ -51,3 +51,51 @@ export interface ConflictItem {
   mainSubject?: any;
 }
 
+export interface CreateTimetableInput {
+  planId: number;
+  termYear: string;
+  yearLevel: string;
+  planType: string;
+  day: number;
+  startPeriod: number;
+  endPeriod: number;
+  roomId?: number | null;
+  teacherId?: number | null;
+  section?: string | null;
+}
+
+export interface TimetableConflictCheckOptions {
+  planId: number;
+  termYear: string;
+  yearLevel: string;
+  planType: string;
+  day: number;
+  startPeriod: number;
+  endPeriod: number;
+  teacherId?: number | null;
+  roomId?: number | null;
+  section?: string | null;
+}
+
+export type CreateTimetableResult =
+  | {
+      success: true;
+      statusCode: 200;
+      timetable: any;
+      conflicts?: never;
+      error?: never;
+    }
+  | {
+      success: false;
+      statusCode: number;
+      conflicts: ConflictItem[];
+      timetable?: never;
+      error?: never;
+    }
+  | {
+      success: false;
+      statusCode: number;
+      error: string;
+      conflicts?: never;
+      timetable?: never;
+    };
