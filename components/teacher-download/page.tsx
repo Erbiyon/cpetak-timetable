@@ -1,7 +1,7 @@
 "use client";
-import React from "react";
-import ExcelJS from "exceljs";
-import { Download } from "lucide-react";
+import React, { useState } from "react";
+import type ExcelJS from "exceljs";
+import { Download, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 
 interface ScheduleData {
@@ -85,6 +85,7 @@ export default function DownloadTeacherButton({
   currentTermYear,
   timetables = [],
 }: DownloadTeacherButtonProps) {
+  const [isExporting, setIsExporting] = useState(false);
   const getCurriculumInfo = () => {
     if (timetables.length === 0)
       return { curriculum: "หลักสูตรไม่ระบุ", filePrefix: "ตารางสอน" };
@@ -847,7 +848,11 @@ export default function DownloadTeacherButton({
 
   const generateExcelDownload = async () => {
     try {
-      const workbook = new ExcelJS.Workbook();
+      setIsExporting(true);
+      const excelModule = await import("exceljs");
+      const ExcelJSClass = excelModule.default || excelModule;
+
+      const workbook = new ExcelJSClass.Workbook();
       const worksheet = initializeWorksheet(workbook);
 
       createMainHeaders(worksheet);
@@ -863,6 +868,8 @@ export default function DownloadTeacherButton({
     } catch (error) {
       console.error("Error generating Excel file:", error);
       alert("เกิดข้อผิดพลาดในการสร้างไฟล์ Excel กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -892,6 +899,7 @@ export default function DownloadTeacherButton({
   const canDownload = hasTeacher && hasData;
 
   const getButtonText = () => {
+    if (isExporting) return "กำลังสร้างไฟล์ Excel...";
     if (!hasTeacher) return "เลือกอาจารย์และภาคเรียนก่อน";
     if (!hasData) return "ไม่มีข้อมูลตารางเรียน";
     return "ดาวน์โหลดตารางสอน";
@@ -902,9 +910,13 @@ export default function DownloadTeacherButton({
       variant="secondary"
       onClick={generateExcelDownload}
       className="flex items-center gap-2"
-      disabled={!canDownload}
+      disabled={!canDownload || isExporting}
     >
-      <Download className="h-4 w-4" />
+      {isExporting ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Download className="h-4 w-4" />
+      )}
       {getButtonText()}
     </Button>
   );
