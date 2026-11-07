@@ -8,6 +8,12 @@ vi.mock("@/lib/prisma", () => ({
     timetable_tb: {
       deleteMany: vi.fn(),
     },
+    $transaction: vi.fn(async (cb) => {
+      if (typeof cb === "function") {
+        return cb(prisma);
+      }
+      return cb;
+    }),
   },
 }));
 

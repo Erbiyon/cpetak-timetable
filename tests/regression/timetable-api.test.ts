@@ -10,7 +10,9 @@ vi.mock("@/lib/prisma", () => ({
     },
     timetable_tb: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
       create: vi.fn(),
+      deleteMany: vi.fn(),
     },
     plans_tb: {
       findUnique: vi.fn(),
@@ -19,6 +21,12 @@ vi.mock("@/lib/prisma", () => ({
     teacher_tb: {
       findFirst: vi.fn(),
     },
+    $transaction: vi.fn(async (cb) => {
+      if (typeof cb === "function") {
+        return cb(prisma);
+      }
+      return cb;
+    }),
   },
 }));
 

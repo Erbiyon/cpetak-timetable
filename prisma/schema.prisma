@@ -147,3 +147,11 @@ model RoomRequestDeadline_tb {
 
   @@map("RoomRequestDeadline_tb")
 }
+
+model TimetableLock_tb {
+  lockKey   String   @id @db.VarChar(191)
+  createdAt DateTime @default(now())
+
+  @@map("TimetableLock_tb")
+}
+

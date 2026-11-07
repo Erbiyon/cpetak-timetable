@@ -1,26 +1,33 @@
 import { prisma } from "@/lib/prisma";
 import { CreateTimetableInput, CreateTimetableResult } from "../types";
 import { TimetableConflictService } from "./timetable-conflict.service";
+import { TimetableLockService } from "./timetable-lock.service";
+import { withTimetableRetry } from "../utils/timetable-retry";
 
 export class TimetableService {
   /**
    * Creates a timetable assignment with conflict verification,
    * single/multi assignment rules, Term 3 exceptions, DVE cross-curriculum synchronization,
    * and Co-Teaching assignment mirroring within an atomic transaction.
+   *
+   * Enforces fine-grained InnoDB row-level locking on TimetableLock_tb
+   * before re-validating conflicts inside the transaction to eliminate TOCTOU race conditions.
+   * Wrapped in withTimetableRetry to absorb transient MySQL gap-lock conflicts gracefully.
    */
   static async createTimetable(input: CreateTimetableInput): Promise<CreateTimetableResult> {
-    const {
-      planId,
-      termYear,
-      yearLevel,
-      planType,
-      day,
-      startPeriod,
-      endPeriod,
-      roomId,
-      teacherId,
-      section,
-    } = input;
+    return withTimetableRetry(async () => {
+      const {
+        planId,
+        termYear,
+        yearLevel,
+        planType,
+        day,
+        startPeriod,
+        endPeriod,
+        roomId,
+        teacherId,
+        section,
+      } = input;
 
     const isDVE = planType === "DVE-MSIX" || planType === "DVE-LVC";
     const isTransferOrFourYear =
@@ -53,72 +60,98 @@ export class TimetableService {
     }
 
     const shouldCheckConflicts = !(isCoTeaching && isTransferOrFourYear);
+    const isTerm3 = typeof termYear === "string" && termYear.startsWith("3/");
 
-    if (shouldCheckConflicts) {
-      const conflicts = await TimetableConflictService.checkConflicts({
-        planId,
-        termYear,
-        yearLevel,
-        planType,
-        day,
-        startPeriod,
-        endPeriod,
-        teacherId,
-        roomId,
-        section,
-      });
-
-      if (conflicts.length > 0) {
-        return {
-          success: false,
-          conflicts,
-          statusCode: 409,
-        };
+    // Collect additional plan IDs affected (e.g. Co-Teaching or DVE counterparts)
+    const additionalPlanIds: number[] = [];
+    if (isCoTeaching && coTeachingGroup) {
+      for (const p of coTeachingGroup.plans) {
+        if (p.id !== planId) additionalPlanIds.push(p.id);
       }
     }
 
-    const isTerm3 = typeof termYear === "string" && termYear.startsWith("3/");
+    const lockKeys = TimetableLockService.buildAssignmentLockKeys({
+      planId,
+      termYear,
+      yearLevel,
+      planType,
+      day,
+      roomId,
+      teacherId,
+      additionalPlanIds,
+    });
 
-    return prisma.$transaction(async (tx) => {
-      if (isTerm3) {
-        const selfOverlap = await tx.timetable_tb.findFirst({
-          where: {
-            planId,
-            day,
-            OR: [
-              {
-                AND: [
-                  { startPeriod: { lte: startPeriod } },
-                  { endPeriod: { gte: startPeriod } },
-                ],
-              },
-              {
-                AND: [
-                  { startPeriod: { lte: endPeriod } },
-                  { endPeriod: { gte: endPeriod } },
-                ],
-              },
-              {
-                AND: [
-                  { startPeriod: { gte: startPeriod } },
-                  { endPeriod: { lte: endPeriod } },
-                ],
-              },
-            ],
-          },
-        });
-        if (selfOverlap) {
-          return {
-            success: false,
-            error: "วิชานี้มีคาบซ้ำกันในวันเดียวกันแล้ว",
-            statusCode: 409,
-          };
+    return prisma.$transaction(
+      async (tx) => {
+        // 1. Acquire exclusive locks in deterministic order
+        await TimetableLockService.acquireLocks(tx, lockKeys);
+
+        // 2. Re-validate conflict rules under exclusive lock
+        if (shouldCheckConflicts) {
+          const conflicts = await TimetableConflictService.checkConflicts(
+            {
+              planId,
+              termYear,
+              yearLevel,
+              planType,
+              day,
+              startPeriod,
+              endPeriod,
+              teacherId,
+              roomId,
+              section,
+            },
+            tx,
+          );
+
+          if (conflicts.length > 0) {
+            return {
+              success: false,
+              conflicts,
+              statusCode: 409,
+            };
+          }
         }
-      } else {
-        await tx.timetable_tb.deleteMany({
-          where: { planId },
-        });
-      }
+
+        if (isTerm3) {
+          const selfOverlap = await tx.timetable_tb.findFirst({
+            where: {
+              planId,
+              day,
+              OR: [
+                {
+                  AND: [
+                    { startPeriod: { lte: startPeriod } },
+                    { endPeriod: { gte: startPeriod } },
+                  ],
+                },
+                {
+                  AND: [
+                    { startPeriod: { lte: endPeriod } },
+                    { endPeriod: { gte: endPeriod } },
+                  ],
+                },
+                {
+                  AND: [
+                    { startPeriod: { gte: startPeriod } },
+                    { endPeriod: { lte: endPeriod } },
+                  ],
+                },
+              ],
+            },
+          });
+          if (selfOverlap) {
+            return {
+              success: false,
+              error: "วิชานี้มีคาบซ้ำกันในวันเดียวกันแล้ว",
+              statusCode: 409,
+            };
+          }
+        } else {
+          await tx.timetable_tb.deleteMany({
+            where: { planId },
+          });
+        }
 
       const timetable = await tx.timetable_tb.create({
         data: {
@@ -249,6 +282,7 @@ export class TimetableService {
         statusCode: 200,
         timetable,
       };
+    }, { maxWait: 10000, timeout: 10000 });
     });
   }
 
@@ -309,8 +343,28 @@ export class TimetableService {
         coTeachingGroup !== null && coTeachingGroup.plans.length > 1;
     }
 
-    return prisma.$transaction(async (tx) => {
-      let deletedPlans: number[] = [];
+    // Build lock keys for all affected plans and their resources
+    const allAffectedPlanIds = [planId];
+    if (isCoTeaching && coTeachingGroup) {
+      for (const p of coTeachingGroup.plans) {
+        if (!allAffectedPlanIds.includes(p.id)) allAffectedPlanIds.push(p.id);
+      }
+    }
+
+    const deleteLockKeys = TimetableLockService.buildAssignmentLockKeys({
+      planId,
+      termYear: currentPlan.termYear || undefined,
+      yearLevel: currentPlan.yearLevel || undefined,
+      planType: currentPlan.planType || undefined,
+      roomId: currentPlan.roomId,
+      teacherId: currentPlan.teacherId,
+      additionalPlanIds: allAffectedPlanIds,
+    });
+
+    return prisma.$transaction(
+      async (tx) => {
+        await TimetableLockService.acquireLocks(tx, deleteLockKeys);
+        let deletedPlans: number[] = [];
 
       if (isDVE) {
         const isSplitSubject =
@@ -415,7 +469,7 @@ export class TimetableService {
           deletedCount: deleteResult.count,
         };
       }
-    });
+    }, { maxWait: 10000, timeout: 10000 });
   }
 
   /**
@@ -440,8 +494,20 @@ export class TimetableService {
       };
     }
 
-    return prisma.$transaction(async (tx) => {
-      await tx.timetable_tb.delete({ where: { id: recordId } });
+    const recordLockKeys = TimetableLockService.buildAssignmentLockKeys({
+      planId: record.planId,
+      termYear: record.termYear,
+      yearLevel: record.yearLevel,
+      planType: record.planType,
+      day: record.day,
+      roomId: record.roomId,
+      teacherId: record.teacherId,
+    });
+
+    return prisma.$transaction(
+      async (tx) => {
+        await TimetableLockService.acquireLocks(tx, recordLockKeys);
+        await tx.timetable_tb.delete({ where: { id: recordId } });
 
       // DVE Term 3: sync delete matching record in counterpart curriculum (LVC <-> MSIX)
       const isDVE =
@@ -486,7 +552,7 @@ export class TimetableService {
         deletedId: recordId,
         planId: record.planId,
       };
-    });
+    }, { maxWait: 10000, timeout: 10000 });
   }
 
   /**
@@ -505,20 +571,33 @@ export class TimetableService {
       };
     }
 
-    const deleteResult = await prisma.timetable_tb.deleteMany({
-      where: {
-        termYear,
-        yearLevel,
-        planType,
-      },
-    });
+    const scopeLockKeys = TimetableLockService.buildScopeLockKeys(
+      termYear,
+      yearLevel,
+      planType,
+    );
 
-    return {
-      success: true,
-      statusCode: 200,
-      message: "All subjects cleared from timetable",
-      deletedCount: deleteResult.count,
-    };
+    return prisma.$transaction(
+      async (tx) => {
+        await TimetableLockService.acquireLocks(tx, scopeLockKeys);
+
+        const deleteResult = await tx.timetable_tb.deleteMany({
+          where: {
+            termYear,
+            yearLevel,
+            planType,
+          },
+        });
+
+        return {
+          success: true,
+          statusCode: 200,
+          message: "All subjects cleared from timetable",
+          deletedCount: deleteResult.count,
+        };
+      },
+      { maxWait: 10000, timeout: 10000 },
+    );
   }
 
   /**
