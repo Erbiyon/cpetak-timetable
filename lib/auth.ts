@@ -1,7 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
-import { verifyPassword } from "@/lib/password";
+import { verifyPasswordAsync } from "@/lib/password";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -30,8 +30,8 @@ export const authOptions: NextAuthOptions = {
           }
 
           // Security Rule 2: Insecure legacy password matching (password === teacher.tId) is strictly eliminated.
-          // Password must match the cryptographically derived hash.
-          const isValid = verifyPassword(credentials.password, teacher.passwordHash);
+          // Password must match the cryptographically derived hash (asynchronous scrypt to avoid blocking event loop).
+          const isValid = await verifyPasswordAsync(credentials.password, teacher.passwordHash);
           if (!isValid) {
             return null;
           }
