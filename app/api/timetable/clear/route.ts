@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/api-auth";
+import { TimetableService } from "@/features/timetable/services/timetable.service";
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -12,24 +12,22 @@ export async function DELETE(request: NextRequest) {
     const body = await request.json();
     const { termYear, yearLevel, planType } = body;
 
-    if (!termYear || !yearLevel || !planType) {
+    const result = await TimetableService.clearTimetable({
+      termYear,
+      yearLevel,
+      planType,
+    });
+
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Missing required parameters" },
-        { status: 400 },
+        { error: result.error },
+        { status: result.statusCode },
       );
     }
 
-    const deletedCount = await prisma.timetable_tb.deleteMany({
-      where: {
-        termYear,
-        yearLevel,
-        planType,
-      },
-    });
-
     return NextResponse.json({
-      message: "All subjects cleared from timetable",
-      deletedCount: deletedCount.count,
+      message: result.message,
+      deletedCount: result.deletedCount,
     });
   } catch (error) {
     console.error("Error clearing timetable:", error);

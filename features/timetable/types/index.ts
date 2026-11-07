@@ -99,3 +99,75 @@ export type CreateTimetableResult =
       conflicts?: never;
       timetable?: never;
     };
+
+export interface DeleteTimetableInput {
+  planId: number;
+}
+
+export type DeleteTimetableResult =
+  | {
+      success: true;
+      statusCode: 200;
+      message: string;
+      deletedPlans: number[];
+      deletedCount: number;
+      error?: never;
+    }
+  | {
+      success: false;
+      statusCode: number;
+      error: string;
+      message?: never;
+      deletedPlans?: never;
+      deletedCount?: never;
+    };
+
+export interface DeleteTimetableRecordInput {
+  recordId: number;
+}
+
+export type DeleteTimetableRecordResult =
+  | {
+      success: true;
+      statusCode: 200;
+      deletedId: number;
+      planId: number;
+      error?: never;
+    }
+  | {
+      success: false;
+      statusCode: number;
+      error: string;
+      deletedId?: never;
+      planId?: never;
+    };
+
+export interface ClearTimetableInput {
+  termYear: string;
+  yearLevel: string;
+  planType: string;
+}
+
+export type ClearTimetableResult =
+  | {
+      success: true;
+      statusCode: 200;
+      message: string;
+      deletedCount: number;
+      error?: never;
+    }
+  | {
+      success: false;
+      statusCode: number;
+      error: string;
+      message?: never;
+      deletedCount?: never;
+    };
+
+export interface GetTimetableQuery {
+  roomId?: number;
+  teacherId?: number;
+  termYear?: string;
+  yearLevel?: string;
+  planType?: string;
+}

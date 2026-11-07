@@ -102,88 +102,38 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const roomIdParam = url.searchParams.get("roomId");
     const teacherIdParam = url.searchParams.get("teacherId");
-    const termYear = url.searchParams.get("termYear");
-    const yearLevel = url.searchParams.get("yearLevel");
-    const planType = url.searchParams.get("planType");
+    const termYear = url.searchParams.get("termYear") || undefined;
+    const yearLevel = url.searchParams.get("yearLevel") || undefined;
+    const planType = url.searchParams.get("planType") || undefined;
 
+    let roomId: number | undefined;
     if (roomIdParam) {
-      const roomId = parseInt(roomIdParam);
+      roomId = parseInt(roomIdParam);
       if (isNaN(roomId)) {
         return NextResponse.json(
           { error: "Invalid roomId parameter" },
           { status: 400 },
         );
       }
-
-      const whereClause: any = { roomId };
-      if (termYear) whereClause.termYear = termYear;
-
-      const timetables = await prisma.timetable_tb.findMany({
-        where: whereClause,
-        include: {
-          plan: {
-            include: {
-              teacher: true,
-              room: true,
-            },
-          },
-          teacher: true,
-          room: true,
-        },
-        orderBy: [{ day: "asc" }, { startPeriod: "asc" }],
-      });
-
-      return NextResponse.json(timetables);
     }
 
+    let teacherId: number | undefined;
     if (teacherIdParam) {
-      const teacherId = parseInt(teacherIdParam);
+      teacherId = parseInt(teacherIdParam);
       if (isNaN(teacherId)) {
         return NextResponse.json(
           { error: "Invalid teacherId parameter" },
           { status: 400 },
         );
       }
-
-      const whereClause: any = { teacherId };
-      if (termYear) whereClause.termYear = termYear;
-
-      const timetables = await prisma.timetable_tb.findMany({
-        where: whereClause,
-        include: {
-          plan: {
-            include: {
-              teacher: true,
-              room: true,
-            },
-          },
-          teacher: true,
-          room: true,
-        },
-        orderBy: [{ day: "asc" }, { startPeriod: "asc" }],
-      });
-
-      return NextResponse.json(timetables);
     }
 
-    const whereClause: any = {};
-    if (termYear) whereClause.termYear = termYear;
-    if (yearLevel) whereClause.yearLevel = yearLevel;
-    if (planType) whereClause.planType = planType;
-
-    const timetables = await prisma.timetable_tb.findMany({
-      where: whereClause,
-      include: {
-        plan: {
-          include: {
-            teacher: true,
-            room: true,
-          },
-        },
-        teacher: true,
-        room: true,
-      },
-      orderBy: [{ day: "asc" }, { startPeriod: "asc" }],
+    const timetables = await TimetableService.getTimetables({
+      roomId,
+      teacherId,
+      termYear,
+      yearLevel,
+      planType,
     });
 
     return NextResponse.json(timetables);

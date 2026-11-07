@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireTeacherOrAdmin } from "@/lib/api-auth";
+import { TimetableService } from "@/features/timetable/services/timetable.service";
 
 export async function GET(
   _request: NextRequest,
@@ -67,7 +68,7 @@ export async function DELETE(
       if (!authenticatedTeacherId) {
         return Response.json(
           { error: "ไม่พบข้อมูลอาจารย์ที่ล็อกอิน (Forbidden)" },
-          { status: 403 }
+          { status: 403 },
         );
       }
 
@@ -79,169 +80,28 @@ export async function DELETE(
       if (!teacherRecord || currentPlan.teacherId !== teacherRecord.id) {
         return Response.json(
           { error: "คุณไม่มีสิทธิ์ลบตารางสอนของอาจารย์ท่านอื่น (Forbidden: Ownership required)" },
-          { status: 403 }
+          { status: 403 },
         );
       }
     }
 
-    const isDVE =
-      currentPlan.planType === "DVE-MSIX" || currentPlan.planType === "DVE-LVC";
-    const isTransferOrFourYear =
-      currentPlan.planType === "TRANSFER" ||
-      currentPlan.planType === "FOUR_YEAR";
-
-    let coTeachingGroup = null;
-    let isCoTeaching = false;
-
-    if (isTransferOrFourYear) {
-      coTeachingGroup = await prisma.coTeaching_tb.findFirst({
-        where: {
-          plans: {
-            some: {
-              id: planId,
-            },
-          },
-        },
-        include: {
-          plans: {
-            include: {
-              timetables: true,
-              teacher: true,
-              room: true,
-            },
-          },
-        },
-      });
-      isCoTeaching =
-        coTeachingGroup !== null && coTeachingGroup.plans.length > 1;
-    }
-
-    console.log("Delete analysis:", {
+    const result = await TimetableService.deleteTimetable({
       planId,
-      isDVE,
-      isTransferOrFourYear,
-      isCoTeaching,
-      planType: currentPlan.planType,
+      planRecord: currentPlan,
     });
 
-    let deletedPlans: number[] = [];
-
-    if (isDVE) {
-      const isSplitSubject =
-        currentPlan.subjectName && currentPlan.subjectName.includes("(ส่วนที่");
-
-      if (isSplitSubject) {
-        console.log(
-          `� [API-DELETE] ลบวิชาที่แบ่งแล้วพร้อม sync: ${currentPlan.subjectName} (planId: ${planId})`,
-        );
-
-        const duplicatePlans = await prisma.plans_tb.findMany({
-          where: {
-            subjectCode: currentPlan.subjectCode,
-            subjectName: currentPlan.subjectName,
-            termYear: currentPlan.termYear,
-            yearLevel: currentPlan.yearLevel,
-            NOT: {
-              id: planId,
-            },
-          },
-        });
-
-        const allPlanIds = [planId, ...duplicatePlans.map((p) => p.id)];
-        console.log(
-          `🎯 [API-DELETE] ลบวิชาส่วนเดียวกัน ${allPlanIds.length} รายการ:`,
-          allPlanIds,
-        );
-
-        const deleteResult = await prisma.timetable_tb.deleteMany({
-          where: {
-            planId: {
-              in: allPlanIds,
-            },
-          },
-        });
-
-        deletedPlans = allPlanIds;
-
-        return Response.json({
-          message: "ลบตารางเรียนสำหรับวิชาที่แบ่งแล้วพร้อม sync",
-          deletedPlans: deletedPlans,
-          deletedCount: deleteResult.count,
-        });
-      } else {
-        console.log(
-          `🔄 [API-DELETE] ลบวิชา DVE ปกติ: ${currentPlan.subjectName} (planId: ${planId})`,
-        );
-
-        const duplicatePlans = await prisma.plans_tb.findMany({
-          where: {
-            subjectCode: currentPlan.subjectCode,
-            termYear: currentPlan.termYear,
-            yearLevel: currentPlan.yearLevel,
-            NOT: {
-              id: planId,
-            },
-          },
-        });
-
-        const allPlanIds = [planId, ...duplicatePlans.map((p) => p.id)];
-
-        console.log(
-          "DVE: Deleting timetables for duplicate plans:",
-          allPlanIds,
-        );
-
-        const deleteResult = await prisma.timetable_tb.deleteMany({
-          where: {
-            planId: {
-              in: allPlanIds,
-            },
-          },
-        });
-
-        deletedPlans = allPlanIds;
-
-        return Response.json({
-          message: "ลบตารางเรียนสำหรับวิชา DVE ที่มีรหัสเหมือนกันทั้งหมดแล้ว",
-          deletedPlans: deletedPlans,
-          deletedCount: deleteResult.count,
-        });
-      }
-    } else if (isCoTeaching && isTransferOrFourYear && coTeachingGroup) {
-      const planIds = coTeachingGroup.plans.map((p) => p.id);
-
-      console.log("Co-Teaching: Deleting timetables for group:", planIds);
-
-      const deleteResult = await prisma.timetable_tb.deleteMany({
-        where: {
-          planId: {
-            in: planIds,
-          },
-        },
-      });
-
-      deletedPlans = planIds;
-
-      return Response.json({
-        message: "ลบตารางเรียนสำหรับวิชาที่สอนร่วมทั้งหมดแล้ว",
-        deletedPlans: deletedPlans,
-        deletedCount: deleteResult.count,
-      });
-    } else {
-      console.log("Normal: Deleting timetable for single plan:", planId);
-
-      const deleteResult = await prisma.timetable_tb.deleteMany({
-        where: { planId },
-      });
-
-      deletedPlans = [planId];
-
-      return Response.json({
-        message: "ลบตารางเรียนแล้ว",
-        deletedPlans: deletedPlans,
-        deletedCount: deleteResult.count,
-      });
+    if (!result.success) {
+      return Response.json(
+        { error: result.error },
+        { status: result.statusCode },
+      );
     }
+
+    return Response.json({
+      message: result.message,
+      deletedPlans: result.deletedPlans,
+      deletedCount: result.deletedCount,
+    });
   } catch (error) {
     console.error("Error deleting timetable:", error);
     return Response.json(

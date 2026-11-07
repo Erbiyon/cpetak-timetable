@@ -8,7 +8,9 @@ vi.mock("@/lib/prisma", () => ({
     timetable_tb: {
       findMany: vi.fn(),
       findFirst: vi.fn(),
+      findUnique: vi.fn(),
       create: vi.fn(),
+      delete: vi.fn(),
       deleteMany: vi.fn(),
     },
     plans_tb: {
@@ -236,6 +238,208 @@ describe("Timetable Conflict & Service Unit Suite", () => {
         where: { planId: 10 },
       });
       expect(prisma.timetable_tb.create).toHaveBeenCalled();
+    });
+  });
+
+  describe("TimetableService.deleteTimetable", () => {
+    it("returns 404 when target plan is not found", async () => {
+      vi.mocked(prisma.plans_tb.findUnique).mockResolvedValue(null);
+
+      const result = await TimetableService.deleteTimetable({ planId: 999 });
+
+      expect(result.success).toBe(false);
+      expect(result.statusCode).toBe(404);
+      expect(result.error).toBe("Plan not found");
+      expect(prisma.timetable_tb.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it("deletes single plan timetable for normal subjects", async () => {
+      vi.mocked(prisma.plans_tb.findUnique).mockResolvedValue({
+        id: 15,
+        planType: "FOUR_YEAR",
+      } as any);
+      vi.mocked(prisma.coTeaching_tb.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.timetable_tb.deleteMany).mockResolvedValue({ count: 2 });
+
+      const result = await TimetableService.deleteTimetable({ planId: 15 });
+
+      expect(result.success).toBe(true);
+      expect(result.statusCode).toBe(200);
+      expect(result.deletedPlans).toEqual([15]);
+      expect(result.deletedCount).toBe(2);
+      expect(prisma.timetable_tb.deleteMany).toHaveBeenCalledWith({
+        where: { planId: 15 },
+      });
+    });
+
+    it("deletes all linked plans for Co-Teaching groups", async () => {
+      vi.mocked(prisma.plans_tb.findUnique).mockResolvedValue({
+        id: 10,
+        planType: "TRANSFER",
+      } as any);
+      vi.mocked(prisma.coTeaching_tb.findFirst).mockResolvedValue({
+        id: 1,
+        plans: [{ id: 10 }, { id: 20 }],
+      } as any);
+      vi.mocked(prisma.timetable_tb.deleteMany).mockResolvedValue({ count: 4 });
+
+      const result = await TimetableService.deleteTimetable({ planId: 10 });
+
+      expect(result.success).toBe(true);
+      expect(result.deletedPlans).toEqual([10, 20]);
+      expect(result.deletedCount).toBe(4);
+      expect(prisma.timetable_tb.deleteMany).toHaveBeenCalledWith({
+        where: {
+          planId: { in: [10, 20] },
+        },
+      });
+    });
+
+    it("synchronizes deletion across DVE paired curricula", async () => {
+      vi.mocked(prisma.plans_tb.findUnique).mockResolvedValue({
+        id: 101,
+        planType: "DVE-MSIX",
+        subjectCode: "DVE100",
+        termYear: "1/2567",
+        yearLevel: "1",
+      } as any);
+      vi.mocked(prisma.plans_tb.findMany).mockResolvedValue([
+        { id: 202, planType: "DVE-LVC" } as any,
+      ]);
+      vi.mocked(prisma.timetable_tb.deleteMany).mockResolvedValue({ count: 2 });
+
+      const result = await TimetableService.deleteTimetable({ planId: 101 });
+
+      expect(result.success).toBe(true);
+      expect(result.deletedPlans).toEqual([101, 202]);
+      expect(prisma.timetable_tb.deleteMany).toHaveBeenCalledWith({
+        where: {
+          planId: { in: [101, 202] },
+        },
+      });
+    });
+  });
+
+  describe("TimetableService.deleteTimetableRecord", () => {
+    it("returns 404 when record is not found", async () => {
+      vi.mocked(prisma.timetable_tb.findUnique).mockResolvedValue(null);
+
+      const result = await TimetableService.deleteTimetableRecord({ recordId: 999 });
+
+      expect(result.success).toBe(false);
+      expect(result.statusCode).toBe(404);
+      expect(result.error).toBe("Record not found");
+      expect(prisma.timetable_tb.delete).not.toHaveBeenCalled();
+    });
+
+    it("deletes single record and returns deletedId and planId", async () => {
+      vi.mocked(prisma.timetable_tb.findUnique).mockResolvedValue({
+        id: 55,
+        planId: 10,
+        planType: "FOUR_YEAR",
+        termYear: "1/2567",
+      } as any);
+      vi.mocked(prisma.timetable_tb.delete).mockResolvedValue({ id: 55 } as any);
+
+      const result = await TimetableService.deleteTimetableRecord({ recordId: 55 });
+
+      expect(result.success).toBe(true);
+      expect(result.deletedId).toBe(55);
+      expect(result.planId).toBe(10);
+      expect(prisma.timetable_tb.delete).toHaveBeenCalledWith({
+        where: { id: 55 },
+      });
+    });
+  });
+
+  describe("TimetableService.clearTimetable", () => {
+    it("rejects clear operation if required parameters are missing", async () => {
+      const result = await TimetableService.clearTimetable({
+        termYear: "",
+        yearLevel: "1",
+        planType: "FOUR_YEAR",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.statusCode).toBe(400);
+      expect(result.error).toBe("Missing required parameters");
+      expect(prisma.timetable_tb.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it("deletes all records strictly within given curriculum scope", async () => {
+      vi.mocked(prisma.timetable_tb.deleteMany).mockResolvedValue({ count: 12 });
+
+      const result = await TimetableService.clearTimetable({
+        termYear: "1/2567",
+        yearLevel: "ปี 1",
+        planType: "FOUR_YEAR",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.statusCode).toBe(200);
+      expect(result.deletedCount).toBe(12);
+      expect(prisma.timetable_tb.deleteMany).toHaveBeenCalledWith({
+        where: {
+          termYear: "1/2567",
+          yearLevel: "ปี 1",
+          planType: "FOUR_YEAR",
+        },
+      });
+    });
+  });
+
+  describe("TimetableService.getTimetables", () => {
+    it("queries by roomId when roomId is provided", async () => {
+      vi.mocked(prisma.timetable_tb.findMany).mockResolvedValue([{ id: 1 }] as any);
+
+      const result = await TimetableService.getTimetables({
+        roomId: 5,
+        termYear: "1/2567",
+      });
+
+      expect(result).toEqual([{ id: 1 }]);
+      expect(prisma.timetable_tb.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { roomId: 5, termYear: "1/2567" },
+        })
+      );
+    });
+
+    it("queries by teacherId when teacherId is provided", async () => {
+      vi.mocked(prisma.timetable_tb.findMany).mockResolvedValue([{ id: 2 }] as any);
+
+      const result = await TimetableService.getTimetables({
+        teacherId: 10,
+        termYear: "1/2567",
+      });
+
+      expect(result).toEqual([{ id: 2 }]);
+      expect(prisma.timetable_tb.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { teacherId: 10, termYear: "1/2567" },
+        })
+      );
+    });
+
+    it("queries by curriculum coordinates when roomId and teacherId are omitted", async () => {
+      vi.mocked(prisma.timetable_tb.findMany).mockResolvedValue([{ id: 3 }] as any);
+
+      const result = await TimetableService.getTimetables({
+        termYear: "1/2567",
+        yearLevel: "ปี 1",
+        planType: "FOUR_YEAR",
+      });
+
+      expect(result).toEqual([{ id: 3 }]);
+      expect(prisma.timetable_tb.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            termYear: "1/2567",
+            yearLevel: "ปี 1",
+            planType: "FOUR_YEAR",
+          },
+        })
+      );
     });
   });
 });

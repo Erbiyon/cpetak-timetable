@@ -251,4 +251,340 @@ export class TimetableService {
       };
     });
   }
+
+  /**
+   * Deletes all timetable entries associated with a planId,
+   * handling DVE cross-curriculum synchronization and Co-Teaching group plans atomically.
+   */
+  static async deleteTimetable(input: {
+    planId: number;
+    planRecord?: any;
+  }): Promise<import("../types").DeleteTimetableResult> {
+    const { planId, planRecord } = input;
+
+    const currentPlan =
+      planRecord !== undefined
+        ? planRecord
+        : await prisma.plans_tb.findUnique({
+            where: { id: planId },
+          });
+
+    if (!currentPlan) {
+      return {
+        success: false,
+        statusCode: 404,
+        error: "Plan not found",
+      };
+    }
+
+    const isDVE =
+      currentPlan.planType === "DVE-MSIX" || currentPlan.planType === "DVE-LVC";
+    const isTransferOrFourYear =
+      currentPlan.planType === "TRANSFER" ||
+      currentPlan.planType === "FOUR_YEAR";
+
+    let coTeachingGroup = null;
+    let isCoTeaching = false;
+
+    if (isTransferOrFourYear) {
+      coTeachingGroup = await prisma.coTeaching_tb.findFirst({
+        where: {
+          plans: {
+            some: {
+              id: planId,
+            },
+          },
+        },
+        include: {
+          plans: {
+            include: {
+              timetables: true,
+              teacher: true,
+              room: true,
+            },
+          },
+        },
+      });
+      isCoTeaching =
+        coTeachingGroup !== null && coTeachingGroup.plans.length > 1;
+    }
+
+    return prisma.$transaction(async (tx) => {
+      let deletedPlans: number[] = [];
+
+      if (isDVE) {
+        const isSplitSubject =
+          currentPlan.subjectName && currentPlan.subjectName.includes("(ส่วนที่");
+
+        if (isSplitSubject) {
+          const duplicatePlans = await tx.plans_tb.findMany({
+            where: {
+              subjectCode: currentPlan.subjectCode,
+              subjectName: currentPlan.subjectName,
+              termYear: currentPlan.termYear,
+              yearLevel: currentPlan.yearLevel,
+              NOT: {
+                id: planId,
+              },
+            },
+          });
+
+          const allPlanIds = [planId, ...duplicatePlans.map((p) => p.id)];
+
+          const deleteResult = await tx.timetable_tb.deleteMany({
+            where: {
+              planId: {
+                in: allPlanIds,
+              },
+            },
+          });
+
+          deletedPlans = allPlanIds;
+
+          return {
+            success: true,
+            statusCode: 200,
+            message: "ลบตารางเรียนสำหรับวิชาที่แบ่งแล้วพร้อม sync",
+            deletedPlans,
+            deletedCount: deleteResult.count,
+          };
+        } else {
+          const duplicatePlans = await tx.plans_tb.findMany({
+            where: {
+              subjectCode: currentPlan.subjectCode,
+              termYear: currentPlan.termYear,
+              yearLevel: currentPlan.yearLevel,
+              NOT: {
+                id: planId,
+              },
+            },
+          });
+
+          const allPlanIds = [planId, ...duplicatePlans.map((p) => p.id)];
+
+          const deleteResult = await tx.timetable_tb.deleteMany({
+            where: {
+              planId: {
+                in: allPlanIds,
+              },
+            },
+          });
+
+          deletedPlans = allPlanIds;
+
+          return {
+            success: true,
+            statusCode: 200,
+            message: "ลบตารางเรียนสำหรับวิชา DVE ที่มีรหัสเหมือนกันทั้งหมดแล้ว",
+            deletedPlans,
+            deletedCount: deleteResult.count,
+          };
+        }
+      } else if (isCoTeaching && isTransferOrFourYear && coTeachingGroup) {
+        const planIds = coTeachingGroup.plans.map((p) => p.id);
+
+        const deleteResult = await tx.timetable_tb.deleteMany({
+          where: {
+            planId: {
+              in: planIds,
+            },
+          },
+        });
+
+        deletedPlans = planIds;
+
+        return {
+          success: true,
+          statusCode: 200,
+          message: "ลบตารางเรียนสำหรับวิชาที่สอนร่วมทั้งหมดแล้ว",
+          deletedPlans,
+          deletedCount: deleteResult.count,
+        };
+      } else {
+        const deleteResult = await tx.timetable_tb.deleteMany({
+          where: { planId },
+        });
+
+        deletedPlans = [planId];
+
+        return {
+          success: true,
+          statusCode: 200,
+          message: "ลบตารางเรียนแล้ว",
+          deletedPlans,
+          deletedCount: deleteResult.count,
+        };
+      }
+    });
+  }
+
+  /**
+   * Deletes a specific single timetable record by recordId,
+   * handling DVE Term 3 synchronization across counterpart plans atomically.
+   */
+  static async deleteTimetableRecord(input: {
+    recordId: number;
+  }): Promise<import("../types").DeleteTimetableRecordResult> {
+    const { recordId } = input;
+
+    const record = await prisma.timetable_tb.findUnique({
+      where: { id: recordId },
+      include: { plan: true },
+    });
+
+    if (!record) {
+      return {
+        success: false,
+        statusCode: 404,
+        error: "Record not found",
+      };
+    }
+
+    return prisma.$transaction(async (tx) => {
+      await tx.timetable_tb.delete({ where: { id: recordId } });
+
+      // DVE Term 3: sync delete matching record in counterpart curriculum (LVC <-> MSIX)
+      const isDVE =
+        record.planType === "DVE-LVC" || record.planType === "DVE-MSIX";
+      const isTerm3 =
+        typeof record.termYear === "string" && record.termYear.startsWith("3/");
+
+      if (isDVE && isTerm3 && record.plan) {
+        const isSplitSubject = record.plan.subjectName?.includes("(ส่วนที่");
+        const duplicatePlans = await tx.plans_tb.findMany({
+          where: isSplitSubject
+            ? {
+                subjectCode: record.plan.subjectCode,
+                subjectName: record.plan.subjectName,
+                termYear: record.plan.termYear,
+                yearLevel: record.plan.yearLevel,
+                NOT: { id: record.planId },
+              }
+            : {
+                subjectCode: record.plan.subjectCode,
+                termYear: record.plan.termYear,
+                yearLevel: record.plan.yearLevel,
+                NOT: { id: record.planId },
+              },
+        });
+
+        for (const dup of duplicatePlans) {
+          await tx.timetable_tb.deleteMany({
+            where: {
+              planId: dup.id,
+              day: record.day,
+              startPeriod: record.startPeriod,
+              endPeriod: record.endPeriod,
+            },
+          });
+        }
+      }
+
+      return {
+        success: true,
+        statusCode: 200,
+        deletedId: recordId,
+        planId: record.planId,
+      };
+    });
+  }
+
+  /**
+   * Clears timetable records within a strictly bounded scope: termYear, yearLevel, and planType.
+   */
+  static async clearTimetable(
+    input: import("../types").ClearTimetableInput,
+  ): Promise<import("../types").ClearTimetableResult> {
+    const { termYear, yearLevel, planType } = input;
+
+    if (!termYear || !yearLevel || !planType) {
+      return {
+        success: false,
+        statusCode: 400,
+        error: "Missing required parameters",
+      };
+    }
+
+    const deleteResult = await prisma.timetable_tb.deleteMany({
+      where: {
+        termYear,
+        yearLevel,
+        planType,
+      },
+    });
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: "All subjects cleared from timetable",
+      deletedCount: deleteResult.count,
+    };
+  }
+
+  /**
+   * Retrieves timetable records based on query filters (roomId, teacherId, or curriculum coordinates).
+   */
+  static async getTimetables(query: import("../types").GetTimetableQuery) {
+    const { roomId, teacherId, termYear, yearLevel, planType } = query;
+
+    if (roomId !== undefined) {
+      const whereClause: any = { roomId };
+      if (termYear) whereClause.termYear = termYear;
+
+      return prisma.timetable_tb.findMany({
+        where: whereClause,
+        include: {
+          plan: {
+            include: {
+              teacher: true,
+              room: true,
+            },
+          },
+          teacher: true,
+          room: true,
+        },
+        orderBy: [{ day: "asc" }, { startPeriod: "asc" }],
+      });
+    }
+
+    if (teacherId !== undefined) {
+      const whereClause: any = { teacherId };
+      if (termYear) whereClause.termYear = termYear;
+
+      return prisma.timetable_tb.findMany({
+        where: whereClause,
+        include: {
+          plan: {
+            include: {
+              teacher: true,
+              room: true,
+            },
+          },
+          teacher: true,
+          room: true,
+        },
+        orderBy: [{ day: "asc" }, { startPeriod: "asc" }],
+      });
+    }
+
+    const whereClause: any = {};
+    if (termYear) whereClause.termYear = termYear;
+    if (yearLevel) whereClause.yearLevel = yearLevel;
+    if (planType) whereClause.planType = planType;
+
+    return prisma.timetable_tb.findMany({
+      where: whereClause,
+      include: {
+        plan: {
+          include: {
+            teacher: true,
+            room: true,
+          },
+        },
+        teacher: true,
+        room: true,
+      },
+      orderBy: [{ day: "asc" }, { startPeriod: "asc" }],
+    });
+  }
 }
