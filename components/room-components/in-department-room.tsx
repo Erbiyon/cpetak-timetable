@@ -10,7 +10,7 @@ import {
     TableRow
 } from "../ui/table";
 import { Loader2 } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 interface Room {
     id: number;
