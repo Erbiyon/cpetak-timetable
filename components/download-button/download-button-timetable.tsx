@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import type ExcelJS from "exceljs";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
