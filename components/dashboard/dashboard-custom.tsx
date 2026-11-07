@@ -169,23 +169,8 @@ export default function DashboardCustom() {
   ];
 
   // เมนูดำเนินงานหลัก (Quick Operations) มีเมนูย่อยเฉพาะหมวดที่มีฟังก์ชันย่อยจริง (จัดการข้อมูลอาจารย์ และ จัดการห้องเรียน)
+  // จัดเรียงให้อยู่ติดกันในแถวแรกเพื่อความสะดวกในการเข้าถึงงานบริหารข้อมูลพื้นฐาน
   const quickOperations = [
-    {
-      title: "ตารางการใช้ห้องเรียน",
-      description: "ตรวจสอบความหนาแน่นและช่วงเวลาการใช้ห้อง",
-      icon: <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />,
-      borderStyle: "border-blue-200/90 dark:border-blue-900/60 hover:border-blue-500 dark:hover:border-blue-400",
-      iconBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50",
-      href: "/rooms-use",
-    },
-    {
-      title: "ตารางสอนอาจารย์",
-      description: "ตรวจสอบภาระการสอนและส่งออกไฟล์ Excel",
-      icon: <CalendarCheck2 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />,
-      borderStyle: "border-indigo-200/90 dark:border-indigo-900/60 hover:border-indigo-500 dark:hover:border-indigo-400",
-      iconBg: "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-800/50",
-      href: "/class-schedule",
-    },
     {
       title: "จัดการข้อมูลอาจารย์",
       description: "รายชื่ออาจารย์ผู้สอนและการลงทะเบียนผู้ใช้",
@@ -216,6 +201,22 @@ export default function DashboardCustom() {
       borderStyle: "border-amber-200/90 dark:border-amber-900/60 hover:border-amber-500 dark:hover:border-amber-400",
       iconBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/50",
       href: "/curriculum",
+    },
+    {
+      title: "ตารางสอนอาจารย์",
+      description: "ตรวจสอบภาระการสอนและส่งออกไฟล์ Excel",
+      icon: <CalendarCheck2 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />,
+      borderStyle: "border-indigo-200/90 dark:border-indigo-900/60 hover:border-indigo-500 dark:hover:border-indigo-400",
+      iconBg: "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-800/50",
+      href: "/class-schedule",
+    },
+    {
+      title: "ตารางการใช้ห้องเรียน",
+      description: "ตรวจสอบความหนาแน่นและช่วงเวลาการใช้ห้อง",
+      icon: <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />,
+      borderStyle: "border-blue-200/90 dark:border-blue-900/60 hover:border-blue-500 dark:hover:border-blue-400",
+      iconBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50",
+      href: "/rooms-use",
     },
     {
       title: "ปฏิทินการศึกษา",
