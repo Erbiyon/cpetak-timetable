@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "@/app/api/timetable/route";
 import { prisma } from "@/lib/prisma";
+import * as apiAuth from "@/lib/api-auth";
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -23,14 +24,34 @@ describe("API Route Contract: /api/timetable (POST)", () => {
     vi.clearAllMocks();
   });
 
+  it("returns 401 Unauthorized when request is unauthenticated", async () => {
+    vi.spyOn(apiAuth, "requireTeacherOrAdmin").mockResolvedValueOnce({
+      authorized: false,
+      response: Response.json({ error: "Unauthorized" }, { status: 401 }) as any,
+    });
+
+    const req = new Request("http://localhost:3000/api/timetable", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planId: 1 }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(401);
+  });
+
   it("returns 409 DUPLICATE_SECTION_CONFLICT when same subject and section already exists in same term", async () => {
+    vi.spyOn(apiAuth, "requireTeacherOrAdmin").mockResolvedValueOnce({
+      authorized: true,
+      user: { id: "1", role: "admin" },
+    });
+
     (prisma.coTeaching_tb.findFirst as any).mockResolvedValue(null);
     (prisma.timetable_tb.findMany as any)
       .mockResolvedValueOnce([]) // timeConflicts
       .mockResolvedValueOnce([]) // teacherConflicts
       .mockResolvedValueOnce([]); // roomConflicts
 
-    // Current plan
     (prisma.plans_tb.findUnique as any).mockResolvedValueOnce({
       id: 1,
       subjectCode: "CPE101",
@@ -38,7 +59,6 @@ describe("API Route Contract: /api/timetable (POST)", () => {
       termYear: "1/2567",
     });
 
-    // Duplicate section found in another plan
     (prisma.plans_tb.findMany as any).mockResolvedValueOnce([
       {
         id: 2,
@@ -76,6 +96,11 @@ describe("API Route Contract: /api/timetable (POST)", () => {
   });
 
   it("returns 409 TIME_CONFLICT when time period overlaps with another class of same term/yearLevel/planType", async () => {
+    vi.spyOn(apiAuth, "requireTeacherOrAdmin").mockResolvedValueOnce({
+      authorized: true,
+      user: { id: "1", role: "teacher" },
+    });
+
     (prisma.coTeaching_tb.findFirst as any).mockResolvedValue(null);
     (prisma.timetable_tb.findMany as any)
       .mockResolvedValueOnce([
@@ -87,8 +112,8 @@ describe("API Route Contract: /api/timetable (POST)", () => {
           plan: { subjectCode: "CPE102", subjectName: "Programming" },
         },
       ])
-      .mockResolvedValueOnce([]) // teacherConflicts
-      .mockResolvedValueOnce([]); // roomConflicts
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
 
     (prisma.plans_tb.findUnique as any).mockResolvedValueOnce({
       id: 1,
@@ -123,9 +148,14 @@ describe("API Route Contract: /api/timetable (POST)", () => {
   });
 
   it("returns 409 TEACHER_CONFLICT when teacher is already teaching in overlapping period", async () => {
+    vi.spyOn(apiAuth, "requireTeacherOrAdmin").mockResolvedValueOnce({
+      authorized: true,
+      user: { id: "1", role: "admin" },
+    });
+
     (prisma.coTeaching_tb.findFirst as any).mockResolvedValue(null);
     (prisma.timetable_tb.findMany as any)
-      .mockResolvedValueOnce([]) // no timeConflicts
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([
         {
           id: 60,
@@ -138,8 +168,8 @@ describe("API Route Contract: /api/timetable (POST)", () => {
           room: null,
           section: "1",
         },
-      ]) // teacherConflicts
-      .mockResolvedValueOnce([]); // roomConflicts
+      ])
+      .mockResolvedValueOnce([]);
 
     (prisma.plans_tb.findUnique as any).mockResolvedValueOnce({
       id: 1,

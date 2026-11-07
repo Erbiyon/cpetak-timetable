@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireTeacherOrAdmin } from "@/lib/api-auth";
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireTeacherOrAdmin();
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const body = await request.json();
     const {
       planId,

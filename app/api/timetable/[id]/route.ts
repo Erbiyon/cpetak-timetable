@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireTeacherOrAdmin } from "@/lib/api-auth";
 
 export async function GET(
   _request: NextRequest,
@@ -38,6 +39,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireTeacherOrAdmin();
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
     const planId = parseInt(id);
 

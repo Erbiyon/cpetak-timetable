@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/api-auth";
 
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireAdmin();
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const body = await req.json();
     const {
       id_sub,
@@ -61,6 +67,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireAdmin();
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id: idParam } = await params;
     const id = parseInt(idParam);
 

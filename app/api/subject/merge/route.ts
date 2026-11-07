@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/api-auth";
 import {
   checkCoTeachingGroup,
   handleCoTeachingMerge,
@@ -7,6 +8,11 @@ import {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAdmin();
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { subjectId } = await request.json();
 
     const subjectToMerge = await prisma.plans_tb.findUnique({

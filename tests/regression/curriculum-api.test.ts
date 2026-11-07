@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "@/app/api/curriculum/route";
 import { prisma } from "@/lib/prisma";
+import * as apiAuth from "@/lib/api-auth";
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -16,7 +17,28 @@ describe("API Route Contract: /api/curriculum (POST)", () => {
     vi.clearAllMocks();
   });
 
+  it("returns 401 Unauthorized when request is unauthenticated", async () => {
+    vi.spyOn(apiAuth, "requireAdmin").mockResolvedValueOnce({
+      authorized: false,
+      response: Response.json({ error: "Unauthorized" }, { status: 401 }) as any,
+    });
+
+    const req = new Request("http://localhost:3000/api/curriculum", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_sub: "CPE101" }),
+    });
+
+    const res = await POST(req as any);
+    expect(res.status).toBe(401);
+  });
+
   it("returns 400 when curriculum subject code (id_sub) already exists", async () => {
+    vi.spyOn(apiAuth, "requireAdmin").mockResolvedValueOnce({
+      authorized: true,
+      user: { id: "admin", role: "admin" },
+    });
+
     (prisma.curriculum_tb.findFirst as any).mockResolvedValueOnce({
       id: 1,
       id_sub: "CPE101",
@@ -44,6 +66,11 @@ describe("API Route Contract: /api/curriculum (POST)", () => {
   });
 
   it("successfully creates a new curriculum record when id_sub is unique", async () => {
+    vi.spyOn(apiAuth, "requireAdmin").mockResolvedValueOnce({
+      authorized: true,
+      user: { id: "admin", role: "admin" },
+    });
+
     (prisma.curriculum_tb.findFirst as any).mockResolvedValueOnce(null);
     const newRecord = {
       id: 2,
