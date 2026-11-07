@@ -3,49 +3,57 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const totalTeachers = await prisma.teacher_tb.count();
+    const [totalTeachers, totalRooms, subjectGroups, planCounts] =
+      await Promise.all([
+        prisma.teacher_tb.count(),
+        prisma.room_tb.count(),
+        prisma.plans_tb.groupBy({
+          by: ["subjectCode"],
+          _count: {
+            subjectCode: true,
+          },
+        }),
+        prisma.plans_tb.groupBy({
+          by: ["planType"],
+          _count: {
+            _all: true,
+          },
+        }),
+      ]);
 
-    const totalRooms = await prisma.room_tb.count();
+    const totalSubjects = subjectGroups.length;
 
-    const totalSubjects = await prisma.plans_tb
-      .groupBy({
-        by: ["subjectCode"],
-        _count: {
-          subjectCode: true,
-        },
-      })
-      .then((result) => result.length);
+    const planBreakdown = {
+      transfer: 0,
+      fourYear: 0,
+      dveLvc: 0,
+      dveMsix: 0,
+    };
 
-    const transferPlanCount = await prisma.plans_tb.count({
-      where: { planType: "TRANSFER" },
-    });
-    const fourYearPlanCount = await prisma.plans_tb.count({
-      where: { planType: "FOUR_YEAR" },
-    });
-    const dveLvcPlanCount = await prisma.plans_tb.count({
-      where: { planType: "DVE-LVC" },
-    });
-    const dveMsixPlanCount = await prisma.plans_tb.count({
-      where: { planType: "DVE-MSIX" },
-    });
+    for (const item of planCounts) {
+      if (item.planType === "TRANSFER") {
+        planBreakdown.transfer = item._count._all;
+      } else if (item.planType === "FOUR_YEAR") {
+        planBreakdown.fourYear = item._count._all;
+      } else if (item.planType === "DVE-LVC") {
+        planBreakdown.dveLvc = item._count._all;
+      } else if (item.planType === "DVE-MSIX") {
+        planBreakdown.dveMsix = item._count._all;
+      }
+    }
 
     const activePlans =
-      transferPlanCount +
-      fourYearPlanCount +
-      dveLvcPlanCount +
-      dveMsixPlanCount;
+      planBreakdown.transfer +
+      planBreakdown.fourYear +
+      planBreakdown.dveLvc +
+      planBreakdown.dveMsix;
 
     return NextResponse.json({
       totalTeachers,
       totalRooms,
       totalSubjects,
       activePlans,
-      planBreakdown: {
-        transfer: transferPlanCount,
-        fourYear: fourYearPlanCount,
-        dveLvc: dveLvcPlanCount,
-        dveMsix: dveMsixPlanCount,
-      },
+      planBreakdown,
     });
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);
