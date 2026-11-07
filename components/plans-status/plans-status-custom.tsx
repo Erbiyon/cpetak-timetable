@@ -210,13 +210,12 @@ export default function PlansStatusCustom({
               </span>
             </div>
           </div>
-          <div className="rounded-xl border shadow-sm py-4 px-4 overflow-visible">
-            <div className="text-center text-sm mb-2">
-              ลากวิชาจากรายการด้านล่างไปวางในตารางเพื่อจัดตารางเรียน
+          <div className="rounded-xl border border-border/80 bg-muted/20 shadow-xs py-4 px-4 overflow-visible">
+            <div className="text-center text-sm mb-3">
+              <span className="font-medium text-foreground">ลากวิชาจากรายการด้านล่างไปวางในตารางเพื่อจัดตารางเรียน</span>
               {assignedCount > 0 && (
-                <div className="text-xs text-muted-foreground">
-                  สามารถลากวิชาที่อยู่ในตารางมาวางใหม่
-                  หรือคลิกขวาที่วิชาในตารางเพื่อนำออก
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  สามารถลากวิชาที่อยู่ในตารางมาวางใหม่ หรือคลิกขวาที่วิชาในตารางเพื่อนำออก
                 </div>
               )}
             </div>
@@ -673,20 +672,19 @@ function SubjectCard({
             ref={setNodeRef}
             {...listeners}
             {...attributes}
-            className={`relative rounded border shadow-sm bg-card dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 w-[120px] h-[70px] flex items-center justify-center p-2 text-xs transition-all duration-300 ${
-              isDragging ? "cursor-grabbing opacity-30" : "cursor-grab"
+            className={`relative rounded-lg border shadow-xs bg-card hover:bg-accent/60 w-[125px] h-[72px] flex items-center justify-center p-2 text-xs transition-all duration-200 select-none ${
+              isDragging ? "cursor-grabbing opacity-30 scale-95" : "cursor-grab hover:border-primary/50"
             } ${
               isDragFailed
-                ? "bg-red-100 dark:bg-red-900/20 border-red-300 dark:border-red-700 animate-pulse"
-                : ""
+                ? "bg-destructive/10 border-destructive text-destructive animate-pulse"
+                : "border-border"
             }`}
           >
             {isDragFailed && (
               <div className="absolute top-1 text-xs left-1">
                 <TriangleAlert
                   size={15}
-                  color="#ffff00"
-                  className="animate-pulse"
+                  className="text-amber-500 animate-pulse"
                 />
               </div>
             )}

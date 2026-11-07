@@ -8,7 +8,8 @@ import { Toaster } from "sonner";
 
 const sarabun = Sarabun({
   subsets: ["thai", "latin"],
-  weight: "400",
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
