@@ -23,11 +23,11 @@ export interface HashOptions {
 }
 
 const DEFAULT_OPTIONS: Required<HashOptions> = {
-  N: 16384,
+  N: 16384, // 2^14
   r: 8,
-  p: 1,
+  p: 5,     // OWASP Password Storage Cheat Sheet recommended scrypt option 4: N=2^14, r=8, p=5
   keyLen: 64,
-  maxmem: 32 * 1024 * 1024, // 32MB safety boundary for OWASP scrypt cost
+  maxmem: 64 * 1024 * 1024, // 64MB memory envelope (scrypt memory requirement: 128 * r * N bytes ≈ 16MB)
 };
 
 /**
@@ -121,13 +121,18 @@ export async function verifyPasswordAsync(password: string, storedHash: string |
     return false;
   }
 
+  // Sanity check to avoid DoS on maliciously crafted stored hash parameters
+  if (N > 131072 || r > 16 || p > 10 || salt.length > 128 || hashHex.length > 256) {
+    return false;
+  }
+
   try {
     const expectedHashBuf = Buffer.from(hashHex, "hex");
     const derivedKey = (await scryptAsync(password, salt, expectedHashBuf.length, {
       N,
       r,
       p,
-      maxmem: DEFAULT_OPTIONS.maxmem,
+      maxmem: Math.max(DEFAULT_OPTIONS.maxmem, 128 * r * N * 2),
     })) as Buffer;
 
     if (derivedKey.length !== expectedHashBuf.length) {
@@ -167,13 +172,18 @@ export function verifyPassword(password: string, storedHash: string | null | und
     return false;
   }
 
+  // Sanity check to avoid DoS on maliciously crafted stored hash parameters
+  if (N > 131072 || r > 16 || p > 10 || salt.length > 128 || hashHex.length > 256) {
+    return false;
+  }
+
   try {
     const expectedHashBuf = Buffer.from(hashHex, "hex");
     const derivedKey = crypto.scryptSync(password, salt, expectedHashBuf.length, {
       N,
       r,
       p,
-      maxmem: DEFAULT_OPTIONS.maxmem,
+      maxmem: Math.max(DEFAULT_OPTIONS.maxmem, 128 * r * N * 2),
     });
 
     if (derivedKey.length !== expectedHashBuf.length) {

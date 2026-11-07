@@ -17,7 +17,7 @@ describe("Password and Token Cryptographic Engine (lib/password.ts)", () => {
     expect(parts[0]).toBe("scrypt");
     expect(parts[1]).toBe("16384");
     expect(parts[2]).toBe("8");
-    expect(parts[3]).toBe("1");
+    expect(parts[3]).toBe("5");
     expect(parts[4].length).toBe(32); // 16 bytes hex
     expect(parts[5].length).toBe(128); // 64 bytes hex
   });

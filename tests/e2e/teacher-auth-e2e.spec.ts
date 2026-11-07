@@ -142,14 +142,10 @@ test.describe("Teacher Authentication, Enrollment & Password Reset E2E Suite", (
     page,
     request,
   }) => {
-    // 1. Request password reset via API
-    const reqRes = await request.post("/api/teacher/reset-password/request", {
-      data: { tId: enrolledTId },
-    });
-    expect(reqRes.status()).toBe(200);
-    const reqBody = await reqRes.json();
-    expect(reqBody.success).toBe(true);
-    const resetToken = reqBody.devResetToken;
+    // 1. Create password reset token directly via service (simulating Admin-assisted issuance)
+    const resetResult = await TeacherAuthService.createAdminAssistedResetToken(enrolledTeacherId);
+    expect(resetResult).toBeTruthy();
+    const resetToken = resetResult.rawToken;
     expect(resetToken).toBeTruthy();
 
     // 2. Confirm password reset with new password

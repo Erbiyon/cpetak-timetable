@@ -3,6 +3,7 @@ import {
   hashPassword,
   hashToken,
   generateSecureToken,
+  validatePasswordPolicy,
 } from "@/lib/password";
 
 export interface EnrollmentTokenResult {
@@ -68,18 +69,17 @@ export class TeacherAuthService {
 
   /**
    * Completes teacher enrollment by consuming the one-time token and setting individual password.
+   * Enforces strict atomic conditional consumption to prevent race conditions during concurrent redemption.
    */
   static async completeEnrollment(
     rawToken: string,
     newPassword: string
   ): Promise<{ success: boolean; teacherId: number; error?: string }> {
-    if (!newPassword || newPassword.length < 8) {
-      return { success: false, teacherId: 0, error: "รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร" };
-    }
-
     const tokenHash = hashToken(rawToken);
 
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(
+      async (tx) => {
+      // 1. Fetch token record
       const tokenRecord = await tx.teacherToken_tb.findUnique({
         where: { tokenHash },
         include: { teacher: true },
@@ -101,24 +101,35 @@ export class TeacherAuthService {
         return { success: false, teacherId: 0, error: "โทเค็นหมดอายุแล้ว" };
       }
 
-      // Disallow setting password to their own tId
-      if (newPassword === tokenRecord.teacher.tId) {
+      // 2. Validate password policy against teacher's public tId
+      const policy = validatePasswordPolicy(newPassword, tokenRecord.teacher.tId);
+      if (!policy.valid) {
         return {
           success: false,
           teacherId: tokenRecord.teacherId,
-          error: "ไม่อนุญาตให้ใช้รหัสประจำตัวเป็นรหัสผ่านเพื่อความปลอดภัย",
+          error: policy.error,
         };
+      }
+
+      // 3. Atomic Conditional Update: Only one concurrent transaction can update consumedAt from null
+      const consumptionResult = await tx.teacherToken_tb.updateMany({
+        where: {
+          id: tokenRecord.id,
+          consumedAt: null,
+        },
+        data: {
+          consumedAt: new Date(),
+        },
+      });
+
+      if (consumptionResult.count !== 1) {
+        // Another concurrent request consumed the token first
+        return { success: false, teacherId: 0, error: "โทเค็นนี้ถูกใช้งานไปแล้ว" };
       }
 
       const passwordHash = hashPassword(newPassword);
 
-      // Atomically mark token consumed
-      await tx.teacherToken_tb.update({
-        where: { id: tokenRecord.id },
-        data: { consumedAt: new Date() },
-      });
-
-      // Update teacher status
+      // 4. Update teacher status
       await tx.teacher_tb.update({
         where: { id: tokenRecord.teacherId },
         data: {
@@ -129,7 +140,7 @@ export class TeacherAuthService {
       });
 
       return { success: true, teacherId: tokenRecord.teacherId };
-    });
+    }, { maxWait: 10000, timeout: 10000 });
   }
 
   /**
@@ -223,18 +234,17 @@ export class TeacherAuthService {
 
   /**
    * Resets teacher password using valid reset token and increments sessionVersion to invalidate active sessions.
+   * Enforces strict atomic conditional consumption to prevent race conditions during concurrent redemption.
    */
   static async resetPassword(
     rawToken: string,
     newPassword: string
   ): Promise<{ success: boolean; teacherId: number; error?: string }> {
-    if (!newPassword || newPassword.length < 8) {
-      return { success: false, teacherId: 0, error: "รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร" };
-    }
-
     const tokenHash = hashToken(rawToken);
 
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(
+      async (tx) => {
+      // 1. Fetch token record
       const tokenRecord = await tx.teacherToken_tb.findUnique({
         where: { tokenHash },
         include: { teacher: true },
@@ -252,23 +262,34 @@ export class TeacherAuthService {
         return { success: false, teacherId: 0, error: "ลิงก์รีเซ็ตรหัสผ่านหมดอายุแล้ว" };
       }
 
-      if (newPassword === tokenRecord.teacher.tId) {
+      // 2. Validate password policy against teacher's public tId
+      const policy = validatePasswordPolicy(newPassword, tokenRecord.teacher.tId);
+      if (!policy.valid) {
         return {
           success: false,
           teacherId: tokenRecord.teacherId,
-          error: "ไม่อนุญาตให้ใช้รหัสประจำตัวเป็นรหัสผ่านเพื่อความปลอดภัย",
+          error: policy.error,
         };
+      }
+
+      // 3. Atomic Conditional Update: Only one concurrent transaction can update consumedAt from null
+      const consumptionResult = await tx.teacherToken_tb.updateMany({
+        where: {
+          id: tokenRecord.id,
+          consumedAt: null,
+        },
+        data: {
+          consumedAt: new Date(),
+        },
+      });
+
+      if (consumptionResult.count !== 1) {
+        return { success: false, teacherId: 0, error: "ลิงก์รีเซ็ตรหัสผ่านนี้ถูกใช้งานไปแล้ว" };
       }
 
       const passwordHash = hashPassword(newPassword);
 
-      // Consume token
-      await tx.teacherToken_tb.update({
-        where: { id: tokenRecord.id },
-        data: { consumedAt: new Date() },
-      });
-
-      // Increment sessionVersion to invalidate all existing sessions
+      // 4. Increment sessionVersion to invalidate all existing sessions
       await tx.teacher_tb.update({
         where: { id: tokenRecord.teacherId },
         data: {
@@ -278,6 +299,6 @@ export class TeacherAuthService {
       });
 
       return { success: true, teacherId: tokenRecord.teacherId };
-    });
+    }, { maxWait: 10000, timeout: 10000 });
   }
 }
