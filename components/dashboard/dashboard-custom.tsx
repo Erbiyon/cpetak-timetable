@@ -168,7 +168,7 @@ export default function DashboardCustom() {
     },
   ];
 
-  // เมนูดำเนินงานหลัก (Quick Operations) พร้อมเมนูย่อยและสีกรอบแยกหมวดหมู่สอดคล้องกับเมนูด้านข้าง
+  // เมนูดำเนินงานหลัก (Quick Operations) มีเมนูย่อยเฉพาะหมวดที่มีฟังก์ชันย่อยจริง (จัดการข้อมูลอาจารย์ และ จัดการห้องเรียน)
   const quickOperations = [
     {
       title: "ตารางการใช้ห้องเรียน",
@@ -176,10 +176,7 @@ export default function DashboardCustom() {
       icon: <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />,
       borderStyle: "border-blue-200/90 dark:border-blue-900/60 hover:border-blue-500 dark:hover:border-blue-400",
       iconBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50",
-      subItems: [
-        { label: "ตรวจสอบตารางการใช้ห้องเรียน", href: "/rooms-use" },
-        { label: "จัดการข้อมูลห้องเรียน", href: "/rooms" },
-      ],
+      href: "/rooms-use",
     },
     {
       title: "ตารางสอนอาจารย์",
@@ -187,10 +184,7 @@ export default function DashboardCustom() {
       icon: <CalendarCheck2 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />,
       borderStyle: "border-indigo-200/90 dark:border-indigo-900/60 hover:border-indigo-500 dark:hover:border-indigo-400",
       iconBg: "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-800/50",
-      subItems: [
-        { label: "ตรวจสอบตารางสอนคณาจารย์", href: "/class-schedule" },
-        { label: "จัดการรายชื่ออาจารย์ผู้สอน", href: "/teachers" },
-      ],
+      href: "/class-schedule",
     },
     {
       title: "จัดการข้อมูลอาจารย์",
@@ -199,9 +193,9 @@ export default function DashboardCustom() {
       borderStyle: "border-violet-200/90 dark:border-violet-900/60 hover:border-violet-500 dark:hover:border-violet-400",
       iconBg: "bg-violet-50 text-violet-600 dark:bg-violet-950/60 dark:text-violet-400 border-violet-200/50 dark:border-violet-800/50",
       subItems: [
-        { label: "รายชื่ออาจารย์ผู้สอนทั้งหมด", href: "/teachers" },
-        { label: "เพิ่มอาจารย์ภายในสาขา", href: "/teachers/in-teacher" },
-        { label: "เพิ่มอาจารย์ภายนอกสาขา", href: "/teachers/out-teacher" },
+        { label: "จัดการรายชื่ออาจารย์", href: "/teachers" },
+        { label: "เพิ่มอาจารย์วิชาภายในสาขา", href: "/teachers/in-teacher" },
+        { label: "เพิ่มอาจารย์วิชาภายนอกสาขา", href: "/teachers/out-teacher" },
       ],
     },
     {
@@ -211,7 +205,7 @@ export default function DashboardCustom() {
       borderStyle: "border-teal-200/90 dark:border-teal-900/60 hover:border-teal-500 dark:hover:border-teal-400",
       iconBg: "bg-teal-50 text-teal-600 dark:bg-teal-950/60 dark:text-teal-400 border-teal-200/50 dark:border-teal-800/50",
       subItems: [
-        { label: "รายชื่อห้องเรียนทั้งหมด", href: "/rooms" },
+        { label: "จัดการห้องเรียน", href: "/rooms" },
         { label: "เพิ่มห้องเรียนวิชานอกสาขา", href: "/rooms/room-out" },
       ],
     },
@@ -221,11 +215,7 @@ export default function DashboardCustom() {
       icon: <BookOpenText className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
       borderStyle: "border-amber-200/90 dark:border-amber-900/60 hover:border-amber-500 dark:hover:border-amber-400",
       iconBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/50",
-      subItems: [
-        { label: "โครงสร้างหลักสูตรทั้งหมด", href: "/curriculum" },
-        { label: "แผนการเรียนระดับปริญญาตรี", href: "/study-plans/four-year-plan" },
-        { label: "แผนการเรียนระดับ ปวส.", href: "/study-plans/dve-lvc-plan" },
-      ],
+      href: "/curriculum",
     },
     {
       title: "ปฏิทินการศึกษา",
@@ -233,10 +223,7 @@ export default function DashboardCustom() {
       icon: <Calendar className="h-5 w-5 text-rose-600 dark:text-rose-400" />,
       borderStyle: "border-rose-200/90 dark:border-rose-900/60 hover:border-rose-500 dark:hover:border-rose-400",
       iconBg: "bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 border-rose-200/50 dark:border-rose-800/50",
-      subItems: [
-        { label: "ตรวจสอบปฏิทินการศึกษา", href: "/academic-calendar" },
-        { label: "จัดการตารางเรียนตามแผน", href: "/dashboard" },
-      ],
+      href: "/academic-calendar",
     },
   ];
 
@@ -613,42 +600,75 @@ export default function DashboardCustom() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {quickOperations.map((op) => (
-            <Card
-              key={op.title}
-              className={`border bg-card shadow-xs transition-all duration-200 flex flex-col justify-between ${op.borderStyle}`}
-            >
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="font-semibold text-sm text-foreground font-sans">
-                      {op.title}
+          {quickOperations.map((op) => {
+            if ("subItems" in op && op.subItems) {
+              return (
+                <Card
+                  key={op.title}
+                  className={`border bg-card shadow-xs transition-all duration-200 flex flex-col justify-between ${op.borderStyle}`}
+                >
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="font-semibold text-sm text-foreground font-sans">
+                          {op.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground line-clamp-1 font-sans">
+                          {op.description}
+                        </div>
+                      </div>
+                      <div className={`p-2.5 rounded-lg border shrink-0 ${op.iconBg}`}>
+                        {op.icon}
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground line-clamp-1 font-sans">
-                      {op.description}
-                    </div>
-                  </div>
-                  <div className={`p-2.5 rounded-lg border shrink-0 ${op.iconBg}`}>
-                    {op.icon}
-                  </div>
-                </div>
 
-                {/* เมนูย่อยสำหรับการ์ดดำเนินงาน */}
-                <div className="pt-2 border-t border-border/60 space-y-1">
-                  {op.subItems.map((sub) => (
-                    <Link
-                      key={sub.label}
-                      href={sub.href}
-                      className="flex items-center justify-between px-2.5 py-1.5 rounded-md hover:bg-secondary text-xs text-muted-foreground hover:text-foreground font-sans font-medium transition-colors group"
-                    >
-                      <span className="truncate">{sub.label}</span>
-                      <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5 shrink-0 ml-1" />
-                    </Link>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    {/* เมนูย่อยเฉพาะหมวดที่กำหนด */}
+                    <div className="pt-2 border-t border-border/60 space-y-1">
+                      {op.subItems.map((sub) => (
+                        <Link
+                          key={sub.label}
+                          href={sub.href}
+                          className="flex items-center justify-between px-2.5 py-1.5 rounded-md hover:bg-secondary text-xs text-muted-foreground hover:text-foreground font-sans font-medium transition-colors group"
+                        >
+                          <span className="truncate">{sub.label}</span>
+                          <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5 shrink-0 ml-1" />
+                        </Link>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            }
+
+            return (
+              <Link key={op.title} href={op.href} className="group block focus:outline-none">
+                <Card
+                  className={`border bg-card shadow-xs transition-all duration-200 h-full flex flex-col justify-between ${op.borderStyle}`}
+                >
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="font-semibold text-sm text-foreground font-sans flex items-center gap-1.5 group-hover:text-foreground">
+                          {op.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground line-clamp-2 font-sans">
+                          {op.description}
+                        </div>
+                      </div>
+                      <div className={`p-2.5 rounded-lg border shrink-0 ${op.iconBg}`}>
+                        {op.icon}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground group-hover:text-foreground font-sans font-medium transition-colors">
+                      <span>เข้าสู่เมนู</span>
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
