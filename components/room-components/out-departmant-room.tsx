@@ -35,29 +35,6 @@ type GroupedSubjects = {
   };
 };
 
-const getPlanTypeBgColor = (planType: string) => {
-  switch (planType) {
-    case "DVE-LVC":
-      return "bg-blue-50 dark:bg-blue-900";
-    case "DVE-MSIX":
-      return "bg-blue-100 dark:bg-blue-800";
-    case "TRANSFER":
-      return "bg-blue-200 dark:bg-blue-700";
-    case "FOUR_YEAR":
-      return "bg-blue-50 dark:bg-blue-900";
-    default:
-      return "bg-gray-50 dark:bg-gray-800";
-  }
-};
-
-const getYearLevelBgColor = (yearLevel: string) => {
-  if (yearLevel.includes("1")) return "bg-gray-100 dark:bg-gray-700";
-  if (yearLevel.includes("2")) return "bg-gray-200 dark:bg-gray-600";
-  if (yearLevel.includes("3")) return "bg-gray-100 dark:bg-gray-700";
-  if (yearLevel.includes("4")) return "bg-gray-200 dark:bg-gray-600";
-  return "bg-gray-50 dark:bg-gray-800";
-};
-
 export default function OutdepartmentRoom() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [termYear, setTermYear] = useState<string>("");
@@ -153,125 +130,167 @@ export default function OutdepartmentRoom() {
     });
   };
 
+  const getPlanTypeTheme = (planType: string) => {
+    switch (planType) {
+      case "DVE-LVC":
+        return {
+          border: "border-amber-300/80 dark:border-amber-800/80",
+          badge: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+          dot: "bg-amber-500",
+        };
+      case "DVE-MSIX":
+        return {
+          border: "border-emerald-300/80 dark:border-emerald-800/80",
+          badge: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+          dot: "bg-emerald-500",
+        };
+      case "TRANSFER":
+        return {
+          border: "border-sky-300/80 dark:border-sky-800/80",
+          badge: "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800",
+          dot: "bg-sky-500",
+        };
+      case "FOUR_YEAR":
+        return {
+          border: "border-indigo-300/80 dark:border-indigo-800/80",
+          badge: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+          dot: "bg-indigo-500",
+        };
+      default:
+        return {
+          border: "border-border",
+          badge: "bg-secondary text-secondary-foreground border-border",
+          dot: "bg-zinc-500",
+        };
+    }
+  };
+
   return (
-    <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-3 mx-5 py-5 shadow-sm">
-      <div className="flex justify-between items-center mx-8">
-        <h2 className="text-xl font-bold">
-          เพิ่มห้องเรียนของวิชานอกสาขา
-          {termYear && (
-            <span className="text-sm font-normal text-muted-foreground ml-2">
-              ({termYear})
-            </span>
-          )}
-        </h2>
+    <div className="bg-card text-card-foreground flex flex-col rounded-xl border border-border shadow-xs overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 p-5 border-b border-border/80 bg-muted/20">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-bold text-foreground font-sans">
+              เพิ่มห้องเรียนของวิชานอกสาขา
+            </h2>
+            {termYear && (
+              <Badge variant="outline" className="text-xs font-mono font-medium border-border">
+                {termYear}
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground font-sans">
+            จัดสรรห้องเรียนสำหรับรายวิชาที่เรียนนอกภาควิชา
+          </p>
+        </div>
       </div>
 
-      <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border my-5 shadow-sm mx-8 max-h-[73vh] overflow-y-auto">
+      <div className="p-4">
         {loading ? (
-          <div className="flex justify-center items-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">กำลังโหลดข้อมูลวิชานอกสาขา...</span>
+          <div className="flex justify-center items-center p-12">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="ml-2 text-xs text-muted-foreground font-sans">
+              กำลังโหลดข้อมูลวิชานอกสาขา...
+            </span>
           </div>
         ) : Object.keys(groupedSubjects).length > 0 ? (
-          <div className="space-y-6 p-4">
-            {Object.entries(groupedSubjects).map(([planType, yearLevels]) => (
-              <div key={planType} className="space-y-4">
-                <div
-                  className={`p-3 rounded-lg border border-border ${getPlanTypeBgColor(planType)}`}
-                >
-                  <h3 className="font-bold text-lg">
-                    {getPlanTypeText(planType)}
-                    <Badge variant="outline" className="ml-2">
-                      {Object.values(yearLevels).flat().length} วิชา
-                    </Badge>
-                  </h3>
-                </div>
+          <div className="space-y-6">
+            {Object.entries(groupedSubjects).map(([planType, yearLevels]) => {
+              const theme = getPlanTypeTheme(planType);
 
-                {sortYearLevels(Object.keys(yearLevels)).map((yearLevel) => {
-                  const subjects = yearLevels[yearLevel];
-
-                  return (
-                    <div key={`${planType}-${yearLevel}`} className="space-y-2">
-                      <div
-                        className={`flex items-center gap-2 p-2 rounded-md ${getYearLevelBgColor(yearLevel)}`}
-                      >
-                        <span className="font-medium">{yearLevel}</span>
-                        <Badge variant="secondary">
-                          {subjects.length} วิชา
-                        </Badge>
-                        <span className="text-muted-foreground text-xs">
-                          ({getPlanTypeText(planType)})
-                        </span>
-                      </div>
-
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[220px]">เลขห้อง</TableHead>
-                            {/* <TableHead className="w-[100px]">ประเภท</TableHead> */}
-                            <TableHead className="w-[100px]">
-                              รหัสวิชา
-                            </TableHead>
-                            <TableHead>ชื่อวิชา</TableHead>
-                            <TableHead className="text-center w-[100px]">
-                              ดำเนินการ
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {subjects.map((subject) => (
-                            <TableRow
-                              key={subject.id}
-                              className="hover:bg-muted/50"
-                            >
-                              <TableCell className="font-medium">
-                                {subject.room?.roomCode || "-"}
-                              </TableCell>
-                              {/* <TableCell className="text-xs">
-                                                                {subject.room?.roomType ? (
-                                                                    <span className={
-                                                                        subject.room.roomType === "ห้องปฏิบัติการ"
-                                                                            ? "text-blue-600"
-                                                                            : subject.room.roomType === "ห้องเรียน"
-                                                                                ? "text-green-600"
-                                                                                : "text-gray-600"
-                                                                    }>
-                                                                        {subject.room.roomType}
-                                                                    </span>
-                                                                ) : "-"}
-                                                            </TableCell> */}
-                              <TableCell className="font-mono text-sm">
-                                {subject.subjectCode}
-                              </TableCell>
-                              <TableCell>
-                                <div className="font-medium text-sm">
-                                  {subject.subjectName}
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <AddRoomSubjectOutCustom
-                                  subjectId={subject.id}
-                                  roomCode={subject.room?.roomCode || ""}
-                                  subjectCode={subject.subjectCode}
-                                  planType={subject.planType}
-                                  termYear={subject.termYear}
-                                  subjectName={subject.subjectName}
-                                  yearLevel={subject.yearLevel}
-                                  onUpdate={handleRoomUpdated}
-                                />
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+              return (
+                <div key={planType} className={`space-y-4 rounded-xl border p-4 bg-card/60 shadow-2xs ${theme.border}`}>
+                  <div className="flex items-center justify-between pb-1 border-b border-border/60">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2.5 w-2.5 rounded-full ${theme.dot}`} />
+                      <h3 className="font-bold text-sm sm:text-base text-foreground font-sans">
+                        {getPlanTypeText(planType)}
+                      </h3>
                     </div>
-                  );
-                })}
-              </div>
-            ))}
+                    <Badge variant="outline" className={`text-xs font-normal font-sans ${theme.badge}`}>
+                      {Object.values(yearLevels).flat().length} รายวิชา
+                    </Badge>
+                  </div>
+
+                  {sortYearLevels(Object.keys(yearLevels)).map((yearLevel) => {
+                    const subjects = yearLevels[yearLevel];
+
+                    return (
+                      <div key={`${planType}-${yearLevel}`} className="space-y-2 pt-1">
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-secondary/50 border border-border/50">
+                          <span className="font-semibold text-xs text-foreground font-sans">
+                            {yearLevel}
+                          </span>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-border">
+                            {subjects.length} วิชา
+                          </Badge>
+                        </div>
+
+                        <div className="overflow-x-auto rounded-lg border border-border/70">
+                          <Table>
+                            <TableHeader className="bg-muted/30">
+                              <TableRow className="border-b border-border/60 hover:bg-transparent">
+                                <TableHead className="w-[180px] text-xs font-semibold text-foreground font-sans">
+                                  เลขห้อง
+                                </TableHead>
+                                <TableHead className="w-[110px] text-xs font-semibold text-foreground font-sans">
+                                  รหัสวิชา
+                                </TableHead>
+                                <TableHead className="text-xs font-semibold text-foreground font-sans">
+                                  ชื่อวิชา
+                                </TableHead>
+                                <TableHead className="text-center w-[110px] text-xs font-semibold text-foreground font-sans">
+                                  ดำเนินการ
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {subjects.map((subject) => (
+                                <TableRow
+                                  key={subject.id}
+                                  className="hover:bg-muted/30 transition-colors border-b border-border/60"
+                                >
+                                  <TableCell className="font-mono text-xs font-medium text-foreground">
+                                    {subject.room?.roomCode ? (
+                                      <Badge variant="secondary" className="font-mono text-xs bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800">
+                                        {subject.room.roomCode}
+                                      </Badge>
+                                    ) : (
+                                      <span className="text-muted-foreground">-</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="font-mono text-xs text-foreground">
+                                    {subject.subjectCode}
+                                  </TableCell>
+                                  <TableCell className="text-xs font-sans text-foreground">
+                                    {subject.subjectName}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <AddRoomSubjectOutCustom
+                                      subjectId={subject.id}
+                                      roomCode={subject.room?.roomCode || ""}
+                                      subjectCode={subject.subjectCode}
+                                      planType={subject.planType}
+                                      termYear={subject.termYear}
+                                      subjectName={subject.subjectName}
+                                      yearLevel={subject.yearLevel}
+                                      onUpdate={handleRoomUpdated}
+                                    />
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
           </div>
         ) : (
-          <div className="text-center text-muted-foreground py-8">
+          <div className="text-center text-muted-foreground py-12 text-xs font-sans">
             {termYear
               ? `ไม่มีวิชานอกสาขาในภาคเรียน ${termYear}`
               : "ไม่มีข้อมูลภาคเรียน"}
