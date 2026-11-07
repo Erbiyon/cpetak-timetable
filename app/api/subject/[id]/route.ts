@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { SubjectService } from "@/features/subjects/services/subject.service";
 
 export async function PATCH(
   request: NextRequest,
@@ -10,98 +10,7 @@ export async function PATCH(
     const planId = parseInt(id);
     const body = await request.json();
 
-    const { teacherId, roomId, sectionNumber, ...restData } = body;
-
-    const updateData: any = { ...restData };
-
-    if (teacherId !== undefined) {
-      if (teacherId === null) {
-        updateData.teacher = { disconnect: true };
-      } else {
-        updateData.teacher = { connect: { id: teacherId } };
-      }
-    }
-
-    if (roomId !== undefined) {
-      if (roomId === null) {
-        updateData.room = { disconnect: true };
-      } else {
-        updateData.room = { connect: { id: roomId } };
-      }
-    }
-
-    if (sectionNumber !== undefined) {
-      updateData.section = sectionNumber.toString();
-    }
-
-    const coTeachingGroup = await prisma.coTeaching_tb.findFirst({
-      where: {
-        plans: {
-          some: {
-            id: planId,
-          },
-        },
-      },
-      include: {
-        plans: true,
-      },
-    });
-
-    const isCoTeaching = coTeachingGroup && coTeachingGroup.plans.length > 1;
-
-    const currentPlan = await prisma.plans_tb.findUnique({
-      where: { id: planId },
-    });
-
-    const isTransferOrFourYear =
-      currentPlan &&
-      (currentPlan.planType === "TRANSFER" ||
-        currentPlan.planType === "FOUR_YEAR");
-
-    const updatedPlan = await prisma.plans_tb.update({
-      where: { id: planId },
-      data: updateData,
-      include: {
-        teacher: true,
-        room: true,
-        timetables: true,
-      },
-    });
-
-    if (isCoTeaching && isTransferOrFourYear && body.section !== undefined) {
-      const otherPlans = coTeachingGroup.plans.filter((p) => p.id !== planId);
-
-      for (const otherPlan of otherPlans) {
-        await prisma.plans_tb.update({
-          where: { id: otherPlan.id },
-          data: { section: body.section },
-        });
-
-        await prisma.timetable_tb.updateMany({
-          where: { planId: otherPlan.id },
-          data: { section: body.section },
-        });
-      }
-
-      if (updatedPlan.timetables.length > 0) {
-        await prisma.timetable_tb.updateMany({
-          where: { planId: planId },
-          data: { section: body.section },
-        });
-      }
-    }
-
-    if (isCoTeaching && sectionNumber !== undefined) {
-      const otherPlans = coTeachingGroup.plans.filter((p) => p.id !== planId);
-
-      for (const otherPlan of otherPlans) {
-        await prisma.plans_tb.update({
-          where: { id: otherPlan.id },
-          data: { section: sectionNumber.toString() },
-        });
-      }
-    }
-
+    const updatedPlan = await SubjectService.patchSubject(planId, body);
     return Response.json(updatedPlan);
   } catch (error) {
     console.error("Error updating plan:", error);
@@ -120,15 +29,7 @@ export async function GET(
   try {
     const id = parseInt(params.id);
 
-    console.log("GET - ดึงข้อมูลวิชา:", id);
-
-    const subject = await prisma.plans_tb.findUnique({
-      where: { id },
-      include: {
-        room: true,
-        teacher: true,
-      },
-    });
+    const subject = await SubjectService.getSubjectById(id);
 
     if (!subject) {
       return NextResponse.json(
@@ -136,16 +37,6 @@ export async function GET(
         { status: 404 },
       );
     }
-
-    console.log("GET - วิชาที่พบ:", {
-      id: subject.id,
-      subjectCode: subject.subjectCode,
-      section: subject.section,
-      roomId: subject.roomId,
-      teacherId: subject.teacherId,
-      room: subject.room,
-      teacher: subject.teacher,
-    });
 
     return NextResponse.json(subject);
   } catch (error) {
@@ -165,17 +56,7 @@ export async function DELETE(
   try {
     const id = parseInt(params.id);
 
-    console.log("DELETE - ลบวิชา:", id);
-
-    await prisma.timetable_tb.deleteMany({
-      where: { planId: id },
-    });
-
-    const deletedSubject = await prisma.plans_tb.delete({
-      where: { id },
-    });
-
-    console.log("DELETE - ลบวิชาเรียบร้อย:", deletedSubject.id);
+    const deletedSubject = await SubjectService.deleteSubject(id);
 
     return NextResponse.json({ success: true, deletedSubject });
   } catch (error) {
@@ -222,22 +103,19 @@ export async function PUT(
       );
     }
 
-    const newSubject = await prisma.plans_tb.update({
-      where: { id: parseInt(id) },
-      data: {
-        subjectCode,
-        subjectName,
-        credit: Number(credit),
-        lectureHour: Number(lectureHour),
-        labHour: Number(labHour),
-        yearLevel,
-        planType,
-        termYear,
-        dep,
-      },
+    const updatedSubject = await SubjectService.updateSubject(parseInt(id), {
+      subjectCode,
+      subjectName,
+      credit: Number(credit),
+      lectureHour: Number(lectureHour),
+      labHour: Number(labHour),
+      yearLevel,
+      planType,
+      termYear,
+      dep,
     });
 
-    return NextResponse.json(newSubject, { status: 201 });
+    return NextResponse.json(updatedSubject, { status: 201 });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "เกิดข้อผิดพลาด" },
