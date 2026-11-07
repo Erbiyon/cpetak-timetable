@@ -18,20 +18,32 @@ export default function CardStudyPlansCustom({
 
   const handleAdded = () => setRefreshKey((k) => k + 1);
 
-  return (
-    <div className="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border shadow-sm mx-4 sm:mx-8 lg:mx-16 xl:mx-32 2xl:mx-48 py-4 sm:py-5">
-      <div className="px-4 sm:px-6">{children({ onAdded: handleAdded })}</div>
+  // Border theme by planType
+  let borderTheme = "border-border";
+  if (planType === "TRANSFER") {
+    borderTheme = "border-sky-300/80 dark:border-sky-800/80";
+  } else if (planType === "FOUR_YEAR") {
+    borderTheme = "border-indigo-300/80 dark:border-indigo-800/80";
+  } else if (planType === "DVE-LVC") {
+    borderTheme = "border-amber-300/80 dark:border-amber-800/80";
+  } else if (planType === "DVE-MSIX") {
+    borderTheme = "border-emerald-300/80 dark:border-emerald-800/80";
+  }
 
-      <div className="bg-card text-card-foreground flex flex-col rounded-xl border shadow-sm mx-2 sm:mx-4 lg:mx-8 overflow-hidden">
-        <div className="overflow-x-auto">
-          <TableCustom
-            planType={planType}
-            termYear={termYear}
-            yearLevel={yearLevel}
-            curriculumType={curriculumType}
-            refreshKey={refreshKey}
-          />
-        </div>
+  return (
+    <div className={`bg-card text-card-foreground flex flex-col gap-4 rounded-xl border ${borderTheme} shadow-xs p-5 transition-all`}>
+      <div className="flex items-center justify-between border-b border-border/60 pb-3">
+        {children({ onAdded: handleAdded })}
+      </div>
+
+      <div className="overflow-hidden">
+        <TableCustom
+          planType={planType}
+          termYear={termYear}
+          yearLevel={yearLevel}
+          curriculumType={curriculumType}
+          refreshKey={refreshKey}
+        />
       </div>
     </div>
   );
