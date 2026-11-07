@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
@@ -16,8 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Loader2 } from "lucide-react";
+import { Loader2, CalendarCheck2, Users } from "lucide-react";
 import DownloadTeacherButton from "@/components/teacher-download/page";
+import { Badge } from "@/components/ui/badge";
 
 export default function ClassSchedule() {
   const [teachers, setTeachers] = useState<any[]>([]);
@@ -25,7 +26,6 @@ export default function ClassSchedule() {
   const [loading, setLoading] = useState(true);
   const [timetables, setTimetables] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<string>("internal");
-
   const [currentTermYear, setCurrentTermYear] = useState<string>("");
 
   const teacherGroups = useMemo(() => {
@@ -99,19 +99,11 @@ export default function ClassSchedule() {
   ) => {
     try {
       setLoading(true);
-      console.log(
-        "Fetching timetable for teacher ID:",
-        teacherId,
-        "Term Year:",
-        termYear,
-      );
-
       const response = await fetch(
         `/api/timetable?teacherId=${teacherId}&termYear=${encodeURIComponent(termYear)}`,
       );
       if (response.ok) {
         const data = await response.json();
-        console.log("Timetable data received:", data);
         setTimetables(data);
       }
     } catch (error) {
@@ -123,7 +115,6 @@ export default function ClassSchedule() {
   };
 
   const handleTeacherChange = (value: string) => {
-    console.log("Teacher selected:", value);
     setSelectedTeacherId(value);
     if (currentTermYear) {
       fetchTimetableByTeacher(Number(value), currentTermYear);
@@ -136,13 +127,8 @@ export default function ClassSchedule() {
     const cellSkip: Set<string> = new Set();
 
     if (!timetables || timetables.length === 0 || !currentTermYear) {
-      console.log("No timetable data available or no term year");
       return { cellToSubject, cellColspan, cellSkip };
     }
-
-    console.log(
-      `Total timetable entries: ${timetables.length}, filtering for teacher ID: ${selectedTeacherId}, Term Year: ${currentTermYear}`,
-    );
 
     const filteredTimetables = timetables.filter((item) => {
       const teacherMatch = String(item.teacherId) === selectedTeacherId;
@@ -150,14 +136,10 @@ export default function ClassSchedule() {
       return teacherMatch && termYearMatch;
     });
 
-    console.log(`Filtered timetable entries: ${filteredTimetables.length}`);
-
     filteredTimetables.forEach((item) => {
       const { day, startPeriod, endPeriod, plan } = item;
 
-      if (!plan) {
-        return;
-      }
+      if (!plan) return;
 
       const cellKey = `${day}-${startPeriod}`;
 
@@ -182,41 +164,77 @@ export default function ClassSchedule() {
     return { cellToSubject, cellColspan, cellSkip };
   }, [timetables, selectedTeacherId, currentTermYear]);
 
-  return (
-    <div className="container mx-auto px-6">
-      <h2 className="text-2xl font-bold mb-2">ตารางสอน</h2>
+  const selectedTeacher = teachers.find(
+    (t) => t.id === Number(selectedTeacherId),
+  );
 
-      <Card className="mb-2">
-        <CardHeader>
-          <CardTitle>
-            เลือกประเภทอาจารย์และอาจารย์ผู้สอน
-            {currentTermYear && (
-              <span className="text-base font-normal text-muted-foreground ml-2">
-                ({currentTermYear})
-              </span>
-            )}
+  return (
+    <div className="container mx-auto px-4 py-8 space-y-6 animate-in fade-in-50 duration-500">
+      {/* Academic Header */}
+      <div className="rounded-xl border border-indigo-200/80 dark:border-indigo-900/60 bg-card p-6 shadow-xs transition-all">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className="border-border bg-muted/60 text-foreground font-medium text-xs px-2.5 py-0.5 font-sans"
+              >
+                สาขาวิศวกรรมคอมพิวเตอร์
+              </Badge>
+              <Badge
+                variant="secondary"
+                className="font-normal text-xs bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 font-sans"
+              >
+                ภาระงานสอน
+              </Badge>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl flex items-center gap-2.5 font-sans">
+              <CalendarCheck2 className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+              ตารางสอนอาจารย์
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground font-sans">
+              ตรวจสอบตารางสอนและภาระการสอนรายสัปดาห์ของคณาจารย์ พร้อมส่งออกเอกสาร Excel
+            </p>
+          </div>
+          {currentTermYear && (
+            <Badge variant="outline" className="font-mono text-sm px-3 py-1 border-border bg-secondary/50">
+              ภาคเรียนที่ {currentTermYear}
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      {/* Selector & Info Card */}
+      <Card className="border border-border bg-card shadow-xs">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold flex items-center gap-2 font-sans">
+            <Users className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            เลือกอาจารย์ผู้สอน
           </CardTitle>
+          <CardDescription className="text-xs font-sans">
+            สลับกลุ่มอาจารย์ภายในหรือภายนอกสาขา และเลือกรายชื่อเพื่อเรียกดูตาราง
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            <div className="space-y-3">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="internal" className="flex-1">
-                    อาจารย์ภายในสาขา
+                <TabsList className="w-full grid grid-cols-2">
+                  <TabsTrigger value="internal" className="text-xs font-sans">
+                    อาจารย์ภายในสาขา ({teacherGroups.internal.length})
                   </TabsTrigger>
-                  <TabsTrigger value="external" className="flex-1">
-                    อาจารย์ภายนอกสาขา
+                  <TabsTrigger value="external" className="text-xs font-sans">
+                    อาจารย์ภายนอกสาขา ({teacherGroups.external.length})
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="internal">
+                <TabsContent value="internal" className="pt-2">
                   <Select
                     key={`internal-${activeTab}`}
                     value={selectedTeacherId}
                     onValueChange={handleTeacherChange}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="text-xs font-sans h-9 border-border">
                       <SelectValue placeholder="เลือกอาจารย์ภายในสาขา" />
                     </SelectTrigger>
                     <SelectContent>
@@ -225,31 +243,27 @@ export default function ClassSchedule() {
                           <SelectItem
                             key={`internal-${teacher.id}`}
                             value={String(teacher.id)}
+                            className="text-xs font-sans"
                           >
                             {teacher.tName} {teacher.tLastName} ({teacher.tId})
                           </SelectItem>
                         ))
                       ) : (
-                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground font-sans">
                           ไม่มีข้อมูลอาจารย์
                         </div>
                       )}
                     </SelectContent>
                   </Select>
-                  {teacherGroups.internal.length === 0 && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      ยังไม่มีการเพิ่มอาจารย์ภายในสาขา
-                    </p>
-                  )}
                 </TabsContent>
 
-                <TabsContent value="external">
+                <TabsContent value="external" className="pt-2">
                   <Select
                     key={`external-${activeTab}`}
                     value={selectedTeacherId}
                     onValueChange={handleTeacherChange}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="text-xs font-sans h-9 border-border">
                       <SelectValue placeholder="เลือกอาจารย์ภายนอกสาขา" />
                     </SelectTrigger>
                     <SelectContent>
@@ -258,67 +272,58 @@ export default function ClassSchedule() {
                           <SelectItem
                             key={`external-${teacher.id}`}
                             value={String(teacher.id)}
+                            className="text-xs font-sans"
                           >
                             {teacher.tName} {teacher.tLastName} ({teacher.tId})
                           </SelectItem>
                         ))
                       ) : (
-                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground font-sans">
                           ไม่มีข้อมูลอาจารย์
                         </div>
                       )}
                     </SelectContent>
                   </Select>
-                  {teacherGroups.external.length === 0 && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      ยังไม่มีการเพิ่มอาจารย์ภายนอกสาขา
-                    </p>
-                  )}
                 </TabsContent>
               </Tabs>
             </div>
 
             <div>
-              {selectedTeacherId && currentTermYear && teachers.length > 0 && (
-                <div className="p-3 bg-muted rounded-md">
-                  <div className="text-sm font-medium mb-2">ข้อมูลที่แสดง</div>
-                  <div className="grid grid-cols-1 gap-1 text-xs">
+              {selectedTeacher ? (
+                <div className="p-4 rounded-lg bg-secondary/40 border border-border/80 space-y-2">
+                  <div className="text-xs font-semibold text-foreground font-sans">
+                    ข้อมูลผู้สอนที่เลือก
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs font-sans">
                     <div>
-                      <span className="text-muted-foreground">ภาคเรียน:</span>{" "}
-                      <span className="font-medium">{currentTermYear}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">อาจารย์:</span>{" "}
-                      <span className="font-medium">
-                        {(() => {
-                          const teacher = teachers.find(
-                            (t) => t.id === Number(selectedTeacherId),
-                          );
-                          return teacher
-                            ? `${teacher.tName} ${teacher.tLastName}`
-                            : "-";
-                        })()}
+                      <span className="text-muted-foreground">ชื่อ-สกุล:</span>{" "}
+                      <span className="font-medium text-foreground">
+                        {selectedTeacher.tName} {selectedTeacher.tLastName}
                       </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">
-                        รหัสอาจารย์:
-                      </span>{" "}
-                      <span className="font-medium">
-                        {teachers.find(
-                          (t) => t.id === Number(selectedTeacherId),
-                        )?.tId || "-"}
+                      <span className="text-muted-foreground">รหัสประจำตัว:</span>{" "}
+                      <span className="font-mono font-medium text-foreground">
+                        {selectedTeacher.tId || "-"}
                       </span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">ประเภท:</span>{" "}
-                      <span className="font-medium">
-                        {teachers.find(
-                          (t) => t.id === Number(selectedTeacherId),
-                        )?.teacherType || "-"}
+                      <span className="font-medium text-foreground">
+                        {selectedTeacher.teacherType || "-"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">ภาคการศึกษา:</span>{" "}
+                      <span className="font-medium text-foreground">
+                        {currentTermYear || "-"}
                       </span>
                     </div>
                   </div>
+                </div>
+              ) : (
+                <div className="p-4 rounded-lg border border-dashed border-border/80 text-center text-xs text-muted-foreground font-sans flex items-center justify-center h-full">
+                  กรุณาเลือกอาจารย์ผู้สอนเพื่อแสดงรายละเอียด
                 </div>
               )}
             </div>
@@ -326,37 +331,37 @@ export default function ClassSchedule() {
         </CardContent>
       </Card>
 
+      {/* Timetable Card */}
       {loading ? (
-        <div className="flex justify-center items-center p-8">
+        <div className="flex justify-center items-center p-16">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">กำลังโหลดข้อมูล...</span>
+          <span className="ml-2 text-xs text-muted-foreground font-sans">
+            กำลังโหลดข้อมูลตารางสอน...
+          </span>
         </div>
-      ) : selectedTeacherId && currentTermYear ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex justify-between">
+      ) : selectedTeacher && currentTermYear ? (
+        <Card className="border border-border bg-card shadow-xs">
+          <CardHeader className="pb-3 border-b border-border/60">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                ตารางสอน{" "}
-                {(() => {
-                  const teacher = teachers.find(
-                    (t) => t.id === Number(selectedTeacherId),
-                  );
-                  return teacher ? `${teacher.tName} ${teacher.tLastName}` : "";
-                })()}{" "}
-                <span className="text-base font-normal text-muted-foreground">
-                  ({currentTermYear})
-                </span>
+                <CardTitle className="text-base font-semibold font-sans flex items-center gap-2">
+                  <span>ตารางสอน {selectedTeacher.tName} {selectedTeacher.tLastName}</span>
+                  <Badge variant="outline" className="text-xs font-normal border-border font-sans">
+                    ภาคเรียน {currentTermYear}
+                  </Badge>
+                </CardTitle>
+                <CardDescription className="text-xs font-sans mt-0.5">
+                  ช่วงเวลาทำการสอน คาบละ 30 นาที (08:00 - 20:30 น.)
+                </CardDescription>
               </div>
               <DownloadTeacherButton
-                selectedTeacher={teachers.find(
-                  (t) => t.id === Number(selectedTeacherId),
-                )}
+                selectedTeacher={selectedTeacher}
                 currentTermYear={currentTermYear}
                 timetables={timetables}
               />
-            </CardTitle>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4">
             <TeacherTimetable
               key={`timetable-${selectedTeacherId}-${currentTermYear}`}
               cellToSubject={cellToSubject}
@@ -368,12 +373,16 @@ export default function ClassSchedule() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="text-center py-8">
-            <p className="text-muted-foreground">
+        <Card className="border border-border bg-card shadow-xs">
+          <CardContent className="text-center py-16">
+            <CalendarCheck2 className="h-8 w-8 mx-auto mb-2 text-muted-foreground/60" />
+            <p className="text-sm font-semibold text-foreground font-sans">
               {!currentTermYear
                 ? "กำลังโหลดข้อมูลภาคเรียน..."
                 : "กรุณาเลือกอาจารย์เพื่อดูตารางสอน"}
+            </p>
+            <p className="text-xs text-muted-foreground font-sans mt-1">
+              เลือกอาจารย์จากรายการด้านบนเพื่อตรวจสอบชั่วโมงสอนและห้องเรียน
             </p>
           </CardContent>
         </Card>
@@ -401,7 +410,7 @@ function TeacherTimetable({
   cellToSubject,
   cellColspan,
   cellSkip,
-  teacherId,
+  teacherId: _teacherId,
   termYear,
 }: {
   cellToSubject: { [cellKey: string]: any };
@@ -413,24 +422,22 @@ function TeacherTimetable({
   const isTerm3 = typeof termYear === "string" && termYear.startsWith("3/");
   const days = ["จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา."];
 
-  console.log("Rendering timetable for teacher ID:", teacherId);
-  console.log("Available subjects:", Object.keys(cellToSubject).length);
-  console.log("Cell keys:", Object.keys(cellToSubject));
-
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="w-full overflow-x-auto rounded-lg border border-border/80">
       <table className="table-fixed border-collapse w-full">
         <thead>
-          <tr>
-            <th className="border px-2 py-1 text-xs w-[72px]">วัน/คาบ</th>
+          <tr className="bg-muted/40">
+            <th className="border-b border-r border-border/80 px-2 py-2 text-xs font-semibold text-foreground font-sans w-[60px]">
+              วัน/คาบ
+            </th>
             {Array.from({ length: 25 }, (_, i) => (
               <th
                 key={i}
-                className="border px-1 py-1 text-xs"
+                className="border-b border-r border-border/70 px-0.5 py-1 text-xs"
                 style={{ width: `${100 / 25}%` }}
               >
-                <div className="font-semibold text-center">{i + 1}</div>
-                <div className="text-[7px] font-normal text-muted-foreground leading-tight text-center">
+                <div className="font-semibold text-foreground text-center font-sans">{i + 1}</div>
+                <div className="text-[8px] font-normal text-muted-foreground leading-tight text-center font-mono">
                   {(() => {
                     const startMinutes = 8 * 60 + i * 30;
                     const endMinutes = startMinutes + 30;
@@ -448,8 +455,10 @@ function TeacherTimetable({
         </thead>
         <tbody>
           {days.map((day, dayIndex) => (
-            <tr key={dayIndex}>
-              <td className="border text-center text-xs w-[72px]">{day}</td>
+            <tr key={dayIndex} className="hover:bg-muted/10 transition-colors">
+              <td className="border-b border-r border-border/80 text-center font-semibold text-xs text-foreground font-sans w-[60px] bg-muted/20">
+                {day}
+              </td>
               {Array.from({ length: 25 }, (_, colIdx) => {
                 const period = colIdx;
 
@@ -458,7 +467,7 @@ function TeacherTimetable({
                     <td
                       key={`activity-${dayIndex}-${period}`}
                       colSpan={4}
-                      className="border text-center bg-muted font-bold text-xs"
+                      className="border-b border-r border-border/80 text-center bg-muted/60 font-semibold text-xs text-muted-foreground font-sans"
                     >
                       กิจกรรม
                     </td>
@@ -477,15 +486,14 @@ function TeacherTimetable({
 
                 const subject = cellToSubject[cellKey];
                 const colspan = cellColspan[cellKey] || 1;
-
                 const displayPeriod = period + 1;
 
                 return (
                   <td
                     key={`cell-${dayIndex}-${displayPeriod}`}
-                    className={`border text-center h-[36px] p-0 align-middle overflow-hidden text-xs ${
+                    className={`border-b border-r border-border/70 text-center h-[42px] p-0 align-middle overflow-hidden text-xs transition-colors ${
                       subject
-                        ? "bg-blue-100 dark:bg-blue-900 border border-blue-300 dark:border-blue-700"
+                        ? "bg-indigo-500/10 dark:bg-indigo-500/20 border-indigo-300 dark:border-indigo-800"
                         : "bg-card"
                     }`}
                     colSpan={colspan}
@@ -523,38 +531,36 @@ function SubjectInCell({
   const totalHours = lectureHours + labHours;
 
   return (
-    <TooltipProvider delayDuration={300}>
+    <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="w-full h-full p-1">
-            <div className="text-center">
-              <div className="font-medium text-blue-950 dark:text-blue-50">
-                {subject.subjectCode}
+          <div className="w-full h-full p-1 cursor-pointer">
+            <div className="text-center space-y-0.5">
+              <div className="font-semibold text-xs text-foreground font-sans flex items-center justify-center gap-1">
+                <span>{subject.subjectCode}</span>
                 {subject.section && (
-                  <span className="text-[9px] ml-1 bg-blue-200 dark:bg-blue-700 px-1 py-0.5 rounded">
+                  <span className="text-[9px] font-mono bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 px-1 py-0.2 rounded-xs">
                     sec.{subject.section}
                   </span>
                 )}
               </div>
-              <div className="text-[10px] truncate text-blue-900 dark:text-blue-100">
+              <div className="text-[10px] truncate text-muted-foreground font-sans">
                 {subject.subjectName}
               </div>
-              <div className="text-[8px] mt-1 flex items-center justify-center gap-1">
-                <span className="bg-blue-200/50 dark:bg-blue-700/50 px-1 rounded">
+              <div className="text-[8px] flex items-center justify-center gap-1">
+                <span className="bg-secondary text-secondary-foreground px-1 rounded-xs font-sans">
                   {totalHours} ชม. ({lectureHours}/{labHours})
                 </span>
                 {colspan > 1 && (
-                  <span className="bg-blue-300/30 dark:bg-blue-600/30 px-1 rounded">
+                  <span className="bg-muted text-muted-foreground px-1 rounded-xs font-sans">
                     {colspan} คาบ
                   </span>
                 )}
               </div>
 
               {subject.room && (
-                <div className="text-[8px] mt-1">
-                  <span className="bg-blue-200/30 dark:bg-blue-700/30 px-1 rounded">
-                    ห้อง: {subject.room.roomCode}
-                  </span>
+                <div className="text-[8px] text-muted-foreground font-sans truncate">
+                  ห้อง: {subject.room.roomCode}
                 </div>
               )}
             </div>
@@ -563,38 +569,37 @@ function SubjectInCell({
         <TooltipContent
           side="top"
           align="center"
-          className="bg-slate-950 text-slate-50 dark:bg-slate-900"
+          className="bg-popover text-popover-foreground border border-border shadow-md"
         >
-          <div className="text-xs p-1">
-            <div className="font-medium">
-              {subject.subjectCode}
+          <div className="text-xs p-1 space-y-1">
+            <div className="font-bold text-foreground font-sans">
+              {subject.subjectCode} {subject.subjectName}
               {subject.section && (
-                <span className="ml-2">กลุ่มเรียน: {subject.section}</span>
+                <span className="ml-2 font-mono text-muted-foreground">กลุ่มเรียน: {subject.section}</span>
               )}
             </div>
-            <div className="mt-1">{subject.subjectName}</div>
-            <div className="mt-2 grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-muted-foreground font-sans pt-1 border-t border-border/60">
               <div>หลักสูตร:</div>
-              <div className="text-right">
+              <div className="text-right text-foreground font-medium">
                 {getPlanTypeText(subject.planType)}
               </div>
               <div>ชั้นปี:</div>
-              <div className="text-right">{subject.yearLevel}</div>
+              <div className="text-right text-foreground font-medium">{subject.yearLevel}</div>
               <div>จำนวนหน่วยกิต:</div>
-              <div className="text-right">{subject.credit}</div>
+              <div className="text-right text-foreground font-medium">{subject.credit}</div>
               <div>ชั่วโมงบรรยาย:</div>
-              <div className="text-right">{lectureHours} ชม.</div>
+              <div className="text-right text-foreground font-medium">{lectureHours} ชม.</div>
               <div>ชั่วโมงปฏิบัติ:</div>
-              <div className="text-right">{labHours} ชม.</div>
+              <div className="text-right text-foreground font-medium">{labHours} ชม.</div>
               <div>รวม:</div>
-              <div className="text-right">
+              <div className="text-right text-foreground font-medium">
                 {totalHours} ชม. ({totalHours * 2} คาบ)
               </div>
 
               {subject.room && (
                 <>
                   <div>ห้องเรียน:</div>
-                  <div className="text-right">{subject.room.roomCode}</div>
+                  <div className="text-right text-foreground font-medium">{subject.room.roomCode}</div>
                 </>
               )}
             </div>
