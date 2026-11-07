@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/api-auth";
+import { CurriculumService } from "@/features/curriculum/services/curriculum.service";
+import { validateCurriculumInput } from "@/features/curriculum/validations";
 
 export async function PUT(
   req: NextRequest,
@@ -12,47 +13,35 @@ export async function PUT(
       return auth.response;
     }
 
-    const body = await req.json();
-    const {
-      id_sub,
-      subject_name,
-      credit,
-      lacture_credit,
-      lab_credit,
-      out_credit,
-      curriculum_type,
-    } = body;
     const { id: idParam } = await params;
     const id = parseInt(idParam);
-
-    const existingCurriculum = await prisma.curriculum_tb.findFirst({
-      where: {
-        id_sub,
-        NOT: { id },
-      },
-    });
-
-    if (existingCurriculum) {
+    if (isNaN(id)) {
       return NextResponse.json(
-        { error: `รหัสวิชา ${id_sub} มีอยู่ในระบบแล้ว` },
-        { status: 400 },
+        { error: "ID ไม่ถูกต้อง" },
+        { status: 400 }
       );
     }
 
-    const curriculum = await prisma.curriculum_tb.update({
-      where: { id },
-      data: {
-        id_sub,
-        subject_name,
-        credit,
-        lacture_credit,
-        lab_credit,
-        out_credit,
-        curriculum_type,
-      },
-    });
+    const body = await req.json();
+    const validation = validateCurriculumInput(body);
 
-    return NextResponse.json(curriculum);
+    if (!validation.success || !validation.data) {
+      return NextResponse.json(
+        { error: validation.error || "ข้อมูลไม่ถูกต้อง" },
+        { status: 400 }
+      );
+    }
+
+    const result = await CurriculumService.updateCurriculum(id, validation.data);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error },
+        { status: result.statusCode || 400 }
+      );
+    }
+
+    return NextResponse.json(result.curriculum);
   } catch (error) {
     console.error("Error updating curriculum:", error);
     return NextResponse.json(
@@ -74,10 +63,14 @@ export async function DELETE(
 
     const { id: idParam } = await params;
     const id = parseInt(idParam);
+    if (isNaN(id)) {
+      return NextResponse.json(
+        { error: "ID ไม่ถูกต้อง" },
+        { status: 400 }
+      );
+    }
 
-    await prisma.curriculum_tb.delete({
-      where: { id },
-    });
+    await CurriculumService.deleteCurriculum(id);
 
     return NextResponse.json({ message: "ลบข้อมูลสำเร็จ" });
   } catch (error) {
