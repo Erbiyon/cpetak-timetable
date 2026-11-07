@@ -18,6 +18,7 @@ import {
   BarChart3,
   CalendarRange,
   School,
+  BookOpenCheck,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { DashboardClock } from "@/features/dashboard/components/DashboardClock";
@@ -168,8 +169,7 @@ export default function DashboardCustom() {
     },
   ];
 
-  // เมนูดำเนินงานหลัก (Quick Operations) มีเมนูย่อยเฉพาะหมวดที่มีฟังก์ชันย่อยจริง (จัดการข้อมูลอาจารย์ และ จัดการห้องเรียน)
-  // จัดเรียงให้อยู่ติดกันในแถวแรกเพื่อความสะดวกในการเข้าถึงงานบริหารข้อมูลพื้นฐาน
+  // เมนูดำเนินงานหลัก (Quick Operations) มีเมนูย่อยเฉพาะหมวดที่มีฟังก์ชันย่อยจริง
   const quickOperations = [
     {
       title: "จัดการข้อมูลอาจารย์",
@@ -192,6 +192,19 @@ export default function DashboardCustom() {
       subItems: [
         { label: "จัดการห้องเรียน", href: "/rooms" },
         { label: "เพิ่มห้องเรียนวิชานอกสาขา", href: "/rooms/room-out" },
+      ],
+    },
+    {
+      title: "แผนการเรียน",
+      description: "จัดการแผนการเรียนตามระดับและปีการศึกษา",
+      icon: <BookOpenCheck className="h-5 w-5 text-sky-600 dark:text-sky-400" />,
+      borderStyle: "border-sky-200/90 dark:border-sky-900/60 hover:border-sky-500 dark:hover:border-sky-400",
+      iconBg: "bg-sky-50 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400 border-sky-200/50 dark:border-sky-800/50",
+      subItems: [
+        { label: "หลักสูตรเทียบโอน (3 ปี)", href: "/study-plans/transfer-plan" },
+        { label: "หลักสูตร 4 ปี", href: "/study-plans/four-year-plan" },
+        { label: "หลักสูตร ปวส. (ปวช.)", href: "/study-plans/dve-lvc-plan" },
+        { label: "หลักสูตร ปวส. (ม.6)", href: "/study-plans/dve-msix-plan" },
       ],
     },
     {
