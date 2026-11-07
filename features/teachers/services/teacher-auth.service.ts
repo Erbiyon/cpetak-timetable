@@ -133,6 +133,50 @@ export class TeacherAuthService {
   }
 
   /**
+   * Generates a single-use password reset token via Admin-assisted procedure.
+   */
+  static async createAdminAssistedResetToken(
+    teacherId: number,
+    validityMinutes: number = 60
+  ): Promise<ResetTokenResult> {
+    const teacher = await prisma.teacher_tb.findUnique({
+      where: { id: teacherId },
+    });
+
+    if (!teacher) {
+      throw new Error("Teacher not found");
+    }
+
+    const rawToken = generateSecureToken(32);
+    const tokenHash = hashToken(rawToken);
+    const expiresAt = new Date(Date.now() + validityMinutes * 60 * 1000);
+
+    // Invalidate existing unused reset tokens for this teacher
+    await prisma.teacherToken_tb.deleteMany({
+      where: {
+        teacherId: teacher.id,
+        tokenType: "PASSWORD_RESET",
+        consumedAt: null,
+      },
+    });
+
+    await prisma.teacherToken_tb.create({
+      data: {
+        teacherId: teacher.id,
+        tokenHash,
+        tokenType: "PASSWORD_RESET",
+        expiresAt,
+      },
+    });
+
+    return {
+      rawToken,
+      expiresAt,
+      teacherId: teacher.id,
+    };
+  }
+
+  /**
    * Generates a single-use password reset token.
    * Default validity: 1 hour.
    */

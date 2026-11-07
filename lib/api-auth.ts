@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth/next";
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 export type Role = "admin" | "teacher";
 
@@ -11,6 +12,7 @@ export interface AuthenticatedUser {
   role?: string;
   teacherId?: string;
   teacherType?: string;
+  sessionVersion?: number;
 }
 
 export interface AuthSuccess {
@@ -26,7 +28,8 @@ export interface AuthFailure {
 export type AuthResult = AuthSuccess | AuthFailure;
 
 /**
- * Validates whether the incoming request has a valid active session or JWT token.
+ * Validates whether the incoming request has a valid active session or JWT token,
+ * and enforces server-side session revocation against Teacher_tb.sessionVersion.
  * Works seamlessly in both live Next.js App Router server execution and test contexts.
  */
 export async function requireAuth(req?: NextRequest | Request): Promise<AuthResult> {
@@ -50,6 +53,7 @@ export async function requireAuth(req?: NextRequest | Request): Promise<AuthResu
               role: token.role as string,
               teacherId: token.teacherId as string,
               teacherType: token.teacherType as string,
+              sessionVersion: token.sessionVersion as number,
             },
           };
         }
@@ -69,9 +73,44 @@ export async function requireAuth(req?: NextRequest | Request): Promise<AuthResu
     };
   }
 
+  const user = session.user as AuthenticatedUser;
+
+  // Server-side Session Revocation Check for Teachers:
+  // If the user is a teacher and sessionVersion is supplied, verify it matches the current database record.
+  if (user.role === "teacher" && user.teacherId && user.sessionVersion !== undefined && user.sessionVersion !== null) {
+    try {
+      const currentTeacher = await prisma.teacher_tb.findFirst({
+        where: { tId: user.teacherId },
+        select: { id: true, isEnrolled: true, sessionVersion: true },
+      });
+
+      if (!currentTeacher || !currentTeacher.isEnrolled) {
+        return {
+          authorized: false,
+          response: NextResponse.json(
+            { error: "บัญชีผู้ใช้นี้ไม่พร้อมใช้งานหรือถูกระงับ (Unauthorized: Account Inactive)" },
+            { status: 401 }
+          ),
+        };
+      }
+
+      if (currentTeacher.sessionVersion !== user.sessionVersion) {
+        return {
+          authorized: false,
+          response: NextResponse.json(
+            { error: "เซสชันหมดอายุเนื่องจากมีการเปลี่ยนรหัสผ่าน กรุณาเข้าสู่ระบบใหม่ (Unauthorized: Session Revoked)" },
+            { status: 401 }
+          ),
+        };
+      }
+    } catch (err) {
+      console.error("Session verification error:", err);
+    }
+  }
+
   return {
     authorized: true,
-    user: session.user as AuthenticatedUser,
+    user,
   };
 }
 
