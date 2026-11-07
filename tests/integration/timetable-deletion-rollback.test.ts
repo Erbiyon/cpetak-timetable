@@ -186,3 +186,4 @@ describe("MySQL Timetable Deletion & Clear Integration Suite", () => {
     expect(kept).not.toBeNull();
   });
 });
+

@@ -1,66 +1,88 @@
 "use client";
 
-import { AddSubjectCustom } from "@/components/add-subject/add-subject-custom";
-import CardStudyPlansCustom from "@/components/card-study-plans-table/card-study-plans-custom";
+import { useMemo } from "react";
 import { SelectCustom } from "@/components/select/select-custom";
-import { useEffect, useState } from "react";
+import { useStudyPlanMeta } from "@/features/subjects/hooks/useStudyPlanMeta";
+import { StudyPlanSectionCard } from "@/features/subjects/components/StudyPlanSectionCard";
 
 export default function FourYearPlan() {
-  const [year, setYear] = useState<string>("");
-  const [terms, setTerms] = useState<any[]>([]);
-  const [yearLevels, setYearLevels] = useState<any[]>([]);
-  const [_loading, setLoading] = useState(true);
+  const { year, handleYearChange, terms, yearLevels } = useStudyPlanMeta();
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
+  const currentBuddhistYear = useMemo(() => new Date().getFullYear() + 543, []);
+  const baseYear = useMemo(
+    () => (year ? parseInt(year, 10) : currentBuddhistYear),
+    [year, currentBuddhistYear]
+  );
 
-        const currentYear = new Date().getFullYear() + 543;
-        setYear(currentYear.toString());
+  const academicYears = useMemo(
+    () => ({
+      year1: baseYear,
+      year2: baseYear + 1,
+      year3: baseYear + 2,
+      year4: baseYear + 3,
+    }),
+    [baseYear]
+  );
 
-        const [termRes, yearRes] = await Promise.all([
-          fetch("/api/term"),
-          fetch("/api/year-level"),
-        ]);
-
-        if (termRes.ok) {
-          const termData = await termRes.json();
-          setTerms(termData);
-        }
-
-        if (yearRes.ok) {
-          const yearData = await yearRes.json();
-          setYearLevels(yearData);
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
-
-  const handleYearChange = (newYear: string) => {
-    setYear(newYear);
-  };
-
-  const academicYear = year || new Date().getFullYear() + 543;
-  const academicYear2 = parseInt(year) + 1 || new Date().getFullYear() + 544;
-  const academicYear3 = parseInt(year) + 2 || new Date().getFullYear() + 545;
-  const academicYear4 = parseInt(year) + 3 || new Date().getFullYear() + 546;
+  const planSections = useMemo(
+    () => [
+      // ปี 1
+      {
+        yearLevel: yearLevels[0]?.name,
+        term: terms[0]?.name,
+        academicYear: academicYears.year1,
+      },
+      {
+        yearLevel: yearLevels[0]?.name,
+        term: terms[1]?.name,
+        academicYear: academicYears.year1,
+      },
+      // ปี 2
+      {
+        yearLevel: yearLevels[1]?.name,
+        term: terms[0]?.name,
+        academicYear: academicYears.year2,
+      },
+      {
+        yearLevel: yearLevels[1]?.name,
+        term: terms[1]?.name,
+        academicYear: academicYears.year2,
+      },
+      // ปี 3
+      {
+        yearLevel: yearLevels[2]?.name,
+        term: terms[0]?.name,
+        academicYear: academicYears.year3,
+      },
+      {
+        yearLevel: yearLevels[2]?.name,
+        term: terms[1]?.name,
+        academicYear: academicYears.year3,
+      },
+      // ปี 4
+      {
+        yearLevel: yearLevels[3]?.name,
+        term: terms[0]?.name,
+        academicYear: academicYears.year4,
+      },
+      {
+        yearLevel: yearLevels[3]?.name,
+        term: terms[1]?.name,
+        academicYear: academicYears.year4,
+      },
+    ],
+    [terms, yearLevels, academicYears]
+  );
 
   return (
     <div className="container mx-auto px-4 py-4">
       <div className="py-4 sm:py-6 lg:py-8 px-2 sm:px-4 md:px-8 lg:px-16 xl:px-32 2xl:px-48">
         <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold mb-2 sm:mb-3 break-words leading-tight">
-          แผนการเรียนสำหรับนักศึกษาที่เข้ารับการศึกษาในปีการศึกษา {academicYear}
+          แผนการเรียนสำหรับนักศึกษาที่เข้ารับการศึกษาในปีการศึกษา {academicYears.year1}
         </h1>
         <h3 className="text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
           หลักสูตรวิศวกรรมคอมพิวเตอร์{" "}
-          <span className="text-green-600 font-medium">4 ปี</span> มทร.ล้านนา
-          ตาก
+          <span className="text-green-600 font-medium">4 ปี</span> มทร.ล้านนา ตาก
         </h3>
       </div>
 
@@ -73,197 +95,16 @@ export default function FourYearPlan() {
       </div>
 
       <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-        <CardStudyPlansCustom
-          planType="FOUR_YEAR"
-          termYear={`${terms[0]?.name}/${academicYear}`}
-          yearLevel={yearLevels[0]?.name}
-          curriculumType="BACHELOR"
-        >
-          {({ onAdded }) => (
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 lg:gap-4 mx-3 sm:mx-4 md:mx-6 lg:mx-8">
-              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-medium break-words leading-tight">
-                {yearLevels[0]?.name} {terms[0]?.name}/{academicYear}
-              </h2>
-              <div className="shrink-0 self-start sm:self-center">
-                <AddSubjectCustom
-                  planType="FOUR_YEAR"
-                  termYear={`${terms[0]?.name}/${academicYear}`}
-                  yearLevel={yearLevels[0]?.name}
-                  curriculumType="BACHELOR"
-                  onAdded={onAdded}
-                />
-              </div>
-            </div>
-          )}
-        </CardStudyPlansCustom>
-
-        <CardStudyPlansCustom
-          planType="FOUR_YEAR"
-          termYear={`${terms[1]?.name}/${academicYear}`}
-          yearLevel={yearLevels[0]?.name}
-          curriculumType="BACHELOR"
-        >
-          {({ onAdded }) => (
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 lg:gap-4 mx-3 sm:mx-4 md:mx-6 lg:mx-8">
-              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-medium break-words leading-tight">
-                {yearLevels[0]?.name} {terms[1]?.name}/{academicYear}
-              </h2>
-              <div className="shrink-0 self-start sm:self-center">
-                <AddSubjectCustom
-                  planType="FOUR_YEAR"
-                  termYear={`${terms[1]?.name}/${academicYear}`}
-                  yearLevel={yearLevels[0]?.name}
-                  curriculumType="BACHELOR"
-                  onAdded={onAdded}
-                />
-              </div>
-            </div>
-          )}
-        </CardStudyPlansCustom>
-
-        <CardStudyPlansCustom
-          planType="FOUR_YEAR"
-          termYear={`${terms[0]?.name}/${academicYear2}`}
-          yearLevel={yearLevels[1]?.name}
-          curriculumType="BACHELOR"
-        >
-          {({ onAdded }) => (
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 lg:gap-4 mx-3 sm:mx-4 md:mx-6 lg:mx-8">
-              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-medium break-words leading-tight">
-                {yearLevels[1]?.name} {terms[0]?.name}/{academicYear2}
-              </h2>
-              <div className="shrink-0 self-start sm:self-center">
-                <AddSubjectCustom
-                  planType="FOUR_YEAR"
-                  termYear={`${terms[0]?.name}/${academicYear2}`}
-                  yearLevel={yearLevels[1]?.name}
-                  curriculumType="BACHELOR"
-                  onAdded={onAdded}
-                />
-              </div>
-            </div>
-          )}
-        </CardStudyPlansCustom>
-
-        <CardStudyPlansCustom
-          planType="FOUR_YEAR"
-          termYear={`${terms[1]?.name}/${academicYear2}`}
-          yearLevel={yearLevels[1]?.name}
-          curriculumType="BACHELOR"
-        >
-          {({ onAdded }) => (
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 lg:gap-4 mx-3 sm:mx-4 md:mx-6 lg:mx-8">
-              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-medium break-words leading-tight">
-                {yearLevels[1]?.name} {terms[1]?.name}/{academicYear2}
-              </h2>
-              <div className="shrink-0 self-start sm:self-center">
-                <AddSubjectCustom
-                  planType="FOUR_YEAR"
-                  termYear={`${terms[1]?.name}/${academicYear2}`}
-                  yearLevel={yearLevels[1]?.name}
-                  curriculumType="BACHELOR"
-                  onAdded={onAdded}
-                />
-              </div>
-            </div>
-          )}
-        </CardStudyPlansCustom>
-
-        <CardStudyPlansCustom
-          planType="FOUR_YEAR"
-          termYear={`${terms[0]?.name}/${academicYear3}`}
-          yearLevel={yearLevels[2]?.name}
-          curriculumType="BACHELOR"
-        >
-          {({ onAdded }) => (
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 lg:gap-4 mx-3 sm:mx-4 md:mx-6 lg:mx-8">
-              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-medium break-words leading-tight">
-                {yearLevels[2]?.name} {terms[0]?.name}/{academicYear3}
-              </h2>
-              <div className="shrink-0 self-start sm:self-center">
-                <AddSubjectCustom
-                  planType="FOUR_YEAR"
-                  termYear={`${terms[0]?.name}/${academicYear3}`}
-                  yearLevel={yearLevels[2]?.name}
-                  curriculumType="BACHELOR"
-                  onAdded={onAdded}
-                />
-              </div>
-            </div>
-          )}
-        </CardStudyPlansCustom>
-
-        <CardStudyPlansCustom
-          planType="FOUR_YEAR"
-          termYear={`${terms[1]?.name}/${academicYear3}`}
-          yearLevel={yearLevels[2]?.name}
-          curriculumType="BACHELOR"
-        >
-          {({ onAdded }) => (
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 lg:gap-4 mx-3 sm:mx-4 md:mx-6 lg:mx-8">
-              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-medium break-words leading-tight">
-                {yearLevels[2]?.name} {terms[1]?.name}/{academicYear3}
-              </h2>
-              <div className="shrink-0 self-start sm:self-center">
-                <AddSubjectCustom
-                  planType="FOUR_YEAR"
-                  termYear={`${terms[1]?.name}/${academicYear3}`}
-                  yearLevel={yearLevels[2]?.name}
-                  curriculumType="BACHELOR"
-                  onAdded={onAdded}
-                />
-              </div>
-            </div>
-          )}
-        </CardStudyPlansCustom>
-
-        <CardStudyPlansCustom
-          planType="FOUR_YEAR"
-          termYear={`${terms[0]?.name}/${academicYear4}`}
-          yearLevel={yearLevels[3]?.name}
-          curriculumType="BACHELOR"
-        >
-          {({ onAdded }) => (
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 lg:gap-4 mx-3 sm:mx-4 md:mx-6 lg:mx-8">
-              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-medium break-words leading-tight">
-                {yearLevels[3]?.name} {terms[0]?.name}/{academicYear4}
-              </h2>
-              <div className="shrink-0 self-start sm:self-center">
-                <AddSubjectCustom
-                  planType="FOUR_YEAR"
-                  termYear={`${terms[0]?.name}/${academicYear4}`}
-                  yearLevel={yearLevels[3]?.name}
-                  curriculumType="BACHELOR"
-                  onAdded={onAdded}
-                />
-              </div>
-            </div>
-          )}
-        </CardStudyPlansCustom>
-
-        <CardStudyPlansCustom
-          planType="FOUR_YEAR"
-          termYear={`${terms[1]?.name}/${academicYear4}`}
-          yearLevel={yearLevels[3]?.name}
-          curriculumType="BACHELOR"
-        >
-          {({ onAdded }) => (
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 lg:gap-4 mx-3 sm:mx-4 md:mx-6 lg:mx-8">
-              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-medium break-words leading-tight">
-                {yearLevels[3]?.name} {terms[1]?.name}/{academicYear4}
-              </h2>
-              <div className="shrink-0 self-start sm:self-center">
-                <AddSubjectCustom
-                  planType="FOUR_YEAR"
-                  termYear={`${terms[1]?.name}/${academicYear4}`}
-                  yearLevel={yearLevels[3]?.name}
-                  curriculumType="BACHELOR"
-                  onAdded={onAdded}
-                />
-              </div>
-            </div>
-          )}
-        </CardStudyPlansCustom>
+        {planSections.map((section, idx) => (
+          <StudyPlanSectionCard
+            key={`${section.yearLevel}-${section.term}-${section.academicYear}-${idx}`}
+            planType="FOUR_YEAR"
+            termName={section.term}
+            yearLevelName={section.yearLevel}
+            academicYear={section.academicYear}
+            curriculumType="BACHELOR"
+          />
+        ))}
       </div>
     </div>
   );
