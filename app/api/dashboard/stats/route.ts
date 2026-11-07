@@ -14,6 +14,7 @@ export async function GET() {
       totalAssignedPlans,
       utilizedRoomsCount,
       scheduledTimetableSlots,
+      timetableEntries,
     ] = await Promise.all([
       prisma.teacher_tb.count(),
       prisma.room_tb.count(),
@@ -45,6 +46,13 @@ export async function GET() {
       }),
       // นับจำนวนช่วงเวลา slot ที่มีการจัดตาราง
       prisma.timetable_tb.count(),
+      // ดึงสถิติการกระจายวันสำหรับจัดตารางเรียน
+      prisma.timetable_tb.groupBy({
+        by: ["day", "planType"],
+        _count: {
+          _all: true,
+        },
+      }),
     ]);
 
     const totalSubjects = subjectGroups.length;
@@ -81,6 +89,14 @@ export async function GET() {
         ? Math.round((assignedPlansCount / activePlans) * 100)
         : 0;
 
+    // คำนวณการกระจายคาบเรียนตามวัน (วันจันทร์-อาทิตย์, day 1 ถึง 7)
+    const dayDistribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
+    for (const entry of timetableEntries) {
+      if (entry.day >= 1 && entry.day <= 7) {
+        dayDistribution[entry.day] = (dayDistribution[entry.day] || 0) + entry._count._all;
+      }
+    }
+
     return NextResponse.json({
       totalTeachers,
       totalRooms,
@@ -93,6 +109,7 @@ export async function GET() {
       schedulingProgressPercent,
       utilizedRoomsCount: utilizedRoomsCount.length,
       scheduledTimetableSlots,
+      dayDistribution,
     });
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);

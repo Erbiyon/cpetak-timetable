@@ -6,6 +6,12 @@ export function AnimatedCounter({ value, duration = 600 }: { value: number; dura
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
+    // Respect prefers-reduced-motion
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDisplayValue(value);
+      return;
+    }
+
     let startTimestamp: number | null = null;
     const startValue = 0;
     const endValue = value;
@@ -35,4 +41,5 @@ export function AnimatedCounter({ value, duration = 600 }: { value: number; dura
 
   return <span>{displayValue.toLocaleString()}</span>;
 }
+
 

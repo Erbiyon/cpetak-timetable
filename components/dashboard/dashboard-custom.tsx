@@ -1,34 +1,30 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import {
-  School,
+  Calendar,
+  Clock,
   SquareUser,
   Table,
-  Calendar,
-  ArrowRight,
-  BookOpenText,
+  CheckCircle2,
   AlertCircle,
-  Clock,
-  Layers,
-  ChevronRight,
   Building2,
   CalendarCheck2,
-  CheckCircle2,
+  BookOpenText,
+  Layers,
+  ArrowRight,
+  ChevronRight,
+  BarChart3,
+  CalendarRange,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { DashboardClock } from "@/features/dashboard/components/DashboardClock";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AnimatedCounter } from "./animated-counter";
 
 interface DashboardStats {
@@ -48,7 +44,18 @@ interface DashboardStats {
   schedulingProgressPercent?: number;
   utilizedRoomsCount?: number;
   scheduledTimetableSlots?: number;
+  dayDistribution?: Record<number, number>;
 }
+
+const DAYS_MAP = [
+  { day: 1, label: "จันทร์", fullLabel: "วันจันทร์" },
+  { day: 2, label: "อังคาร", fullLabel: "วันอังคาร" },
+  { day: 3, label: "พุธ", fullLabel: "วันพุธ" },
+  { day: 4, label: "พฤหัสฯ", fullLabel: "วันพฤหัสบดี" },
+  { day: 5, label: "ศุกร์", fullLabel: "วันศุกร์" },
+  { day: 6, label: "เสาร์", fullLabel: "วันเสาร์" },
+  { day: 7, label: "อาทิตย์", fullLabel: "วันอาทิตย์" },
+];
 
 export default function DashboardCustom() {
   const { data: session } = useSession();
@@ -98,25 +105,26 @@ export default function DashboardCustom() {
   const progressPercent = stats?.schedulingProgressPercent ?? (totalPlans > 0 ? Math.round((assignedPlans / totalPlans) * 100) : 0);
   const totalRooms = stats?.totalRooms || 0;
   const utilizedRooms = stats?.utilizedRoomsCount ?? 0;
+  const dayDistribution = stats?.dayDistribution || {};
+  const maxDaySlots = Math.max(...Object.values(dayDistribution), 1);
 
-  // เมนูจัดตารางเรียนตามหลักสูตร
+  // ข้อมูลหลักสูตรและชั้นปี
   const timetableCurriculums = [
     {
-      title: "หลักสูตรเทียบโอน",
+      title: "หลักสูตรเทียบโอน (3 ปี)",
       curriculumCode: "TRANSFER",
       years: [
         { label: "ชั้นปีที่ 1", href: "/adjust-time-tables/adjust-plan-transfer/transfer-one-year" },
         { label: "ชั้นปีที่ 2", href: "/adjust-time-tables/adjust-plan-transfer/transfer-two-year" },
-        ...(isTerm3 ? [] : [{ label: "ชั้นปีที่ 3", href: "/adjust-time-tables/adjust-plan-transfer/transfer-three-year" }]),
+        { label: "ชั้นปีที่ 3", href: "/adjust-time-tables/adjust-plan-transfer/transfer-three-year" },
       ],
       planCount: stats?.planBreakdown.transfer || 0,
-      badgeVariant: "default" as const,
     },
     ...(isTerm3
       ? []
       : [
           {
-            title: "หลักสูตร 4 ปี (ปกติ)",
+            title: "หลักสูตร 4 ปี",
             curriculumCode: "FOUR_YEAR",
             years: [
               { label: "ชั้นปีที่ 1", href: "/adjust-time-tables/adjust-plan-four-year/four-one-year" },
@@ -125,7 +133,6 @@ export default function DashboardCustom() {
               { label: "ชั้นปีที่ 4", href: "/adjust-time-tables/adjust-plan-four-year/four-four-year" },
             ],
             planCount: stats?.planBreakdown.fourYear || 0,
-            badgeVariant: "secondary" as const,
           },
         ]),
     {
@@ -136,7 +143,6 @@ export default function DashboardCustom() {
         { label: "ชั้นปีที่ 2", href: "/adjust-time-tables/adjust-plan-dve/dve-two-year" },
       ],
       planCount: stats?.planBreakdown.dveLvc || 0,
-      badgeVariant: "outline" as const,
     },
     {
       title: "หลักสูตร ปวส. (ม.6)",
@@ -146,62 +152,61 @@ export default function DashboardCustom() {
         { label: "ชั้นปีที่ 2", href: "/adjust-time-tables/adjust-plan-dve/dve-ms-two-year" },
       ],
       planCount: stats?.planBreakdown.dveMsix || 0,
-      badgeVariant: "outline" as const,
     },
   ];
 
-  // เมนูดำเนินงานหลัก
+  // เมนูดำเนินงานหลัก (Quick Operations)
   const quickOperations = [
     {
       title: "ตารางการใช้ห้องเรียน",
       description: "ตรวจสอบความหนาแน่นและช่วงเวลาการใช้ห้อง",
-      icon: <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />,
+      icon: <Building2 className="h-5 w-5 text-foreground" />,
       href: "/rooms-use",
     },
     {
       title: "ตารางสอนอาจารย์",
       description: "ตรวจสอบภาระการสอนและส่งออกไฟล์ Excel",
-      icon: <CalendarCheck2 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />,
+      icon: <CalendarCheck2 className="h-5 w-5 text-foreground" />,
       href: "/class-schedule",
     },
     {
       title: "จัดการข้อมูลอาจารย์",
-      description: "รายชื่อคณาจารย์ประจำและอาจารย์ภายนอก",
-      icon: <SquareUser className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
+      description: "รายชื่ออาจารย์ผู้สอนและการลงทะเบียนผู้ใช้",
+      icon: <SquareUser className="h-5 w-5 text-foreground" />,
       href: "/teachers",
     },
     {
-      title: "จัดการห้องเรียนและแล็บ",
-      description: "ข้อมูลห้องปฏิบัติการและห้องบรรยาย",
-      icon: <School className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
+      title: "จัดการห้องเรียน",
+      description: "เพิ่ม แก้ไข และกำหนดประเภทห้องเรียน",
+      icon: <Layers className="h-5 w-5 text-foreground" />,
       href: "/rooms",
     },
     {
       title: "โครงสร้างหลักสูตร",
       description: "ตรวจสอบรายชื่อวิชาและหน่วยกิตตามแผน",
-      icon: <BookOpenText className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+      icon: <BookOpenText className="h-5 w-5 text-foreground" />,
       href: "/curriculum",
     },
     {
       title: "ปฏิทินการศึกษา",
       description: "กำหนดการเปิด-ปิดภาคเรียนและกิจกรรมสาขา",
-      icon: <Calendar className="h-5 w-5 text-rose-600 dark:text-rose-400" />,
+      icon: <Calendar className="h-5 w-5 text-foreground" />,
       href: "/academic-calendar",
     },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* A. Academic Context Header */}
-      <div className="rounded-xl border bg-card p-6 shadow-xs transition-all">
+    <div className="space-y-6 animate-in fade-in-50 duration-500">
+      {/* A. Academic Context Header (ภาพรวมงานวิชาการ) */}
+      <div className="rounded-xl border border-border bg-card p-6 shadow-xs transition-all">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300 font-medium text-xs px-2.5 py-0.5">
+              <Badge variant="outline" className="border-border bg-muted/60 text-foreground font-medium text-xs px-2.5 py-0.5">
                 สาขาวิศวกรรมคอมพิวเตอร์
               </Badge>
               {session?.user?.role === "admin" && (
-                <Badge variant="secondary" className="font-normal text-xs">
+                <Badge variant="secondary" className="font-normal text-xs bg-secondary text-secondary-foreground">
                   สิทธิ์ผู้ดูแลระบบ
                 </Badge>
               )}
@@ -215,14 +220,14 @@ export default function DashboardCustom() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="rounded-lg border bg-muted/40 px-4 py-2.5 text-left sm:text-right">
-              <div className="text-xs text-muted-foreground flex items-center sm:justify-end gap-1">
-                <Clock className="h-3.5 w-3.5 text-primary" />
+            <div className="rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-left sm:text-right">
+              <div className="text-xs text-muted-foreground flex items-center sm:justify-end gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-foreground" />
                 เวลาปัจจุบัน
               </div>
               <DashboardClock className="text-sm font-semibold text-foreground font-mono" />
               {currentTermYear && (
-                <div className="text-xs font-medium text-primary mt-0.5">
+                <div className="text-xs font-medium text-foreground mt-0.5">
                   ภาคการศึกษาที่ {currentTermYear}
                 </div>
               )}
@@ -231,24 +236,30 @@ export default function DashboardCustom() {
         </div>
       </div>
 
-      {/* B. Scheduling Progress Overview (Enterprise KPI Cards) */}
+      {/* B. Scheduling Progress Overview (Zinc Enterprise KPI Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: รายวิชาที่จัดตารางแล้ว */}
-        <Card className="shadow-xs hover:border-primary/50 transition-colors">
+        <Card className="border border-border bg-card shadow-xs hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors">
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               รายวิชาที่จัดตารางแล้ว
             </CardTitle>
-            <div className="p-2 rounded-md bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+            <div className="p-2 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold tracking-tight text-foreground">
-              {isLoadingStats ? "..." : <AnimatedCounter value={assignedPlans} />}
-              <span className="text-xs font-normal text-muted-foreground ml-1.5">
-                / {totalPlans} แผน
-              </span>
+              {isLoadingStats ? (
+                <Skeleton className="h-8 w-16" />
+              ) : (
+                <>
+                  <AnimatedCounter value={assignedPlans} />
+                  <span className="text-xs font-normal text-muted-foreground ml-1.5">
+                    / {totalPlans} แผน
+                  </span>
+                </>
+              )}
             </div>
             <div className="mt-2.5">
               <Progress value={progressPercent} className="h-1.5 bg-muted" />
@@ -260,21 +271,27 @@ export default function DashboardCustom() {
         </Card>
 
         {/* KPI 2: รายวิชาที่ยังไม่ได้จัดตาราง */}
-        <Card className="shadow-xs hover:border-primary/50 transition-colors">
+        <Card className="border border-border bg-card shadow-xs hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors">
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               รายวิชาที่ยังไม่ได้จัด
             </CardTitle>
-            <div className="p-2 rounded-md bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400">
+            <div className="p-2 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <AlertCircle className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold tracking-tight text-foreground">
-              {isLoadingStats ? "..." : <AnimatedCounter value={unassignedPlans} />}
-              <span className="text-xs font-normal text-muted-foreground ml-1.5">
-                รายวิชา
-              </span>
+              {isLoadingStats ? (
+                <Skeleton className="h-8 w-12" />
+              ) : (
+                <>
+                  <AnimatedCounter value={unassignedPlans} />
+                  <span className="text-xs font-normal text-muted-foreground ml-1.5">
+                    รายวิชา
+                  </span>
+                </>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-4">
               {unassignedPlans > 0 ? "มีรายวิชารอจัดลงช่วงเวลาตาราง" : "จัดลงตารางครบถ้วนแล้ว"}
@@ -283,21 +300,27 @@ export default function DashboardCustom() {
         </Card>
 
         {/* KPI 3: ห้องเรียนที่มีการใช้งาน */}
-        <Card className="shadow-xs hover:border-primary/50 transition-colors">
+        <Card className="border border-border bg-card shadow-xs hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors">
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               ห้องเรียนที่ใช้งาน
             </CardTitle>
-            <div className="p-2 rounded-md bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
-              <School className="h-4 w-4" />
+            <div className="p-2 rounded-md bg-secondary text-foreground">
+              <Building2 className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold tracking-tight text-foreground">
-              {isLoadingStats ? "..." : <AnimatedCounter value={utilizedRooms} />}
-              <span className="text-xs font-normal text-muted-foreground ml-1.5">
-                / {totalRooms} ห้อง
-              </span>
+              {isLoadingStats ? (
+                <Skeleton className="h-8 w-16" />
+              ) : (
+                <>
+                  <AnimatedCounter value={utilizedRooms} />
+                  <span className="text-xs font-normal text-muted-foreground ml-1.5">
+                    / {totalRooms} ห้อง
+                  </span>
+                </>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-4">
               ห้องปฏิบัติการและห้องบรรยายในระบบ
@@ -306,21 +329,27 @@ export default function DashboardCustom() {
         </Card>
 
         {/* KPI 4: จำนวนอาจารย์ผู้สอน */}
-        <Card className="shadow-xs hover:border-primary/50 transition-colors">
+        <Card className="border border-border bg-card shadow-xs hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors">
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               คณาจารย์ผู้สอน
             </CardTitle>
-            <div className="p-2 rounded-md bg-purple-50 text-purple-600 dark:bg-purple-950/50 dark:text-purple-400">
+            <div className="p-2 rounded-md bg-secondary text-foreground">
               <SquareUser className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold tracking-tight text-foreground">
-              {isLoadingStats ? "..." : <AnimatedCounter value={stats?.totalTeachers || 0} />}
-              <span className="text-xs font-normal text-muted-foreground ml-1.5">
-                ท่าน
-              </span>
+              {isLoadingStats ? (
+                <Skeleton className="h-8 w-12" />
+              ) : (
+                <>
+                  <AnimatedCounter value={stats?.totalTeachers || 0} />
+                  <span className="text-xs font-normal text-muted-foreground ml-1.5">
+                    ท่าน
+                  </span>
+                </>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-4">
               อาจารย์ประจำสาขาและอาจารย์พิเศษ
@@ -332,14 +361,14 @@ export default function DashboardCustom() {
       {/* C & D. Required Actions & Curriculum Scheduling Progress */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* C. Required Actions (รายการที่ต้องดำเนินการ) */}
-        <Card className="lg:col-span-1 shadow-xs border">
+        <Card className="lg:col-span-1 shadow-xs border border-border bg-card">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 รายการที่ต้องดำเนินการ
               </CardTitle>
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs border-border bg-muted/40">
                 {unassignedPlans > 0 ? `${unassignedPlans} รายการ` : "ครบถ้วน"}
               </Badge>
             </div>
@@ -350,7 +379,7 @@ export default function DashboardCustom() {
           <CardContent className="space-y-3 pt-1">
             {unassignedPlans > 0 ? (
               <div className="space-y-2">
-                <div className="rounded-lg border bg-amber-50/50 dark:bg-amber-950/20 p-3 border-amber-200 dark:border-amber-900/40">
+                <div className="rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-500/5 p-3">
                   <div className="flex items-start gap-2.5">
                     <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
                     <div>
@@ -371,21 +400,21 @@ export default function DashboardCustom() {
                   <div className="space-y-1">
                     <Link
                       href="/adjust-time-tables/adjust-plan-transfer/transfer-one-year"
-                      className="flex items-center justify-between px-3 py-2 text-xs rounded-md bg-muted/50 hover:bg-muted transition-colors text-foreground font-medium"
+                      className="flex items-center justify-between px-3 py-2 text-xs rounded-md bg-secondary/60 hover:bg-secondary transition-colors text-foreground font-medium"
                     >
                       <span>จัดตารางเรียน เทียบโอน ปี 1</span>
                       <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                     </Link>
                     <Link
                       href="/adjust-time-tables/adjust-plan-four-year/four-one-year"
-                      className="flex items-center justify-between px-3 py-2 text-xs rounded-md bg-muted/50 hover:bg-muted transition-colors text-foreground font-medium"
+                      className="flex items-center justify-between px-3 py-2 text-xs rounded-md bg-secondary/60 hover:bg-secondary transition-colors text-foreground font-medium"
                     >
                       <span>จัดตารางเรียน 4 ปี ชั้นปีที่ 1</span>
                       <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                     </Link>
                     <Link
                       href="/adjust-time-tables/adjust-plan-dve/dve-one-year"
-                      className="flex items-center justify-between px-3 py-2 text-xs rounded-md bg-muted/50 hover:bg-muted transition-colors text-foreground font-medium"
+                      className="flex items-center justify-between px-3 py-2 text-xs rounded-md bg-secondary/60 hover:bg-secondary transition-colors text-foreground font-medium"
                     >
                       <span>จัดตารางเรียน ปวส. ปี 1 (ปวช.)</span>
                       <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
@@ -394,7 +423,7 @@ export default function DashboardCustom() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-lg border bg-emerald-50/50 dark:bg-emerald-950/20 p-4 border-emerald-200 dark:border-emerald-900/40 text-center">
+              <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/40 bg-emerald-500/5 p-4 text-center">
                 <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400 mx-auto mb-2" />
                 <div className="text-sm font-semibold text-foreground">
                   จัดตารางเรียนครบถ้วนสมบูรณ์
@@ -408,13 +437,13 @@ export default function DashboardCustom() {
         </Card>
 
         {/* D. Curriculum Scheduling Progress (ความคืบหน้าการจัดตารางเรียนตามหลักสูตร) */}
-        <Card className="lg:col-span-2 shadow-xs border">
+        <Card className="lg:col-span-2 shadow-xs border border-border bg-card">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-base font-semibold">
                   <h2 className="flex items-center gap-2 text-base font-semibold m-0 p-0 text-foreground">
-                    <Table className="h-4 w-4 text-primary" />
+                    <Table className="h-4 w-4 text-foreground" />
                     จัดการตารางเรียน
                   </h2>
                 </CardTitle>
@@ -422,7 +451,7 @@ export default function DashboardCustom() {
                   ความคืบหน้าการจัดตารางเรียนตามหลักสูตรและทางเข้าสู่แต่ละชั้นปี
                 </CardDescription>
               </div>
-              <Badge variant="outline" className="text-xs font-mono font-medium">
+              <Badge variant="outline" className="text-xs font-mono font-medium border-border">
                 {timetableCurriculums.length} หลักสูตร
               </Badge>
             </div>
@@ -432,13 +461,13 @@ export default function DashboardCustom() {
               {timetableCurriculums.map((curr) => (
                 <div
                   key={curr.curriculumCode}
-                  className="rounded-lg border p-4 hover:border-primary/40 transition-colors bg-card"
+                  className="rounded-lg border border-border p-4 hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors bg-card"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold text-sm text-foreground">
                       {curr.title}
                     </span>
-                    <Badge variant={curr.badgeVariant} className="text-[11px] font-normal">
+                    <Badge variant="secondary" className="text-[11px] font-normal bg-secondary text-secondary-foreground">
                       {curr.planCount} แผนการเรียน
                     </Badge>
                   </div>
@@ -448,7 +477,7 @@ export default function DashboardCustom() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="w-full justify-between text-xs h-8 font-normal hover:bg-accent border-border/70"
+                          className="w-full justify-between text-xs h-8 font-normal hover:bg-secondary border-border/80 text-foreground"
                         >
                           <span>{yr.label}</span>
                           <ArrowRight className="h-3 w-3 text-muted-foreground" />
@@ -463,11 +492,56 @@ export default function DashboardCustom() {
         </Card>
       </div>
 
+      {/* E. Scheduling Overview (ภาพรวมการกระจายคาบเรียนตามวันในสัปดาห์) */}
+      <Card className="border border-border bg-card shadow-xs">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-foreground" />
+                ภาพรวมการจัดตารางเรียน
+              </CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                การกระจายช่วงเวลาคาบเรียน (Timetable Slots) ที่ได้รับการจัดตารางในแต่ละวัน
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <CalendarRange className="h-3.5 w-3.5" />
+              รวม {stats?.scheduledTimetableSlots || 0} ช่วงเวลา
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <div className="grid grid-cols-7 gap-2 sm:gap-3 text-center">
+            {DAYS_MAP.map((d) => {
+              const count = dayDistribution[d.day] || 0;
+              const heightPercent = maxDaySlots > 0 ? Math.max(Math.round((count / maxDaySlots) * 100), 12) : 12;
+              return (
+                <div key={d.day} className="flex flex-col items-center justify-end h-28 p-2 rounded-lg bg-secondary/40 border border-border/60">
+                  <div className="text-xs font-semibold text-foreground mb-1">
+                    {count}
+                  </div>
+                  <div className="w-full bg-secondary rounded-sm overflow-hidden flex items-end justify-center h-14">
+                    <div
+                      className="w-full bg-foreground/80 dark:bg-foreground/70 rounded-xs transition-all duration-500 ease-out"
+                      style={{ height: `${count > 0 ? heightPercent : 4}%` }}
+                    />
+                  </div>
+                  <div className="text-[11px] font-medium text-muted-foreground mt-2 truncate w-full">
+                    {d.label}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* F. Quick Operations (เมนูดำเนินงาน) */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
-            <Layers className="h-4 w-4 text-primary" />
+            <Layers className="h-4 w-4 text-foreground" />
             เมนูดำเนินงาน
           </h2>
           <span className="text-xs text-muted-foreground">
@@ -478,17 +552,17 @@ export default function DashboardCustom() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {quickOperations.map((op) => (
             <Link key={op.href} href={op.href} className="group block">
-              <Card className="shadow-xs border hover:border-primary/50 transition-all h-full">
+              <Card className="border border-border bg-card shadow-xs hover:border-zinc-400 dark:hover:border-zinc-600 transition-all h-full">
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <div className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
+                    <div className="font-semibold text-sm text-foreground group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
                       {op.title}
                     </div>
                     <div className="text-xs text-muted-foreground line-clamp-1">
                       {op.description}
                     </div>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-muted/60 border border-border group-hover:bg-primary/10 transition-colors shrink-0 ml-3">
+                  <div className="p-2.5 rounded-lg bg-secondary border border-border group-hover:bg-accent transition-colors shrink-0 ml-3">
                     {op.icon}
                   </div>
                 </CardContent>
