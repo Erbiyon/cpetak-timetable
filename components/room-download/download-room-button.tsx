@@ -1,9 +1,8 @@
 "use client";
 
-import React from "react";
-import { FileSpreadsheet } from "lucide-react";
+import React, { useState } from "react";
+import { FileSpreadsheet, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
-import ExcelJS from "exceljs";
 
 interface DownloadRoomButtonProps {
   roomCode: string;
@@ -21,8 +20,12 @@ export default function DownloadRoomButton({
   cellColspan,
   cellSkip,
 }: DownloadRoomButtonProps) {
+  const [isExporting, setIsExporting] = useState(false);
+
   const generateExcelDownload = async (): Promise<void> => {
     try {
+      setIsExporting(true);
+
       const stripPartSuffix = (name: string) =>
         name.replace(/\s*\(ส่วนที่ \d+\)\s*$/, "");
 
@@ -34,7 +37,10 @@ export default function DownloadRoomButton({
         return termYear;
       };
 
-      const workbook = new ExcelJS.Workbook();
+      const excelModule = await import("exceljs");
+      const ExcelJSClass = excelModule.default || excelModule;
+
+      const workbook = new ExcelJSClass.Workbook();
       const worksheet = workbook.addWorksheet("ตารางการใช้ห้อง");
 
       const timeSlots = [
@@ -285,12 +291,15 @@ export default function DownloadRoomButton({
     } catch (error) {
       console.error("Error generating Excel file:", error);
       alert("เกิดข้อผิดพลาดในการสร้างไฟล์ Excel");
+    } finally {
+      setIsExporting(false);
     }
   };
 
   const hasData = cellToSubject && Object.keys(cellToSubject).length > 0;
 
   const getButtonText = () => {
+    if (isExporting) return "กำลังสร้างไฟล์ Excel...";
     if (!hasData) return "ไม่มีข้อมูลตารางเรียน";
     return "ดาวน์โหลดตารางห้อง";
   };
@@ -302,9 +311,13 @@ export default function DownloadRoomButton({
       className="flex items-center space-x-2"
       type="button"
       aria-label="Download Excel file"
-      disabled={!hasData}
+      disabled={!hasData || isExporting}
     >
-      <FileSpreadsheet className="h-4 w-4" />
+      {isExporting ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <FileSpreadsheet className="h-4 w-4" />
+      )}
       <span>{getButtonText()}</span>
     </Button>
   );
