@@ -67,15 +67,34 @@ model Room_tb {
 }
 
 model Teacher_tb {
-  id          Int            @id @default(autoincrement())
-  tId         String
-  tName       String
-  tLastName   String
-  teacherType String
-  plans       Plans_tb[]
-  timetables  Timetable_tb[]
+  id             Int              @id @default(autoincrement())
+  tId            String
+  tName          String
+  tLastName      String
+  teacherType    String
+  passwordHash   String?
+  isEnrolled     Boolean          @default(false)
+  sessionVersion Int              @default(1)
+  plans          Plans_tb[]
+  timetables     Timetable_tb[]
+  tokens         TeacherToken_tb[]
 
   @@map("Teacher_tb")
+}
+
+model TeacherToken_tb {
+  id         Int        @id @default(autoincrement())
+  teacherId  Int
+  tokenHash  String     @unique
+  tokenType  String     // "ENROLLMENT" | "PASSWORD_RESET"
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime   @default(now())
+  teacher    Teacher_tb @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([teacherId])
+  @@map("TeacherToken_tb")
 }
 
 model Timetable_tb {

@@ -13,6 +13,7 @@ declare module "next-auth" {
             teacherType?: string
             adminId?: string
             loginType?: string
+            sessionVersion?: number
         }
     }
 
@@ -26,6 +27,7 @@ declare module "next-auth" {
         teacherId?: string
         teacherType?: string
         adminId?: string
+        sessionVersion?: number
     }
 }
 
@@ -37,5 +39,6 @@ declare module "next-auth/jwt" {
         teacherType?: string
         adminId?: string
         loginType?: string
+        sessionVersion?: number
     }
 }
