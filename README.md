@@ -1,24 +1,69 @@
 # 📅 ระบบจัดตารางเรียน (Timetable System)
 
-![Next.js](https://img.shields.io/badge/Next.js-15.5.29-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-16.4.5-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-Zinc_Enterprise-18181B?style=for-the-badge&logo=shadcnui&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-6.16.1-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
 ![NextAuth.js](https://img.shields.io/badge/NextAuth.js-4.24.15-B845ED?style=for-the-badge&logo=auth0&logoColor=white)
 ![pnpm](https://img.shields.io/badge/pnpm-11.x-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-157_Pass-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
-![Playwright](https://img.shields.io/badge/Playwright-37_Pass-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-E2E_Pass-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
 
-ระบบจัดตารางเรียนอัตโนมัติ สำหรับสถาบันการศึกษา พัฒนาด้วย Next.js 15 และ Prisma ORM รองรับการจัดตารางเรียนหลายหลักสูตร (หลักสูตร 4 ปี, เทียบโอน, อาชีวศึกษา DVE-LVC และ DVE-MS) พร้อมระบบจัดการห้องเรียน อาจารย์ผู้สอน ปฏิทินการศึกษา ระบบป้องกันการชนกันของตารางแบบ Pessimistic Concurrency Locking, การยืนยันตัวตนผู้สอนความปลอดภัยสูงด้วย scrypt KDF และระบบ Export ไฟล์ Excel แบบ On-Demand โหลดเร็วระดับ Enterprise
+ระบบจัดตารางเรียนและบริหารงานวิชาการอัจฉริยะ (Academic Management Workspace) สำหรับสถาบันการศึกษา ออกแบบด้วย **shadcn/ui Zinc Enterprise Palette** ผสานฟอนต์ภาษาไทยมาตรฐาน **Sarabun** รองรับการบริหารจัดการครบวงจร ทั้งการจัดตารางเรียนรายชั้นปี 4 ระดับหลักสูตร (11 หน้า), การจัดสรรห้องเรียน, ภาระงานสอนคณาจารย์, โครงสร้างหลักสูตร, แผนการเรียน และปฏิทินการศึกษา พร้อมสถาปัตยกรรมระดับ Production-Ready ทั้งระบบ Concurrency Lock, scrypt KDF Security และ On-Demand Excel Export
 
-> จัดทำโดย **DekCom** (พัฒนาและปรับปรุงสถาปัตยกรรมระดับ Production-Ready)
+> จัดทำโดย **DekCom** — สาขาวิศวกรรมคอมพิวเตอร์ มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา ตาก
+
+---
+
+## 📸 ภาพตัวอย่างระบบ (System Showcase)
+
+### 1. ภาพรวมงานวิชาการ (Academic Dashboard Workspace)
+
+| โหมดสว่าง (Light Mode) | โหมดมืด (Zinc Dark Mode) |
+|:---:|:---:|
+| ![Dashboard Overview Light](public/showcase/02-dashboard-overview-light.png) | ![Dashboard Overview Dark](public/showcase/04-dashboard-overview-dark.png) |
+
+### 2. เมนูดำเนินงานและการกระจายคาบเรียน (Operations & Scheduling Telemetry)
+![Dashboard Operations Light](public/showcase/03-dashboard-operations-light.png)
+*เมนูดำเนินงานจัดระเบียบ 2 แถว: แถวบน 3 การ์ดฟังก์ชันย่อย (อาจารย์, ห้องเรียน, แผนการเรียน) และแถวล่าง 4 การ์ดทางลัด (โครงสร้างหลักสูตร, ตารางสอน, ตารางห้อง, ปฏิทิน)*
+
+### 3. หน้าจัดตารางเรียนรายชั้นปี (Timetable Management with Pointer DnD)
+![Timetable Management](public/showcase/05-timetable-management.png)
+*หน้าจัดตารางเรียนลากและวาง (@dnd-kit) พร้อมระบบป้องกันการชนกัน (Conflict Detection) สีกรอบระบุหลักสูตรชัดเจน และปุ่มคำสั่งจัดอัตโนมัติ/ล้างตาราง/ดาวน์โหลด*
+
+### 4. โมดูลโครงสร้างหลักสูตรและแผนการเรียน (Curriculum & Study Plans)
+
+| โครงสร้างหลักสูตร (Curriculum Database) | แผนการเรียน 4 หลักสูตร (Study Plans) |
+|:---:|:---:|
+| ![Curriculum Structure](public/showcase/06-curriculum-structure.png) | ![Study Plan](public/showcase/11-study-plan.png) |
+
+### 5. โมดูลข้อมูลอาจารย์และห้องเรียน (Teachers & Rooms Management)
+
+| จัดการข้อมูลอาจารย์ (Teachers Management) | จัดการข้อมูลห้องเรียน (Rooms Management) |
+|:---:|:---:|
+| ![Teachers Management](public/showcase/07-teachers-management.png) | ![Rooms Management](public/showcase/08-rooms-management.png) |
+
+### 6. ตารางสอนอาจารย์และตารางการใช้ห้องเรียน (Teacher & Room Utilization)
+
+| ตารางสอนอาจารย์ (Teacher Schedule) | ตารางการใช้ห้องเรียน (Room Utilization) |
+|:---:|:---:|
+| ![Teacher Class Schedule](public/showcase/09-class-schedule.png) | ![Room Utilization Schedule](public/showcase/10-rooms-use-schedule.png) |
+
+### 7. ปฏิทินการศึกษาและหน้าเข้าสู่ระบบ (Academic Calendar & Secure Auth)
+
+| ปฏิทินการศึกษา (Academic Calendar) | เข้าสู่ระบบ 2 บทบาท (Dual-Role Auth) |
+|:---:|:---:|
+| ![Academic Calendar](public/showcase/12-academic-calendar.png) | ![Login Screen](public/showcase/01-login-screen.png) |
 
 ---
 
 ## 📋 สารบัญ
 
+- [System Showcase](#-ภาพตัวอย่างระบบ-system-showcase)
+- [Design System & UI/UX Standards](#-design-system--uiux-standards)
 - [Technology Stack](#-technology-stack)
 - [Architecture & Feature Highlights](#-architecture--feature-highlights)
 - [Getting Started](#-getting-started)
@@ -27,8 +72,27 @@
 - [Security & Concurrency Hardening](#-security--concurrency-hardening)
 - [Testing & Quality Assurance](#-testing--quality-assurance)
 - [Production Deployment](#-production-deployment)
-- [Database Schema](#-database-schema)
 - [License](#-license)
+
+---
+
+## 🎨 Design System & UI/UX Standards
+
+ระบบได้รับการออกแบบใหม่ทั้งหมดภายใต้ทิศทาง **Modern Academic Workspace — shadcn/ui Zinc Enterprise**:
+
+1. **Authentic shadcn/ui Zinc Theme:**
+   - โทนสีมาตรฐาน Zinc Monochrome (`zinc-50` ถึง `zinc-950`) สะอาดตา น่าเชื่อถือ สไตล์ระบบบริหารการศึกษาสมัยใหม่
+   - ไม่ใช้โทนสีน้ำเงิน/ฟ้าแบบเดิมเพื่อคงความเป็นกลางของข้อมูล
+2. **Typography สองภาษาแบบสมบูรณ์:**
+   - ภาษาไทย: ฟอนต์ **Sarabun** ทางการของหน่วยงานการศึกษา แสดงผลคมชัดในทุกอุปกรณ์
+   - ตัวเลขและรหัสวิชา: ฟอนต์ **Mono** ป้องกันความสับสนของตัวเลขรหัสวิชาและห้องเรียน
+3. **Semantic Colored Borders แยกตามหลักสูตร:**
+   - 🔵 **หลักสูตรเทียบโอน (3 ปี):** Sky Theme (`border-sky-300`, `bg-sky-500/10`)
+   - 🟣 **หลักสูตร 4 ปี:** Indigo Theme (`border-indigo-300`, `bg-indigo-500/10`)
+   - 🟠 **หลักสูตร ปวส. (ปวช.):** Amber Theme (`border-amber-300`, `bg-amber-500/10`)
+   - 🟢 **หลักสูตร ปวส. (ม.6):** Emerald Theme (`border-emerald-300`, `bg-emerald-500/10`)
+4. **Adaptive Dark Mode:**
+   - สลับระหว่าง Light Mode และ Dark Mode ได้อย่างไร้รอยต่อ สีคอนทราสต์ผ่านเกณฑ์การเข้าถึง (WCAG AA Compliant)
 
 ---
 
@@ -36,11 +100,12 @@
 
 | หมวดหมู่ | เทคโนโลยี / เครื่องมือ | เวอร์ชัน | หมายเหตุ |
 |---|---|---|---|
-| **Framework** | Next.js (App Router) | 15.5.29 | Server Components, Turbopack Build |
+| **Framework** | Next.js (App Router) | 16.4.5 | Server Components, Turbopack Build |
 | **Language** | TypeScript | ^5.8.3 | Strict Mode 100% Type-Safe |
 | **UI Library** | React | 19.1.0 | Action Hooks, Optimized Memoization |
 | **Styling** | Tailwind CSS | ^4.1.10 | CSS Variables, Oklch Colors |
-| **UI Components** | shadcn/ui + Radix UI | — | Accessible, Themeable Components |
+| **Design System** | shadcn/ui (Zinc Theme) | Latest | Zinc Base Color, Radix UI Primitives |
+| **Thai Typography** | Sarabun (Google Fonts) | Variable | `--font-sarabun`, Tailwind Font Sans |
 | **Icons** | Lucide React | ^0.515.0 | Vector Icons |
 | **ORM** | Prisma Client | 6.16.1 | Versioned Migrations, Connection Pooling |
 | **Database** | MySQL | 8.0+ | InnoDB, ACID Transactions, UTF8MB4 |
@@ -51,7 +116,7 @@
 | **Date Utilities** | date-fns | ^4.1.0 | Thai Buddhist Year Calculations |
 | **Excel Export** | ExcelJS | ^4.4.0 | On-Demand Lazy Loaded (~193 kB bundle) |
 | **Unit/Integration Test** | Vitest | ^3.x | 157 Passing Tests (Mock & Real DB) |
-| **E2E Browser Test** | Playwright (Chromium) | ^1.58.x | 37 Passing Tests across 11 Timetable Pages |
+| **E2E Browser Test** | Playwright (Chromium) | ^1.58.x | 37+ Passing Tests across All Timetable Pages |
 | **Package Manager** | pnpm | 11.x | Lockfile v9 strictly enforced |
 
 ---
@@ -61,13 +126,14 @@
 ```mermaid
 graph TB
     subgraph Client["🖥 Client (React 19 / Next.js App Router)"]
+        Dashboard["Academic Dashboard Workspace"]
         Pages["11 Timetable Pages + Study Plans"]
         DnD["Pointer Drag & Drop (@dnd-kit)"]
         LazyExport["Dynamic On-Demand ExcelJS"]
-        Components["shadcn/ui Design System"]
+        Components["shadcn/ui Zinc Design System"]
     end
 
-    subgraph Server["⚙️ Server Layer (Next.js 15.5.29)"]
+    subgraph Server["⚙️ Server Layer (Next.js 16.4.5)"]
         ServiceLayer["Domain Services (Timetable, Subject, Room, Teacher, Curriculum)"]
         LockService["TimetableLockService (Transactional FOR UPDATE)"]
         AuthSecurity["TeacherAuthService (scrypt KDF + Session Revocation)"]
@@ -81,6 +147,7 @@ graph TB
         TimetableDB["Timetable_tb & Plans_tb (Schedules)"]
     end
 
+    Dashboard --> ServiceLayer
     Pages --> ServiceLayer
     DnD --> ServiceLayer
     LazyExport -.-> Pages
@@ -174,22 +241,18 @@ graph TB
 cpetak-timetable/
 ├── app/                          # Next.js App Router (Pages & API Handlers)
 │   ├── api/                      # RESTful Route Handlers (Role-Protected)
-│   │   ├── auth/                 #   NextAuth Authentication API
-│   │   ├── teacher/              #   Teacher Enrollment & Password Reset API
-│   │   ├── timetable/            #   Timetable Mutations & Safe Clear API
-│   │   └── ...                   #   Curriculum, Room, Subject APIs
-│   ├── adjust-time-tables/       # หน้าจัดตารางสอนทั้ง 11 หน้า
-│   │   ├── adjust-plan-four-year/#   หลักสูตร 4 ปี (ปี 1 – ปี 4)
-│   │   ├── adjust-plan-transfer/ #   หลักสูตรเทียบโอน (ปี 1 – ปี 3)
-│   │   └── adjust-plan-dve/      #   หลักสูตรอาชีวะ DVE-LVC & DVE-MS (ปี 1 – ปี 2)
-│   ├── study-plans/              # หน้าแสดงแผนการเรียน 4 หมวดหมู่
-│   ├── dashboard/                # แดชบอร์ดผู้ดูแลระบบ
+│   ├── adjust-time-tables/       # หน้าจัดตารางสอนทั้ง 11 หน้า (4 ระดับหลักสูตร)
+│   ├── study-plans/              # หน้าแสดงแผนการเรียน 4 หลักสูตร
+│   ├── class-schedule/           # ตารางสอนอาจารย์ และส่งออก Excel
+│   ├── rooms-use/                # ตารางการใช้ห้องเรียน และความหนาแน่น
+│   ├── curriculum/               # โครงสร้างหลักสูตรและฐานข้อมูลรายวิชา
+│   ├── teachers/                 # ข้อมูลอาจารย์ประจำสาขาและภายนอก
+│   ├── rooms/                    # ข้อมูลห้องเรียนสาขาและตึกวิศวกรรมศาสตร์
+│   ├── academic-calendar/        # กำหนดช่วงเวลาภาคเรียนและภาคเรียนปัจจุบัน
+│   ├── dashboard/                # แดชบอร์ดภาพรวมงานวิชาการ
 │   └── login/                    # หน้าเข้าสู่ระบบ (Admin & Teacher)
-├── deploy/                       # แฟ้มการติดตั้งสำหรับเซิร์ฟเวอร์จริง
-│   └── nginx/                    #   Nginx Reverse Proxy, TLS & Rate Limiting Config
-├── docs/                         # เอกสารประกอบการพัฒนาและการส่งมอบ
-│   ├── release/                  #   Checklists, Runbooks, Rollback Procedures
-│   └── security/                 #   Teacher Auth RFC, Security Specifications
+├── public/                       # Static Assets & Showcase Screenshots
+│   └── showcase/                 #   ภาพหน้าจอแสดงฟังก์ชันหลักของระบบ
 ├── features/                     # Domain-Driven Architecture (Service Layer)
 │   ├── timetable/                #   บริการจัดตาราง, Concurrency Lock, Retry Logic
 │   ├── subjects/                 #   วิชาเรียน, การสอนร่วม (Co-Teaching), Split/Merge
@@ -198,18 +261,9 @@ cpetak-timetable/
 │   ├── curriculum/               #   บริการหมวดหมู่และโครงสร้างหลักสูตร
 │   └── dashboard/                #   คอมโพเนนต์และการดึงข้อมูลสถิติ
 ├── components/                   # UI Components ทั่วไปและ shadcn/ui
-├── lib/                          # Core Utilities & Singletons
-│   ├── auth.ts                   #   NextAuth Options & Dual Credentials Providers
-│   ├── password.ts               #   Node.js scrypt KDF Cryptography Helper
-│   ├── api-auth.ts               #   Session Revocation & Role Guards
-│   └── prisma.ts                 #   Prisma Client Singleton
-├── prisma/                       # Prisma Schema & Migrations
-│   ├── migrations/               #   6 Versioned Production Migrations
-│   └── schema.prisma             #   Database Schema
-└── tests/                        # Automated Test Suites
-    ├── unit/                     #   Unit Tests (Services, Helpers, Math)
-    ├── integration/              #   Integration Tests (Concurrency, Rollback, DB)
-    └── e2e/                      #   Playwright Browser Tests (DnD, Export, Modals)
+├── lib/                          # Core Utilities, NextAuth & Prisma Client
+├── prisma/                       # Prisma Schema & Versioned Migrations
+└── tests/                        # Automated Test Suites (Vitest & Playwright)
 ```
 
 ---
@@ -226,7 +280,7 @@ cpetak-timetable/
 ### 📅 2. การจัดตารางสอนครบ 11 หน้าและระบบป้องกันความขัดแย้ง
 - **รองรับ 4 หลักสูตรการศึกษา:**
   - **หลักสูตร 4 ปี:** ปี 1, ปี 2, ปี 3, ปี 4
-  - **หลักสูตรเทียบโอน:** ปี 1, ปี 2, ปี 3
+  - **หลักสูตรเทียบโอน (3 ปี):** ปี 1, ปี 2, ปี 3
   - **หลักสูตร DVE-LVC:** ปี 1, ปี 2
   - **หลักสูตร DVE-MS:** ปี 1, ปี 2
 - **Pointer Drag & Drop:** ลากวางรายวิชาลงตารางได้อย่างลื่นไหลและแม่นยำ
@@ -243,7 +297,7 @@ cpetak-timetable/
 
 ## 🧪 Testing & Quality Assurance
 
-ระบบได้รับการทดสอบครอบคลุมทุกระดับชั้น รวม **194 Tests ผ่าน 100% (Green)**:
+ระบบได้รับการทดสอบครอบคลุมทุกระดับชั้น รวม **194+ Tests ผ่าน 100% (Green)**:
 
 ### 1. Vitest Full Regression Suite (157 / 157 Passing)
 - **Unit Tests:** ทดสอบฟังก์ชันคำนวณคาบเรียน, ฟังก์ชันเข้ารหัส scrypt, การจัดการ Co-Teaching
@@ -254,7 +308,7 @@ cpetak-timetable/
 pnpm test
 ```
 
-### 2. Playwright End-to-End Suite (37 / 37 Passing)
+### 2. Playwright End-to-End Suite (Passing)
 - ทดสอบการล็อกอิน, การลงทะเบียนอาจารย์, และการรีเซ็ตรหัสผ่านผ่านเบราว์เซอร์จริง
 - ทดสอบ Pointer Drag & Drop, การตรวจจับการทับซ้อน (Collision Detection)
 - ทดสอบการดาวน์โหลดไฟล์ Excel ทั้ง 3 ประเภทบน Chromium
@@ -274,63 +328,7 @@ pnpm exec playwright test --project=chromium
 
 ---
 
-## 📝 Database Schema Overview
-
-```mermaid
-erDiagram
-    Plans_tb ||--o{ Timetable_tb : "scheduled into"
-    Plans_tb }o--|| Room_tb : "assigned room"
-    Plans_tb }o--|| Teacher_tb : "taught by"
-    Plans_tb }o--o{ CoTeaching_tb : "grouped in"
-    Teacher_tb ||--o{ TeacherToken_tb : "auth tokens"
-    Timetable_tb }o--|| Room_tb : "uses room"
-    Timetable_tb }o--|| Teacher_tb : "instructed by"
-
-    Teacher_tb {
-        int id PK
-        string tId UK
-        string tName
-        string tLastName
-        string passwordHash
-        boolean isEnrolled
-        int sessionVersion
-    }
-    TeacherToken_tb {
-        int id PK
-        int teacherId FK
-        string tokenHash UK
-        string tokenType
-        datetime expiresAt
-        datetime consumedAt
-    }
-    TimetableLock_tb {
-        string lockKey PK
-        datetime createdAt
-    }
-    Timetable_tb {
-        int id PK
-        int planId FK
-        string termYear
-        int day
-        int startPeriod
-        int endPeriod
-        int roomId FK
-        int teacherId FK
-        string section
-    }
-    Plans_tb {
-        int id PK
-        string subjectCode
-        string subjectName
-        int credit
-        string planType
-        string termYear
-    }
-```
-
----
-
 ## 📄 License & Credits
 
 - พัฒนาและดูแลระบบโดย: **ทีมงาน DekCom**
-- พัฒนาขึ้นเพื่อใช้ในการจัดตารางเรียนตารางสอนสำหรับสถาบันการศึกษา
+- สาขาวิศวกรรมคอมพิวเตอร์ คณะวิศวกรรมศาสตร์ มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา ตาก
