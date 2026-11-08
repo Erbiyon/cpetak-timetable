@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import { SelectCustom } from "@/components/select/select-custom";
 import { useStudyPlanMeta } from "@/features/subjects/hooks/useStudyPlanMeta";
 import { StudyPlanSectionCard } from "@/features/subjects/components/StudyPlanSectionCard";
+import { Badge } from "@/components/ui/badge";
+import { BookOpenCheck } from "lucide-react";
 
 export default function FourYearPlan() {
   const { year, handleYearChange, terms, yearLevels } = useStudyPlanMeta();
@@ -75,26 +77,45 @@ export default function FourYearPlan() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-4">
-      <div className="py-4 sm:py-6 lg:py-8 px-2 sm:px-4 md:px-8 lg:px-16 xl:px-32 2xl:px-48">
-        <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold mb-2 sm:mb-3 break-words leading-tight">
-          แผนการเรียนสำหรับนักศึกษาที่เข้ารับการศึกษาในปีการศึกษา {academicYears.year1}
-        </h1>
-        <h3 className="text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
-          หลักสูตรวิศวกรรมคอมพิวเตอร์{" "}
-          <span className="text-green-600 font-medium">4 ปี</span> มทร.ล้านนา ตาก
-        </h3>
+    <div className="container mx-auto px-4 py-8 space-y-6 animate-in fade-in-50 duration-500">
+      {/* Academic Header */}
+      <div className="rounded-xl border border-indigo-300/80 dark:border-indigo-800/80 bg-card p-6 shadow-xs transition-all">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className="border-border bg-muted/60 text-foreground font-medium text-xs px-2.5 py-0.5 font-sans"
+              >
+                สาขาวิศวกรรมคอมพิวเตอร์
+              </Badge>
+              <Badge
+                variant="secondary"
+                className="font-normal text-xs bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 font-sans"
+              >
+                หลักสูตร 4 ปี
+              </Badge>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl flex items-center gap-2.5 font-sans">
+              <BookOpenCheck className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+              แผนการเรียนหลักสูตร 4 ปี
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground font-sans">
+              แผนการเรียนสำหรับนักศึกษาที่เข้ารับการศึกษาในปีการศึกษา {academicYears.year1}
+            </p>
+          </div>
+          <div className="w-full md:w-auto">
+            <SelectCustom
+              currentYear={year}
+              onYearChange={handleYearChange}
+              planType="FOUR_YEAR"
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="mb-4 sm:mb-6 lg:mb-8">
-        <SelectCustom
-          currentYear={year}
-          onYearChange={handleYearChange}
-          planType="FOUR_YEAR"
-        />
-      </div>
-
-      <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+      {/* Plan Sections */}
+      <div className="space-y-6">
         {planSections.map((section, idx) => (
           <StudyPlanSectionCard
             key={`${section.yearLevel}-${section.term}-${section.academicYear}-${idx}`}

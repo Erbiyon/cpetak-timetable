@@ -1,34 +1,70 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import {
-  NotebookPen,
-  School,
+  Calendar,
+  Clock,
   SquareUser,
   Table,
-  Grid2x2Check,
-  House,
-  Calendar,
-  ArrowRight,
+  CheckCircle2,
+  AlertCircle,
+  Building2,
+  CalendarCheck2,
   BookOpenText,
+  Layers,
+  ArrowRight,
+  ChevronRight,
+  BarChart3,
+  CalendarRange,
+  School,
+  BookOpenCheck,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { DashboardClock } from "@/features/dashboard/components/DashboardClock";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AnimatedCounter } from "./animated-counter";
+
+interface DashboardStats {
+  totalTeachers: number;
+  totalRooms: number;
+  totalSubjects: number;
+  activePlans: number;
+  planBreakdown: {
+    transfer: number;
+    fourYear: number;
+    dveLvc: number;
+    dveMsix: number;
+  };
+  currentTermYear?: string;
+  assignedPlansCount?: number;
+  unassignedPlansCount?: number;
+  schedulingProgressPercent?: number;
+  utilizedRoomsCount?: number;
+  scheduledTimetableSlots?: number;
+  dayDistribution?: Record<number, number>;
+}
+
+const DAYS_MAP = [
+  { day: 1, label: "จันทร์", fullLabel: "วันจันทร์" },
+  { day: 2, label: "อังคาร", fullLabel: "วันอังคาร" },
+  { day: 3, label: "พุธ", fullLabel: "วันพุธ" },
+  { day: 4, label: "พฤหัสฯ", fullLabel: "วันพฤหัสบดี" },
+  { day: 5, label: "ศุกร์", fullLabel: "วันศุกร์" },
+  { day: 6, label: "เสาร์", fullLabel: "วันเสาร์" },
+  { day: 7, label: "อาทิตย์", fullLabel: "วันอาทิตย์" },
+];
 
 export default function DashboardCustom() {
   const { data: session } = useSession();
   const [isTerm3, setIsTerm3] = useState<boolean>(false);
   const [currentTermYear, setCurrentTermYear] = useState<string>("");
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchCurrentTermYear = async () => {
@@ -45,313 +81,612 @@ export default function DashboardCustom() {
       }
     };
 
+    const fetchStats = async () => {
+      try {
+        setIsLoadingStats(true);
+        const res = await fetch("/api/dashboard/stats");
+        if (res.ok) {
+          const data = await res.json();
+          setStats(data);
+        }
+      } catch (err) {
+        console.error("Error loading dashboard stats:", err);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+
     fetchCurrentTermYear();
+    fetchStats();
   }, []);
 
-  const quickActions = [
-    {
-      title: "แผนการเรียน",
-      description: "จัดการแผนการเรียน",
-      icon: <NotebookPen className="h-8 w-8" />,
-      color: "text-blue-700",
-      items: [
-        { href: "/study-plans/transfer-plan", label: "เทียบโอน" },
-        { href: "/study-plans/four-year-plan", label: "4 ปี" },
-        { href: "/study-plans/dve-lvc-plan", label: "ปวส. (ปวช.)" },
-        { href: "/study-plans/dve-msix-plan", label: "ปวส. (ม.6)" },
-      ],
-    },
-    {
-      title: "ห้องเรียน",
-      description: "จัดการข้อมูลห้องเรียน",
-      icon: <School className="h-8 w-8" />,
-      color: "text-green-700",
-      items: [
-        { href: "/rooms", label: "จัดการห้องเรียน" },
-        { href: "/rooms/room-out", label: "ห้องวิชานอกสาขา" },
-      ],
-    },
-    {
-      title: "อาจารย์",
-      description: "จัดการข้อมูลอาจารย์",
-      icon: <SquareUser className="h-8 w-8" />,
-      color: "text-purple-700",
-      items: [
-        { href: "/teachers", label: "จัดการรายชื่ออาจารย์" },
-        { href: "/teachers/in-teacher", label: "อาจารย์วิชาในสาขา" },
-        { href: "/teachers/out-teacher", label: "อาจารย์วิชานอกสาขา" },
-      ],
-    },
-    {
-      title: "หลักสูตร",
-      description: "ดูหลักสูตรและรายวิชา",
-      icon: <BookOpenText className="h-6 w-6" />,
-      items: [
-        {
-          href: "/curriculum",
-          label: "หลักสูตร",
-        },
-      ],
-      color: "text-rose-600 dark:text-rose-400",
-    },
-  ];
+  // คำนวณความคืบหน้าการจัดตารางเรียน
+  const totalPlans = stats?.activePlans || 0;
+  const assignedPlans = stats?.assignedPlansCount ?? 0;
+  const unassignedPlans = stats?.unassignedPlansCount ?? totalPlans;
+  const progressPercent = stats?.schedulingProgressPercent ?? (totalPlans > 0 ? Math.round((assignedPlans / totalPlans) * 100) : 0);
+  const totalRooms = stats?.totalRooms || 0;
+  const utilizedRooms = stats?.utilizedRoomsCount ?? 0;
+  const dayDistribution = stats?.dayDistribution || {};
+  const maxDaySlots = Math.max(...Object.values(dayDistribution), 1);
 
-  const timetableActions = [
+  // ข้อมูลหลักสูตรและชั้นปี พร้อมสีกรอบและป้ายกำกับเฉพาะแต่ละหลักสูตร
+  const timetableCurriculums = [
     {
-      title: "จัดตารางเรียน เทียบโอน",
-      icon: <Table className="h-6 w-6" />,
-      color: "border-blue-600",
-      iconColor: "text-blue-600 dark:text-blue-400",
-      items: [
-        {
-          href: "/adjust-time-tables/adjust-plan-transfer/transfer-one-year",
-          label: "ปี 1",
-        },
-        {
-          href: "/adjust-time-tables/adjust-plan-transfer/transfer-two-year",
-          label: "ปี 2",
-        },
-        ...(isTerm3
-          ? []
-          : [
-              {
-                href: "/adjust-time-tables/adjust-plan-transfer/transfer-three-year",
-                label: "ปี 3",
-              },
-            ]),
+      title: "หลักสูตรเทียบโอน (3 ปี)",
+      curriculumCode: "TRANSFER",
+      years: [
+        { label: "ชั้นปีที่ 1", href: "/adjust-time-tables/adjust-plan-transfer/transfer-one-year" },
+        { label: "ชั้นปีที่ 2", href: "/adjust-time-tables/adjust-plan-transfer/transfer-two-year" },
+        { label: "ชั้นปีที่ 3", href: "/adjust-time-tables/adjust-plan-transfer/transfer-three-year" },
       ],
+      planCount: stats?.planBreakdown.transfer || 0,
+      borderStyle: "border-sky-300/80 dark:border-sky-800/80 hover:border-sky-500 dark:hover:border-sky-400",
+      accentBg: "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800",
+      indicatorColor: "bg-sky-500",
     },
     ...(isTerm3
       ? []
       : [
           {
-            title: "จัดตารางเรียน 4 ปี",
-            icon: <Table className="h-6 w-6" />,
-            color: "border-green-600",
-            iconColor: "text-green-600 dark:text-green-400",
-            items: [
-              {
-                href: "/adjust-time-tables/adjust-plan-four-year/four-one-year",
-                label: "ปี 1",
-              },
-              {
-                href: "/adjust-time-tables/adjust-plan-four-year/four-two-year",
-                label: "ปี 2",
-              },
-              {
-                href: "/adjust-time-tables/adjust-plan-four-year/four-three-year",
-                label: "ปี 3",
-              },
-              {
-                href: "/adjust-time-tables/adjust-plan-four-year/four-four-year",
-                label: "ปี 4",
-              },
+            title: "หลักสูตร 4 ปี",
+            curriculumCode: "FOUR_YEAR",
+            years: [
+              { label: "ชั้นปีที่ 1", href: "/adjust-time-tables/adjust-plan-four-year/four-one-year" },
+              { label: "ชั้นปีที่ 2", href: "/adjust-time-tables/adjust-plan-four-year/four-two-year" },
+              { label: "ชั้นปีที่ 3", href: "/adjust-time-tables/adjust-plan-four-year/four-three-year" },
+              { label: "ชั้นปีที่ 4", href: "/adjust-time-tables/adjust-plan-four-year/four-four-year" },
             ],
+            planCount: stats?.planBreakdown.fourYear || 0,
+            borderStyle: "border-indigo-300/80 dark:border-indigo-800/80 hover:border-indigo-500 dark:hover:border-indigo-400",
+            accentBg: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+            indicatorColor: "bg-indigo-500",
           },
         ]),
     {
-      title: "จัดตารางเรียน ปวส.",
-      icon: <Table className="h-6 w-6" />,
-      color: "border-orange-600",
-      iconColor: "text-orange-600 dark:text-orange-400",
-      items: [
-        {
-          href: "/adjust-time-tables/adjust-plan-dve/dve-one-year",
-          label: "ปวส. ปี 1 (ปวช.)",
-        },
-        {
-          href: "/adjust-time-tables/adjust-plan-dve/dve-two-year",
-          label: "ปวส. ปี 2 (ปวช.)",
-        },
-        {
-          href: "/adjust-time-tables/adjust-plan-dve/dve-ms-one-year",
-          label: "ปวส. ปี 1 (ม.6)",
-        },
-        {
-          href: "/adjust-time-tables/adjust-plan-dve/dve-ms-two-year",
-          label: "ปวส. ปี 2 (ม.6)",
-        },
+      title: "หลักสูตร ปวส. (ปวช.)",
+      curriculumCode: "DVE-LVC",
+      years: [
+        { label: "ชั้นปีที่ 1", href: "/adjust-time-tables/adjust-plan-dve/dve-one-year" },
+        { label: "ชั้นปีที่ 2", href: "/adjust-time-tables/adjust-plan-dve/dve-two-year" },
       ],
+      planCount: stats?.planBreakdown.dveLvc || 0,
+      borderStyle: "border-amber-300/80 dark:border-amber-800/80 hover:border-amber-500 dark:hover:border-amber-400",
+      accentBg: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+      indicatorColor: "bg-amber-500",
+    },
+    {
+      title: "หลักสูตร ปวส. (ม.6)",
+      curriculumCode: "DVE-MSIX",
+      years: [
+        { label: "ชั้นปีที่ 1", href: "/adjust-time-tables/adjust-plan-dve/dve-ms-one-year" },
+        { label: "ชั้นปีที่ 2", href: "/adjust-time-tables/adjust-plan-dve/dve-ms-two-year" },
+      ],
+      planCount: stats?.planBreakdown.dveMsix || 0,
+      borderStyle: "border-emerald-300/80 dark:border-emerald-800/80 hover:border-emerald-500 dark:hover:border-emerald-400",
+      accentBg: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+      indicatorColor: "bg-emerald-500",
     },
   ];
 
-  const utilityActions = [
+  // เมนูดำเนินงานหลัก (Quick Operations) มีเมนูย่อยเฉพาะหมวดที่มีฟังก์ชันย่อยจริง
+  const quickOperations = [
     {
-      title: "ตารางสอน",
-      description: "ดูตารางสอนทั้งหมด",
-      icon: <Grid2x2Check className="h-6 w-6" />,
-      href: "/class-schedule",
-      color: "text-indigo-600 dark:text-indigo-400",
+      title: "จัดการข้อมูลอาจารย์",
+      description: "รายชื่ออาจารย์ผู้สอนและการลงทะเบียนผู้ใช้",
+      icon: <SquareUser className="h-5 w-5 text-violet-600 dark:text-violet-400" />,
+      borderStyle: "border-violet-200/90 dark:border-violet-900/60 hover:border-violet-500 dark:hover:border-violet-400",
+      iconBg: "bg-violet-50 text-violet-600 dark:bg-violet-950/60 dark:text-violet-400 border-violet-200/50 dark:border-violet-800/50",
+      subItems: [
+        { label: "จัดการรายชื่ออาจารย์", href: "/teachers" },
+        { label: "เพิ่มอาจารย์วิชาภายในสาขา", href: "/teachers/in-teacher" },
+        { label: "เพิ่มอาจารย์วิชาภายนอกสาขา", href: "/teachers/out-teacher" },
+      ],
     },
     {
-      title: "การใช้ห้อง",
-      description: "ตรวจสอบการใช้ห้องเรียน",
-      icon: <House className="h-6 w-6" />,
+      title: "จัดการห้องเรียน",
+      description: "เพิ่ม แก้ไข และกำหนดประเภทห้องเรียน",
+      icon: <School className="h-5 w-5 text-teal-600 dark:text-teal-400" />,
+      borderStyle: "border-teal-200/90 dark:border-teal-900/60 hover:border-teal-500 dark:hover:border-teal-400",
+      iconBg: "bg-teal-50 text-teal-600 dark:bg-teal-950/60 dark:text-teal-400 border-teal-200/50 dark:border-teal-800/50",
+      subItems: [
+        { label: "จัดการห้องเรียน", href: "/rooms" },
+        { label: "เพิ่มห้องเรียนวิชานอกสาขา", href: "/rooms/room-out" },
+      ],
+    },
+    {
+      title: "แผนการเรียน",
+      description: "จัดการแผนการเรียนตามระดับและปีการศึกษา",
+      icon: <BookOpenCheck className="h-5 w-5 text-sky-600 dark:text-sky-400" />,
+      borderStyle: "border-sky-200/90 dark:border-sky-900/60 hover:border-sky-500 dark:hover:border-sky-400",
+      iconBg: "bg-sky-50 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400 border-sky-200/50 dark:border-sky-800/50",
+      subItems: [
+        { label: "หลักสูตรเทียบโอน (3 ปี)", href: "/study-plans/transfer-plan" },
+        { label: "หลักสูตร 4 ปี", href: "/study-plans/four-year-plan" },
+        { label: "หลักสูตร ปวส. (ปวช.)", href: "/study-plans/dve-lvc-plan" },
+        { label: "หลักสูตร ปวส. (ม.6)", href: "/study-plans/dve-msix-plan" },
+      ],
+    },
+    {
+      title: "โครงสร้างหลักสูตร",
+      description: "ตรวจสอบรายชื่อวิชาและหน่วยกิตตามแผน",
+      icon: <BookOpenText className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
+      borderStyle: "border-amber-200/90 dark:border-amber-900/60 hover:border-amber-500 dark:hover:border-amber-400",
+      iconBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/50",
+      href: "/curriculum",
+    },
+    {
+      title: "ตารางสอนอาจารย์",
+      description: "ตรวจสอบภาระการสอนและส่งออกไฟล์ Excel",
+      icon: <CalendarCheck2 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />,
+      borderStyle: "border-indigo-200/90 dark:border-indigo-900/60 hover:border-indigo-500 dark:hover:border-indigo-400",
+      iconBg: "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-800/50",
+      href: "/class-schedule",
+    },
+    {
+      title: "ตารางการใช้ห้องเรียน",
+      description: "ตรวจสอบความหนาแน่นและช่วงเวลาการใช้ห้อง",
+      icon: <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />,
+      borderStyle: "border-blue-200/90 dark:border-blue-900/60 hover:border-blue-500 dark:hover:border-blue-400",
+      iconBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50",
       href: "/rooms-use",
-      color: "text-emerald-600 dark:text-emerald-400",
     },
     {
       title: "ปฏิทินการศึกษา",
-      description: "ดูปฏิทินและกำหนดการ",
-      icon: <Calendar className="h-6 w-6" />,
+      description: "กำหนดการเปิด-ปิดภาคเรียนและกิจกรรมสาขา",
+      icon: <Calendar className="h-5 w-5 text-rose-600 dark:text-rose-400" />,
+      borderStyle: "border-rose-200/90 dark:border-rose-900/60 hover:border-rose-500 dark:hover:border-rose-400",
+      iconBg: "bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 border-rose-200/50 dark:border-rose-800/50",
       href: "/academic-calendar",
-      color: "text-rose-600 dark:text-rose-400",
     },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Welcome & System Status Banner */}
-      <div className="bg-primary text-primary-foreground rounded-xl p-6 shadow-sm border border-primary/20">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-medium uppercase tracking-wider text-primary-foreground/80">ระบบจัดตารางเรียนออนไลน์</span>
+    <div className="space-y-6 animate-in fade-in-50 duration-500">
+      {/* A. Academic Context Header (ภาพรวมงานวิชาการ) */}
+      <div className="rounded-xl border border-border bg-card p-6 shadow-xs transition-all">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="border-border bg-muted/60 text-foreground font-medium text-xs px-2.5 py-0.5">
+                สาขาวิศวกรรมคอมพิวเตอร์
+              </Badge>
+              {session?.user?.role === "admin" && (
+                <Badge variant="secondary" className="font-normal text-xs bg-secondary text-secondary-foreground">
+                  สิทธิ์ผู้ดูแลระบบ
+                </Badge>
+              )}
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">
-              ยินดีต้อนรับ, {session?.user?.name || "ผู้ดูแลระบบ"}
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl font-sans">
+              ยินดีต้อนรับ — ภาพรวมงานวิชาการ
             </h1>
-            <p className="text-sm text-primary-foreground/80 mt-1">
-              สาขาวิศวกรรมคอมพิวเตอร์ คณะวิศวกรรมศาสตร์
+            <p className="text-sm text-muted-foreground font-sans">
+              ข้อมูลการจัดตารางเรียนและการดำเนินงานประจำภาคการศึกษา
             </p>
           </div>
-          <div className="text-left sm:text-right bg-black/15 p-3 rounded-lg border border-white/10">
-            <DashboardClock className="text-sm text-white font-medium mb-1" />
-            {currentTermYear && (
-              <p className="text-xs text-primary-foreground/80">
-                ภาคเรียนปัจจุบัน: <strong className="text-white font-semibold">{currentTermYear}</strong>
-              </p>
-            )}
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-left sm:text-right">
+              <div className="text-xs text-muted-foreground flex items-center sm:justify-end gap-1.5 font-sans">
+                <Clock className="h-3.5 w-3.5 text-foreground" />
+                เวลาปัจจุบัน
+              </div>
+              <DashboardClock className="text-sm font-semibold text-foreground font-sans tracking-tight" />
+              {currentTermYear && (
+                <div className="text-xs font-medium text-foreground mt-0.5 font-sans">
+                  ภาคการศึกษาที่ {currentTermYear}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/15">
-          <Badge
-            variant="secondary"
-            className="bg-white/20 hover:bg-white/25 text-white border-white/20 font-medium text-xs px-2.5 py-0.5"
-          >
-            {session?.user?.role === "admin" ? "ผู้ดูแลระบบ (Admin)" : "ผู้ใช้ทั่วไป"}
-          </Badge>
-          {currentTermYear && (
-            <Badge
-              variant="outline"
-              className="bg-black/20 text-white border-white/20 font-mono text-xs px-2.5 py-0.5"
-            >
-              Term: {currentTermYear}
-            </Badge>
-          )}
-          <span className="text-xs text-white/70 ml-auto hidden md:inline">
-            สถานะระบบ: เชื่อมต่อฐานข้อมูลปกติ
+      </div>
+
+      {/* B. Scheduling Progress Overview (Zinc Enterprise KPI Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* KPI 1: รายวิชาที่จัดตารางแล้ว */}
+        <Card className="border border-border bg-card shadow-xs hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium text-muted-foreground font-sans">
+              รายวิชาที่จัดตารางแล้ว
+            </CardTitle>
+            <div className="p-2 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold tracking-tight text-foreground font-sans">
+              {isLoadingStats ? (
+                <Skeleton className="h-8 w-16" />
+              ) : (
+                <>
+                  <AnimatedCounter value={assignedPlans} />
+                  <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">
+                    / {totalPlans} แผน
+                  </span>
+                </>
+              )}
+            </div>
+            <div className="mt-2.5">
+              <Progress value={progressPercent} className="h-1.5 bg-muted" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2 font-sans">
+              คิดเป็น {progressPercent}% ของแผนทั้งหมด
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* KPI 2: รายวิชาที่ยังไม่ได้จัดตาราง */}
+        <Card className="border border-border bg-card shadow-xs hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium text-muted-foreground font-sans">
+              รายวิชาที่ยังไม่ได้จัด
+            </CardTitle>
+            <div className="p-2 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <AlertCircle className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold tracking-tight text-foreground font-sans">
+              {isLoadingStats ? (
+                <Skeleton className="h-8 w-12" />
+              ) : (
+                <>
+                  <AnimatedCounter value={unassignedPlans} />
+                  <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">
+                    รายวิชา
+                  </span>
+                </>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-4 font-sans">
+              {unassignedPlans > 0 ? "มีรายวิชารอจัดลงช่วงเวลาตาราง" : "จัดลงตารางครบถ้วนแล้ว"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* KPI 3: ห้องเรียนที่มีการใช้งาน */}
+        <Card className="border border-border bg-card shadow-xs hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium text-muted-foreground font-sans">
+              ห้องเรียนที่ใช้งาน
+            </CardTitle>
+            <div className="p-2 rounded-md bg-secondary text-foreground">
+              <Building2 className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold tracking-tight text-foreground font-sans">
+              {isLoadingStats ? (
+                <Skeleton className="h-8 w-16" />
+              ) : (
+                <>
+                  <AnimatedCounter value={utilizedRooms} />
+                  <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">
+                    / {totalRooms} ห้อง
+                  </span>
+                </>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-4 font-sans">
+              ห้องปฏิบัติการและห้องบรรยายในระบบ
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* KPI 4: จำนวนอาจารย์ผู้สอน */}
+        <Card className="border border-border bg-card shadow-xs hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium text-muted-foreground font-sans">
+              คณาจารย์ผู้สอน
+            </CardTitle>
+            <div className="p-2 rounded-md bg-secondary text-foreground">
+              <SquareUser className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold tracking-tight text-foreground font-sans">
+              {isLoadingStats ? (
+                <Skeleton className="h-8 w-12" />
+              ) : (
+                <>
+                  <AnimatedCounter value={stats?.totalTeachers || 0} />
+                  <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">
+                    ท่าน
+                  </span>
+                </>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-4 font-sans">
+              อาจารย์ประจำสาขาและอาจารย์พิเศษ
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* C & D. Required Actions & Curriculum Scheduling Progress */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* C. Required Actions (รายการที่ต้องดำเนินการ) */}
+        <Card className="lg:col-span-1 shadow-xs border border-border bg-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold flex items-center gap-2 font-sans">
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                รายการที่ต้องดำเนินการ
+              </CardTitle>
+              <Badge variant="outline" className="text-xs border-border bg-muted/40 font-sans">
+                {totalPlans === 0 ? "ไม่มีแผนวิชา" : unassignedPlans > 0 ? `${unassignedPlans} รายการ` : "ครบถ้วน"}
+              </Badge>
+            </div>
+            <CardDescription className="text-xs font-sans">
+              งานจัดตารางที่ต้องตรวจสอบหรือดำเนินการในภาคการศึกษานี้
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 pt-1">
+            {totalPlans === 0 ? (
+              <div className="rounded-lg border border-border bg-secondary/30 p-4 text-center">
+                <CalendarRange className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                <div className="text-sm font-semibold text-foreground font-sans">
+                  ไม่พบข้อมูลแผนการเรียนในระบบ
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 mb-3 font-sans">
+                  ยังไม่มีรายวิชาในแผนการเรียนประจำภาคการศึกษานี้ สามารถเริ่มต้นเพิ่มแผนการเรียนหรือนำเข้าหลักสูตร
+                </div>
+                <Link href="/curriculum">
+                  <Button variant="outline" size="sm" className="text-xs h-8 font-sans">
+                    ตรวจสอบโครงสร้างหลักสูตร
+                  </Button>
+                </Link>
+              </div>
+            ) : unassignedPlans > 0 ? (
+              <div className="space-y-2">
+                <div className="rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-500/5 p-3">
+                  <div className="flex items-start gap-2.5">
+                    <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-xs font-semibold text-foreground font-sans">
+                        มีรายวิชายังไม่ได้จัดลงตาราง
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5 font-sans">
+                        พบ {unassignedPlans} แผนการเรียนที่ยังไม่มีการกำหนดวันและคาบเวลา
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <div className="text-xs font-medium text-muted-foreground mb-2 font-sans">
+                    เข้าสู่หน้าจัดตารางเรียนด่วน:
+                  </div>
+                  <div className="space-y-1">
+                    <Link
+                      href="/adjust-time-tables/adjust-plan-transfer/transfer-one-year"
+                      className="flex items-center justify-between px-3 py-2 text-xs rounded-md bg-secondary/60 hover:bg-secondary transition-colors text-foreground font-medium font-sans"
+                    >
+                      <span>จัดตารางเรียน เทียบโอน ปี 1</span>
+                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Link>
+                    <Link
+                      href="/adjust-time-tables/adjust-plan-four-year/four-one-year"
+                      className="flex items-center justify-between px-3 py-2 text-xs rounded-md bg-secondary/60 hover:bg-secondary transition-colors text-foreground font-medium font-sans"
+                    >
+                      <span>จัดตารางเรียน 4 ปี ชั้นปีที่ 1</span>
+                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Link>
+                    <Link
+                      href="/adjust-time-tables/adjust-plan-dve/dve-one-year"
+                      className="flex items-center justify-between px-3 py-2 text-xs rounded-md bg-secondary/60 hover:bg-secondary transition-colors text-foreground font-medium font-sans"
+                    >
+                      <span>จัดตารางเรียน ปวส. ปี 1 (ปวช.)</span>
+                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/40 bg-emerald-500/5 p-4 text-center">
+                <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400 mx-auto mb-2" />
+                <div className="text-sm font-semibold text-foreground font-sans">
+                  จัดตารางเรียนครบถ้วนสมบูรณ์
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 font-sans">
+                  ทุกแผนการเรียนได้รับการจัดช่วงเวลาและห้องเรียนเรียบร้อยแล้ว
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* D. Curriculum Scheduling Progress (ความคืบหน้าการจัดตารางเรียนตามหลักสูตร) */}
+        <Card className="lg:col-span-2 shadow-xs border border-border bg-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-semibold">
+                  <h2 className="flex items-center gap-2 text-base font-semibold m-0 p-0 text-foreground font-sans">
+                    <Table className="h-4 w-4 text-foreground" />
+                    จัดการตารางเรียน
+                  </h2>
+                </CardTitle>
+                <CardDescription className="text-xs mt-0.5 font-sans">
+                  ความคืบหน้าการจัดตารางเรียนตามหลักสูตรและทางเข้าสู่แต่ละชั้นปี
+                </CardDescription>
+              </div>
+              <Badge variant="outline" className="text-xs font-mono font-medium border-border">
+                {timetableCurriculums.length} หลักสูตร
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {timetableCurriculums.map((curr) => (
+                <div
+                  key={curr.curriculumCode}
+                  className={`rounded-lg border p-4 transition-all duration-200 bg-card shadow-2xs ${curr.borderStyle}`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2.5 w-2.5 rounded-full ${curr.indicatorColor}`} />
+                      <span className="font-semibold text-sm text-foreground font-sans">
+                        {curr.title}
+                      </span>
+                    </div>
+                    <Badge variant="outline" className={`text-[11px] font-normal font-sans ${curr.accentBg}`}>
+                      {curr.planCount} แผนการเรียน
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 mt-3">
+                    {curr.years.map((yr) => (
+                      <Link key={yr.href} href={yr.href}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-between text-xs h-8 font-normal hover:bg-secondary border-border/80 text-foreground font-sans"
+                        >
+                          <span>{yr.label}</span>
+                          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* E. Scheduling Overview (ภาพรวมการกระจายคาบเรียนตามวันในสัปดาห์) */}
+      <Card className="border border-border bg-card shadow-xs">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-semibold flex items-center gap-2 font-sans">
+                <BarChart3 className="h-4 w-4 text-foreground" />
+                ภาพรวมการจัดตารางเรียน
+              </CardTitle>
+              <CardDescription className="text-xs mt-0.5 font-sans">
+                การกระจายช่วงเวลาคาบเรียน (Timetable Slots) ที่ได้รับการจัดตารางในแต่ละวัน
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-sans">
+              <CalendarRange className="h-3.5 w-3.5" />
+              รวม {stats?.scheduledTimetableSlots || 0} ช่วงเวลา
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <div className="grid grid-cols-7 gap-2 sm:gap-3 text-center">
+            {DAYS_MAP.map((d) => {
+              const count = dayDistribution[d.day] || 0;
+              const heightPercent = maxDaySlots > 0 ? Math.max(Math.round((count / maxDaySlots) * 100), 12) : 12;
+              return (
+                <div key={d.day} className="flex flex-col items-center justify-end h-28 p-2 rounded-lg bg-secondary/40 border border-border/60">
+                  <div className="text-xs font-semibold text-foreground mb-1 font-sans">
+                    {count}
+                  </div>
+                  <div className="w-full bg-secondary rounded-sm overflow-hidden flex items-end justify-center h-14">
+                    <div
+                      className="w-full bg-foreground/80 dark:bg-foreground/70 rounded-xs transition-all duration-500 ease-out"
+                      style={{ height: `${count > 0 ? heightPercent : 4}%` }}
+                    />
+                  </div>
+                  <div className="text-[11px] font-medium text-muted-foreground mt-2 truncate w-full font-sans">
+                    {d.label}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* F. Quick Operations (เมนูดำเนินงาน) */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2 font-sans">
+            <Layers className="h-4 w-4 text-foreground" />
+            เมนูดำเนินงาน
+          </h2>
+          <span className="text-xs text-muted-foreground font-sans">
+            เข้าถึงโมดูลและฟังก์ชันย่อยสำหรับงานบริหารวิชาการ
           </span>
         </div>
-      </div>
 
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight text-foreground mb-3 flex items-center gap-2">
-          <NotebookPen className="h-5 w-5 text-primary" />
-          จัดการข้อมูลพื้นฐาน
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {quickActions.map((action) => (
-            <Card key={action.title} className="border-border hover:shadow-xs transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-lg bg-muted border border-border/50 ${action.color}`}>
-                    {action.icon}
+        {/* แถวที่ 1: เมนูที่มีเมนูย่อย (3 การ์ด: อาจารย์, ห้องเรียน, แผนการเรียน) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {quickOperations
+            .filter((op) => "subItems" in op && op.subItems)
+            .map((op) => (
+              <Card
+                key={op.title}
+                className={`border bg-card shadow-xs transition-all duration-200 flex flex-col justify-between ${op.borderStyle}`}
+              >
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="font-semibold text-sm text-foreground font-sans">
+                        {op.title}
+                      </div>
+                      <div className="text-xs text-muted-foreground line-clamp-1 font-sans">
+                        {op.description}
+                      </div>
+                    </div>
+                    <div className={`p-2.5 rounded-lg border shrink-0 ${op.iconBg}`}>
+                      {op.icon}
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-base font-semibold">{action.title}</CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground">
-                      {action.description}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="grid grid-cols-2 gap-2">
-                  {action.items.map((item) => (
-                    <Link key={item.href} href={item.href}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start text-xs font-normal h-8 hover:bg-accent border-border/80 cursor-pointer"
+
+                  {/* รายการเมนูย่อย */}
+                  <div className="pt-2 border-t border-border/60 space-y-1">
+                    {op.subItems!.map((sub) => (
+                      <Link
+                        key={sub.label}
+                        href={sub.href}
+                        className="flex items-center justify-between px-2.5 py-1.5 rounded-md hover:bg-secondary text-xs text-muted-foreground hover:text-foreground font-sans font-medium transition-colors group"
                       >
-                        {item.label}
-                      </Button>
-                    </Link>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight text-foreground mb-3 flex items-center gap-2">
-          <Table className="h-5 w-5 text-primary" />
-          จัดการตารางเรียน
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {timetableActions.map((action) => (
-            <Card
-              key={action.title}
-              className={`transition-all border-border hover:border-primary/50 hover:shadow-xs ${action.color}`}
-            >
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <span className={action.iconColor}>{action.icon}</span>
-                    {action.title}
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-1">
-                  {action.items.map((item) => (
-                    <Link key={item.href} href={item.href}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-between text-xs font-normal h-8 hover:bg-accent/80 cursor-pointer"
-                      >
-                        {item.label}
-                        <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                      </Button>
-                    </Link>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight text-foreground mb-3 flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-primary" />
-          รายงานตารางและการใช้งาน
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {utilityActions.map((action) => (
-            <Link key={action.href} href={action.href} className="group">
-              <Card className="border-border hover:border-primary/50 hover:shadow-xs transition-all h-full">
-                <CardContent className="p-5 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-sm text-foreground mb-0.5 group-hover:text-primary transition-colors">
-                      {action.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">{action.description}</p>
-                  </div>
-                  <div
-                    className={`p-2.5 rounded-lg bg-muted border border-border/50 ${action.color} group-hover:scale-105 transition-transform`}
-                  >
-                    {action.icon}
+                        <span className="truncate">{sub.label}</span>
+                        <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5 shrink-0 ml-1" />
+                      </Link>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
-            </Link>
-          ))}
+            ))}
+        </div>
+
+        {/* แถวที่ 2: เมนูที่ไม่มีเมนูย่อย (4 การ์ดในแถวเดียวบนหน้าจอขนาดใหญ่: โครงสร้างหลักสูตร, ตารางสอน, ตารางห้อง, ปฏิทิน) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {quickOperations
+            .filter((op) => !("subItems" in op && op.subItems))
+            .map((op) => (
+              <Link key={op.title} href={op.href} className="group block focus:outline-none">
+                <Card
+                  className={`border bg-card shadow-xs transition-all duration-200 h-full flex flex-col justify-between ${op.borderStyle}`}
+                >
+                  <CardContent className="p-4 space-y-3 flex flex-col justify-between h-full">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="font-semibold text-sm text-foreground font-sans flex items-center gap-1.5 group-hover:text-foreground">
+                          {op.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground line-clamp-2 font-sans">
+                          {op.description}
+                        </div>
+                      </div>
+                      <div className={`p-2.5 rounded-lg border shrink-0 ${op.iconBg}`}>
+                        {op.icon}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground group-hover:text-foreground font-sans font-medium transition-colors">
+                      <span>เข้าสู่เมนู</span>
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
         </div>
       </div>
     </div>
