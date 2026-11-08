@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -12,7 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 interface AddRoomCustomProps {
     onRoomAdded?: () => void;
@@ -47,7 +50,7 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
 
     const handleSubmit = async () => {
         if (!roomNumber.trim()) {
-            alert("กรุณากรอกเลขห้อง");
+            toast.error("กรุณากรอกเลขห้อง");
             return;
         }
 
@@ -64,6 +67,7 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
             });
 
             if (res.ok) {
+                toast.success(`เพิ่มห้อง ${roomNumber.trim()} สำเร็จ`);
                 setRoomNumber("");
                 setRoomCategory("บรรยาย");
                 setOpen(false);
@@ -72,11 +76,11 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
                 }
             } else {
                 const data = await res.json().catch(() => ({}));
-                alert(data.error || "เกิดข้อผิดพลาดในการเพิ่มห้อง");
+                toast.error(data.error || "เกิดข้อผิดพลาดในการเพิ่มห้อง");
             }
         } catch (error) {
             console.error("Error adding room:", error);
-            alert("เกิดข้อผิดพลาดในการเพิ่มห้อง");
+            toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
         } finally {
             setAdding(false);
         }
@@ -94,77 +98,85 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="outline">เพิ่มห้องใหม่</Button>
+                <Button size="sm" className="gap-2 font-sans font-medium shadow-xs">
+                    <Plus className="h-4 w-4" />
+                    เพิ่มห้องเรียน
+                </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>
-                        เพิ่มห้องใหม่
-                    </DialogTitle>
+                    <DialogTitle className="font-sans font-bold text-lg">เพิ่มห้องเรียนใหม่</DialogTitle>
+                    <DialogDescription className="font-sans text-xs text-muted-foreground">
+                        ระบุเลขห้องและประเภทห้องสำหรับอาคารที่เลือก
+                    </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-4 py-3">
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="roomNumber" className="text-right">
+                        <Label htmlFor="roomNumber" className="text-right text-xs font-medium font-sans">
                             เลขห้อง
                         </Label>
-                        <Input
-                            id="roomNumber"
-                            value={roomNumber}
-                            onChange={(e) => setRoomNumber(e.target.value)}
-                            className={`col-span-3 ${isDuplicate ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-                            placeholder="กรอกเลขห้อง"
-                            disabled={adding}
-                        />
-                        {isDuplicate && (
-                            <p className="col-span-3 col-start-2 text-xs text-red-500">
-                                ห้องนี้มีอยู่แล้ว
-                            </p>
-                        )}
+                        <div className="col-span-3 space-y-1">
+                            <Input
+                                id="roomNumber"
+                                value={roomNumber}
+                                onChange={(e) => setRoomNumber(e.target.value)}
+                                className={`font-sans ${isDuplicate ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                                placeholder="เช่น 621, LAB-1"
+                                disabled={adding}
+                            />
+                            {isDuplicate && (
+                                <p className="text-xs text-destructive font-sans">
+                                    เลขห้องนี้มีอยู่ในอาคารนี้แล้ว
+                                </p>
+                            )}
+                        </div>
                     </div>
 
                     {title && (
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">อาคาร</Label>
-                            <div className="col-span-3 text-sm text-muted-foreground">
+                            <Label className="text-right text-xs font-medium font-sans">อาคาร</Label>
+                            <div className="col-span-3 text-xs text-muted-foreground font-sans bg-muted/40 px-3 py-2 rounded-md border border-border/60">
                                 {title}
                             </div>
                         </div>
                     )}
 
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right">ประเภทห้อง</Label>
+                        <Label className="text-right text-xs font-medium font-sans">ประเภทห้อง</Label>
                         <RadioGroup
                             value={roomCategory}
                             onValueChange={setRoomCategory}
-                            className="col-span-3"
+                            className="col-span-3 flex items-center gap-4"
                             disabled={adding}
                         >
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="บรรยาย" id="lecture" />
-                                <Label htmlFor="lecture">บรรยาย</Label>
+                                <Label htmlFor="lecture" className="text-xs font-sans cursor-pointer">บรรยาย</Label>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="ปฏิบัติ" id="practical" />
-                                <Label htmlFor="practical">ปฏิบัติ</Label>
+                                <Label htmlFor="practical" className="text-xs font-sans cursor-pointer">ปฏิบัติ</Label>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="ไม่ระบุ" id="unspecified" />
-                                <Label htmlFor="unspecified">ไม่ระบุ</Label>
+                                <Label htmlFor="unspecified" className="text-xs font-sans cursor-pointer">ไม่ระบุ</Label>
                             </div>
                         </RadioGroup>
                     </div>
                 </div>
-                <div className="flex justify-end gap-2">
+                <DialogFooter className="gap-2 sm:gap-0">
                     <Button
                         variant="outline"
                         onClick={() => setOpen(false)}
                         disabled={adding}
+                        className="font-sans"
                     >
                         ยกเลิก
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={adding || !roomNumber.trim() || isDuplicate}
+                        className="font-sans"
                     >
                         {adding ? (
                             <>
@@ -172,10 +184,10 @@ export default function AddRoomCustom({ onRoomAdded, title }: AddRoomCustomProps
                                 กำลังเพิ่ม...
                             </>
                         ) : (
-                            "เพิ่มห้อง"
+                            "เพิ่มห้องเรียน"
                         )}
                     </Button>
-                </div>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

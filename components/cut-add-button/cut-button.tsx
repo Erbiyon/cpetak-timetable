@@ -208,22 +208,23 @@ export default function CutButton({
       <DialogTrigger asChild>
         <Button
           variant="ghost"
-          className="p-0 h-5 w-5"
+          size="icon"
+          className="h-6 w-6 p-0 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
           title={
             isAlreadySplitSubject ? "แบ่งวิชาเพิ่ม หรือรวมส่วนกลับ" : "แบ่งวิชา"
           }
         >
-          <Scissors color="#ff0000" />
+          <Scissors className="h-3.5 w-3.5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="font-sans font-bold">
             {isAlreadySplitSubject ? "จัดการส่วนวิชา" : "แบ่งวิชา"}{" "}
             {subject?.subjectCode}
             {isAlreadySplitSubject ? ` (ส่วนที่ ${currentPartNumber})` : ""}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="font-sans text-xs text-muted-foreground">
             {isAlreadySplitSubject
               ? `คุณสามารถแบ่งวิชา ${subject?.subjectName.replace(/\(ส่วนที่ \d+\)$/, "")} เป็นส่วนเพิ่ม หรือรวมส่วนที่แบ่งกลับเป็นวิชาเดิม`
               : `คุณสามารถแบ่งวิชา ${subject?.subjectName} ออกเป็น 2 ส่วน โดยกำหนดจำนวนชั่วโมงรวมของแต่ละส่วน`}

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -13,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, Edit } from "lucide-react";
+import { toast } from "sonner";
 
 interface EditRoomCustomProps {
     roomId: string;
@@ -56,7 +59,7 @@ export default function EditRoomCustom({
 
     const handleSubmit = async () => {
         if (!roomNumber.trim()) {
-            alert("กรุณากรอกเลขห้อง");
+            toast.error("กรุณากรอกเลขห้อง");
             return;
         }
 
@@ -73,18 +76,18 @@ export default function EditRoomCustom({
             });
 
             if (res.ok) {
+                toast.success(`อัปเดตข้อมูลห้อง ${roomNumber.trim()} เรียบร้อยแล้ว`);
                 setOpen(false);
-
-
                 if (onRoomUpdated) {
                     onRoomUpdated();
                 }
             } else {
-                alert("เกิดข้อผิดพลาดในการแก้ไขห้อง");
+                const data = await res.json().catch(() => ({}));
+                toast.error(data.error || "เกิดข้อผิดพลาดในการแก้ไขห้อง");
             }
         } catch (error) {
             console.error("Error updating room:", error);
-            alert("เกิดข้อผิดพลาดในการแก้ไขห้อง");
+            toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
         } finally {
             setUpdating(false);
         }
@@ -93,7 +96,6 @@ export default function EditRoomCustom({
     const handleOpenChange = (newOpen: boolean) => {
         setOpen(newOpen);
         if (newOpen) {
-
             setRoomNumber(roomCode);
             setRoomCategory(roomCate || "บรรยาย");
         }
@@ -102,84 +104,98 @@ export default function EditRoomCustom({
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="sm">
-                    <Edit color="#ff8000" className="w-4 h-4 mr-1" />
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors"
+                    title={`แก้ไขห้อง ${roomCode}`}
+                >
+                    <Edit className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>
-                        แก้ไขข้อมูลห้อง
-                    </DialogTitle>
+                    <DialogTitle className="font-sans font-bold">แก้ไขข้อมูลห้องเรียน</DialogTitle>
+                    <DialogDescription className="font-sans text-xs text-muted-foreground">
+                        ปรับปรุงข้อมูลเลขห้องและประเภทการใช้งาน
+                    </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-4 py-3">
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="roomNumber" className="text-right">
+                        <Label htmlFor="roomNumber" className="text-right text-xs font-medium font-sans">
                             เลขห้อง
                         </Label>
-                        <Input
-                            id="roomNumber"
-                            value={roomNumber}
-                            onChange={(e) => setRoomNumber(e.target.value)}
-                            className={`col-span-3 ${isDuplicate ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-                            placeholder="กรอกเลขห้อง"
-                            disabled={updating}
-                        />
-                        {isDuplicate && (
-                            <p className="col-span-3 col-start-2 text-xs text-red-500">
-                                ห้องนี้มีอยู่แล้ว
-                            </p>
-                        )}
+                        <div className="col-span-3 space-y-1">
+                            <Input
+                                id="roomNumber"
+                                value={roomNumber}
+                                onChange={(e) => setRoomNumber(e.target.value)}
+                                className={`font-sans ${isDuplicate ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                                placeholder="กรอกเลขห้อง เช่น 621"
+                                disabled={updating}
+                            />
+                            {isDuplicate && (
+                                <p className="text-xs text-destructive font-sans">
+                                    เลขห้องนี้มีอยู่ในอาคารนี้แล้ว
+                                </p>
+                            )}
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right">อาคาร</Label>
-                        <div className="col-span-3 text-sm text-muted-foreground">
+                        <Label className="text-right text-xs font-medium font-sans">อาคาร</Label>
+                        <div className="col-span-3 text-xs text-muted-foreground font-sans bg-muted/40 px-3 py-2 rounded-md border border-border/60">
                             {roomType}
                         </div>
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right">ประเภทห้อง</Label>
+                        <Label className="text-right text-xs font-medium font-sans">ประเภทห้อง</Label>
                         <RadioGroup
                             value={roomCategory}
                             onValueChange={setRoomCategory}
-                            className="col-span-3"
+                            className="col-span-3 flex items-center gap-6"
                             disabled={updating}
                         >
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="บรรยาย" id="edit-lecture" />
-                                <Label htmlFor="edit-lecture">บรรยาย</Label>
+                                <Label htmlFor="edit-lecture" className="text-xs font-sans cursor-pointer">
+                                    ห้องบรรยาย
+                                </Label>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="ปฏิบัติ" id="edit-practical" />
-                                <Label htmlFor="edit-practical">ปฏิบัติ</Label>
+                                <Label htmlFor="edit-practical" className="text-xs font-sans cursor-pointer">
+                                    ห้องปฏิบัติการ
+                                </Label>
                             </div>
                         </RadioGroup>
                     </div>
                 </div>
-                <div className="flex justify-end gap-2">
+                <DialogFooter className="gap-2 sm:gap-0">
                     <Button
                         variant="outline"
                         onClick={() => setOpen(false)}
                         disabled={updating}
+                        className="font-sans"
                     >
                         ยกเลิก
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={updating || !roomNumber.trim() || isDuplicate}
+                        className="font-sans"
                     >
                         {updating ? (
                             <>
                                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                กำลังแก้ไข...
+                                กำลังบันทึก...
                             </>
                         ) : (
-                            "บันทึก"
+                            "บันทึกข้อมูล"
                         )}
                     </Button>
-                </div>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );
